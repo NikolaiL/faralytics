@@ -101,10 +101,10 @@ test("busiest date uses the first tied active day, ignores future days and forma
 });
 
 test("share text uses first person only when the viewer FID matches the selected profile", () => {
-  const activity = { profile: {fid:"366713", username:"nikolaii.eth", display_name:"Nikolai"}, total:4633, period:"365" };
-  assert.equal(activityShareText(activity, "366713"), "I have 4,633 captured Farcaster actions in the past 365 days. A year, one square at a time.");
-  assert.match(activityShareText(activity, "2"), /^@nikolaii\.eth has 4,633/);
-  assert.match(activityShareText(activity), /^@nikolaii\.eth has 4,633/);
+  const activity = { profile: {fid:"366713", username:"nikolaii.eth", display_name:"Nikolai"}, total:4637, period:"365" };
+  assert.equal(activityShareText(activity, "366713"), "I have 4,637 captured Farcaster actions in the past 365 days. A year, one square at a time.\n\nHow about you?");
+  assert.match(activityShareText(activity, "2"), /^@nikolaii\.eth has 4,637/);
+  assert.match(activityShareText(activity), /^@nikolaii\.eth has 4,637/);
   assert.match(activityShareText({...activity, period:"2024"}, "366713"), /actions in 2024\./);
   assert.match(activityShareText({...activity,profile:{...activity.profile,username:null}}), /^FID 366713 has/);
 });

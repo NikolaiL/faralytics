@@ -15,7 +15,7 @@ export const metadata: Metadata = {
       version: "1",
       imageUrl: `${origin}/og/faralytics-farcaster-v10.png`,
       button: {
-        title: "Explore activity",
+        title: "Check My Faralytics",
         action: { type: "launch_miniapp", name: "Faralytics", url: `${origin}/`, splashBackgroundColor: "#0d0b12" },
       },
     }),

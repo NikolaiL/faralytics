@@ -57,7 +57,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
         version: "1",
         imageUrl: image,
         button: {
-          title: "Explore activity",
+          title: "Check My Faralytics",
           action: { type: "launch_miniapp", name: "Faralytics", url, splashBackgroundColor: "#0d0b12" },
         },
       }),
