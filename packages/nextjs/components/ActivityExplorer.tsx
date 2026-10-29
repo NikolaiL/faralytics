@@ -95,6 +95,7 @@ export function ActivityExplorer({
     const origin = process.env.NEXT_PUBLIC_URL || window.location.origin;
     const url = `${origin}${sharePath(data.profile.fid, data.period, data.anchor, Date.now().toString())}`;
     const text = activityShareText(data, fid);
+    const credit = "created by @nikolaii.eth with @viniapp";
     if (target === "copy") {
       try {
         await navigator.clipboard.writeText(url);
@@ -106,14 +107,14 @@ export function ActivityExplorer({
     }
     if (target === "farcaster" && isMiniApp) {
       try {
-        await sdk.actions.composeCast({ text: `${text}\n\ncreated with @viniapp`, embeds: [url] });
+        await sdk.actions.composeCast({ text: `${text}\n\n${credit}`, embeds: [url] });
         return;
       } catch {
         setNote("Could not open the in-app composer. Opening the web composer.");
       }
     }
     const compose = new URL(target === "x" ? "https://x.com/intent/post" : "https://farcaster.xyz/~/compose");
-    compose.searchParams.set("text", `${text}\n\ncreated with ${target === "x" ? "@viniapp_xyz" : "@viniapp"}`);
+    compose.searchParams.set("text", `${text}\n\n${credit}`);
     compose.searchParams.set(target === "x" ? "url" : "embeds[]", url);
     window.open(compose.toString(), "_blank", "noopener,noreferrer");
   }
