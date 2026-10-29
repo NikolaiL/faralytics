@@ -162,6 +162,8 @@ export const GET = withErrorReporting<{ params: Promise<{ format: string }> }>(
                   flex: 1,
                   flexDirection: "column",
                   justifyContent: "center",
+                  alignItems: "center",
+                  textAlign: "center",
                   gap: 10,
                   padding: "14px 22px",
                   background: "#18131f",
