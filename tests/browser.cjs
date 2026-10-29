@@ -40,6 +40,7 @@ const { chromium } = require("@playwright/test");
   assert.match(share.searchParams.get('ts'), /^\d{13}$/);
   await page.getByTestId("share-x").click();
   const x = new URL(await page.evaluate(() => window.__lastShare));
+  assert.match(x.searchParams.get('text'), /^@.+ has [\d,]+ captured Farcaster actions/);
   assert.equal(x.hostname, 'x.com'); const xShare = new URL(x.searchParams.get('url'));
   assert.equal(xShare.pathname, share.pathname);
   assert.equal(xShare.searchParams.get('period'), share.searchParams.get('period'));

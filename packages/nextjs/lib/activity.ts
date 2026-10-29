@@ -140,3 +140,9 @@ export function activityDate(date: string | null) {
     ? utcDate(date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })
     : "—";
 }
+
+export function activityShareText(activity: Pick<Activity, "profile" | "total" | "period">, viewerFid?: string) {
+  const name = activity.profile.username ? `@${activity.profile.username}` : `FID ${activity.profile.fid}`;
+  const subject = viewerFid === activity.profile.fid ? "I have" : `${name} has`;
+  return `${subject} ${activity.total.toLocaleString("en-US")} captured Farcaster actions in ${periodLabel(activity.period)}. A year, one square at a time.`;
+}

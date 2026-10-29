@@ -3,7 +3,7 @@ import { sdk } from "@farcaster/miniapp-sdk";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { Activity, Day } from "~~/lib/activity";
-import { activityDate, dateKey, periodLabel, PURPLES, sharePath, utcDate } from "~~/lib/activity";
+import { activityShareText, activityDate, dateKey, periodLabel, PURPLES, sharePath, utcDate } from "~~/lib/activity";
 import { LOGO_PIXELS } from "~~/lib/brand";
 import { BrandChart } from "./BrandChart";
 import { AvatarImage } from "./AvatarImage";
@@ -94,8 +94,7 @@ export function ActivityExplorer({
     if (!data) return;
     const origin = process.env.NEXT_PUBLIC_URL || window.location.origin;
     const url = `${origin}${sharePath(data.profile.fid, data.period, data.anchor, Date.now().toString())}`;
-    const name = data.profile.username ? `@${data.profile.username}` : `FID ${data.profile.fid}`;
-    const text = `${name}: ${data.total.toLocaleString()} captured Farcaster actions in ${periodLabel(data.period)}. A year, one square at a time.`;
+    const text = activityShareText(data, fid);
     if (target === "copy") {
       try {
         await navigator.clipboard.writeText(url);

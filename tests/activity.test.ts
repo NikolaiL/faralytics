@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { activityDate, colorLevel, fillDays, getRange, grid, sharePath, summarize, validFid } from "../packages/nextjs/lib/activity.ts";
+import { activityShareText, activityDate, colorLevel, fillDays, getRange, grid, sharePath, summarize, validFid } from "../packages/nextjs/lib/activity.ts";
 
 test("365-day range includes anchor exactly once and crosses leap day correctly", () => {
   const range = getRange("365", "2024-03-01");
@@ -91,4 +91,13 @@ test("busiest date uses the first tied active day, ignores future days and forma
   assert.equal(activityDate(result.peakDate), "Oct 22, 2026");
   assert.equal(summarize([{date:"2026-10-22", actions:0, future:false}]).peakDate, null);
   assert.equal(activityDate(null), "—");
+});
+
+test("share text uses first person only when the viewer FID matches the selected profile", () => {
+  const activity = { profile: {fid:"366713", username:"nikolaii.eth", display_name:"Nikolai"}, total:4633, period:"365" };
+  assert.equal(activityShareText(activity, "366713"), "I have 4,633 captured Farcaster actions in the past 365 days. A year, one square at a time.");
+  assert.match(activityShareText(activity, "2"), /^@nikolaii\.eth has 4,633/);
+  assert.match(activityShareText(activity), /^@nikolaii\.eth has 4,633/);
+  assert.match(activityShareText({...activity, period:"2024"}, "366713"), /actions in 2024\./);
+  assert.match(activityShareText({...activity,profile:{...activity.profile,username:null}}), /^FID 366713 has/);
 });
