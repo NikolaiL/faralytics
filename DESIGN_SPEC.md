@@ -19,3 +19,5 @@ The page intro now has a single heading: “Your year. One square at a time.” 
 Busiest-day stat shows the peak action count in large bold type, followed by “on busiest day: May 24, 2026” on the next line, on web and personalized OG cards.
 
 Mobile sharing revision: FC, X and copy-icon-only buttons keep accessible full labels. Caption and buttons form a compact group beside the logo on the same header row; full button text remains on desktop.
+
+Tagline size is 13px. At widths up to360px, tracking tightens to0.75px so the text stays on one line.
