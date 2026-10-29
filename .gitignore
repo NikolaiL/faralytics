@@ -1,0 +1,41 @@
+# dependencies
+node_modules
+
+# yarn
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# eslint
+.eslintcache
+
+# misc
+.DS_Store
+
+# IDE
+.vscode
+.idea
+
+# cli
+dist
+
+# editor swap/temp files
+*.swp
+*.swo
+*.swn
+.*.sw?
+*~
+
+# chat attachments the platform materializes into the workdir for the builder
+# (reference images/PDFs, Neynar Studio source zips); never part of the app
+attachments/
+
+# upstream Scaffold-ETH agent/editor config that is noise in a generated app
+.mcp.json
+opencode.json
+.opencode/
+.cursor/agents/
+.cursor/mcp.json

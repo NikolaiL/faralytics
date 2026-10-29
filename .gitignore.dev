@@ -1,0 +1,27 @@
+--- TEMPLATE FILE
+templates/base/.gitignore.template.mjs
+
+
+--- ARGS FILES
+	- /ve/extension/.gitignore.args.mjs
+
+
+--- RESULTING ARGS
+	- postContent:	[
+# editor swap/temp files
+*.swp
+*.swo
+*.swn
+.*.sw?
+*~
+
+# chat attachments the platform materializes into the workdir for the builder
+# (reference images/PDFs, Neynar Studio source zips); never part of the app
+attachments/
+
+# upstream Scaffold-ETH agent/editor config that is noise in a generated app
+.mcp.json
+opencode.json
+.opencode/
+.cursor/agents/
+.cursor/mcp.json]

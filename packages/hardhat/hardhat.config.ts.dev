@@ -1,0 +1,10 @@
+--- TEMPLATE FILE
+templates/extension hardhat/packages/hardhat/hardhat.config.ts.template.mjs
+
+
+--- ARGS FILES
+	- /ve/extension/packages/hardhat/hardhat.config.ts.args.mjs
+
+
+--- RESULTING ARGS
+	- configOverrides:	[[object Object]]

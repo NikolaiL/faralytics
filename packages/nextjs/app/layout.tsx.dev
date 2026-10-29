@@ -1,0 +1,16 @@
+--- TEMPLATE FILE
+templates/base/packages/nextjs/app/layout.tsx.template.mjs
+
+
+--- ARGS FILES
+	- /ve/extension/packages/nextjs/app/layout.tsx.args.mjs
+
+
+--- RESULTING ARGS
+	- metadataOverrides:	[[object Object]]
+	- preContent:	[export const viewport: import("next").Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+]

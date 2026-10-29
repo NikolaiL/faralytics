@@ -1,0 +1,10 @@
+--- TEMPLATE FILE
+templates/base/packages/nextjs/components/Header.tsx.template.mjs
+
+
+--- ARGS FILES
+	- /ve/extension/packages/nextjs/components/Header.tsx.args.mjs
+
+
+--- RESULTING ARGS
+	- extraMenuLinksObjects:	[]
