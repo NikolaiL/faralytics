@@ -1,32 +1,23 @@
-
-import "@rainbow-me/rainbowkit/styles.css";
-import "@scaffold-ui/components/styles.css";
-import { ScaffoldEthAppWithProviders } from "~~/components/ScaffoldEthAppWithProviders";
-import { ThemeProvider } from "~~/components/ThemeProvider";
+import type { Metadata, Viewport } from "next";
+import { MiniappProvider } from "~~/components/MiniappProvider";
 import "~~/styles/globals.css";
-import { getMetadata } from "~~/utils/scaffold-eth/getMetadata";
-export const viewport: import("next").Viewport = {
+export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  themeColor: "#0d0b12",
 };
-
-
-export const metadata = getMetadata({
-  title: 'ViniApp',
-  description: 'A cross-platform onchain app'
-});
-
-const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
+export const metadata: Metadata = {
+  title: "Cast Year — your Farcaster activity",
+  description: "Your year, one purple square at a time. Explore and share captured Farcaster activity.",
+  icons: { icon: "/icon.svg" },
+};
+export default function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html suppressHydrationWarning className={``}>
+    <html lang="en">
       <body>
-        <ThemeProvider enableSystem>
-          <ScaffoldEthAppWithProviders>{children}</ScaffoldEthAppWithProviders>
-        </ThemeProvider>
+        <MiniappProvider>{children}</MiniappProvider>
       </body>
     </html>
   );
-};
-
-export default ScaffoldEthApp;
+}

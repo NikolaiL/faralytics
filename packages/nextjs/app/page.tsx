@@ -1,44 +1,35 @@
-
-"use client";
-
-import type { NextPage } from "next";
-import { useMiniapp } from "~~/components/MiniappProvider";
-
-const Home: NextPage = () => {
-  const { context, isMiniApp, isReady } = useMiniapp();
-  const user = context.user;
-  const environmentLabel = !isReady
-    ? "Detecting environment"
-    : isMiniApp
-      ? "Running inside Farcaster"
-      : "Running in browser";
-
-  return (
-    <div className="flex flex-col items-center w-full px-4 py-8 pb-24">
-      <div className="w-full max-w-md text-center">
-        {isReady && user?.pfpUrl && (
-          <div className="flex flex-col items-center py-6">
-            <img src={user.pfpUrl} className="w-20 h-20 rounded-full ring-4 ring-primary" alt="Profile" />
-            <h2 className="text-xl font-bold mt-3">{user.displayName || user.username}</h2>
-            {user.username && <p className="text-base-content/60">@{user.username}</p>}
-          </div>
-        )}
-
-        <h1 className="text-4xl font-bold mb-4">
-          {process.env.NEXT_PUBLIC_APP_NAME || "ViniApp"}
-        </h1>
-        <p className="text-base-content/70 mb-8">
-          {process.env.NEXT_PUBLIC_APP_TAGLINE || "A cross-platform onchain app"}
-        </p>
-
-        <div className="card bg-base-200 rounded-xl p-6">
-          <p className="text-sm text-base-content/60">
-            {environmentLabel}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
+import type { Metadata } from "next";
+import { ActivityExplorer } from "~~/components/ActivityExplorer";
+const origin = process.env.NEXT_PUBLIC_URL || "http://localhost:3100";
+export const metadata: Metadata = {
+  openGraph: {
+    title: "Cast Year",
+    description: "Your year, one purple square at a time.",
+    images: [{ url: `${origin}/api/og/farcaster.png`, width: 1200, height: 800 }],
+  },
+  twitter: { card: "summary_large_image", images: [`${origin}/api/og/x.png`] },
+  other: {
+    "fc:miniapp": JSON.stringify({
+      version: "1",
+      imageUrl: `${origin}/api/og/farcaster.png`,
+      button: {
+        title: "Explore activity",
+        action: { type: "launch_miniapp", name: "Cast Year", url: origin, splashBackgroundColor: "#0d0b12" },
+      },
+    }),
+  },
 };
-
-export default Home;
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  return (
+    <ActivityExplorer
+      initialUser={typeof params.user === "string" ? params.user : undefined}
+      initialPeriod={typeof params.period === "string" ? params.period : undefined}
+      initialEnd={typeof params.end === "string" ? params.end : undefined}
+    />
+  );
+}

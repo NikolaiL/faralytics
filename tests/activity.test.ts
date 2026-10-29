@@ -1,0 +1,39 @@
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import { colorLevel, fillDays, getRange, grid, sharePath, summarize, validFid } from "../packages/nextjs/lib/activity.ts";
+
+test("365-day range includes anchor exactly once and crosses leap day correctly", () => {
+  const range = getRange("365", "2024-03-01");
+  const days = fillDays([], range.start, range.end, range.anchor);
+  assert.equal(days.length, 365);
+  assert.equal(days.at(-1)?.date, "2024-03-01");
+  assert.equal(days.filter(day => day.date === "2024-02-29").length, 1);
+});
+test("calendar year zero-fills leap day, masks future days and preserves every count", () => {
+  const range = getRange("2024", "2024-03-01");
+  const days = fillDays([{ day: "2024-02-28", actions: 3 }, { day: "2024-02-29", actions: 7 }, { day: "2024-03-01", actions: 2 }, { day: "2024-03-02", actions: 99 }], range.start, range.end, range.anchor);
+  assert.equal(days.length, 366);
+  assert.deepEqual(summarize(days), { total: 12, activeDays: 3, longestStreak: 3, peak: 7 });
+  assert.equal(days.find(day => day.date === "2024-03-02")?.future, true);
+});
+test("calendar alignment supports Sunday start and 54-week leap years", () => {
+  const sunday = grid(fillDays([], "2023-01-01", "2023-12-31", "2023-12-31"));
+  assert.equal(sunday.offset, 0);
+  assert.equal(sunday.cells[0].row, 0);
+  const leap = grid(fillDays([], "2000-01-01", "2000-12-31", "2000-12-31"));
+  assert.equal(leap.columns, 54);
+  assert.equal(leap.cells.at(-1)?.column, 53);
+});
+test("validates UInt64 FIDs without JS numeric precision loss", () => {
+  assert.equal(validFid("18446744073709551615"), true);
+  for (const value of ["18446744073709551616", "0", "-1", "001", "1 OR 1=1", "1.2", ""]) assert.equal(validFid(value), false);
+});
+test("rejects malformed/future periods and dates", () => {
+  for (const year of ["2020", "1900", "3000", "2e3", "2024 OR 1=1"]) assert.throws(() => getRange(year));
+  for (const date of ["2024-02-30", "2024-13-01", "3000-01-01", "invalid", "2024-1-01"]) assert.throws(() => getRange("365", date));
+});
+test("intensity and shared links preserve the selected FID, period and anchor", () => {
+  assert.equal(colorLevel(0, 20), 0); assert.equal(colorLevel(20, 20), 4); assert.equal(colorLevel(1, 20) > 0, true);
+  const url = new URL(sharePath("366713", "2024", "2024-03-01"), "http://localhost");
+  assert.equal(url.pathname, "/share/366713"); assert.equal(url.searchParams.get("period"), "2024"); assert.equal(url.searchParams.get("end"), "2024-03-01");
+});

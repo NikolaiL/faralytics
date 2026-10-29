@@ -1,0 +1,3 @@
+# Design
+
+Cast Year — your year, one square at a time. Near-black #0d0b12 canvas, warm white text, muted lilac borders; Farcaster purple #855DCD with a five-step dark-to-bright scale. Editorial, spacious header; compact profile; chart as the hero; right-side year rail on desktop, horizontally scrolling year selector on mobile. No generated imagery: a small grid mark is the identity. Responsive SVG chart fits mobile; larger scrollable detail view via accessible day selection. Dark only by request. Uses system sans and monospace numeric labels. Native button focus states, descriptive labels, polite status/error announcements. UTC dates everywhere.

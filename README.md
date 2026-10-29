@@ -1,115 +1,49 @@
-# 🏗 Scaffold-ETH 2
+# Cast Year
 
-<h4 align="center">
-  <a href="https://docs.scaffoldeth.io">Documentation</a> |
-  <a href="https://scaffoldeth.io">Website</a>
-</h4>
+A dark Farcaster activity miniapp with a GitHub-style purple heatmap. Look up a username (with or without @) or FID, view exactly the past 365 UTC days or a calendar year, and share that person and period.
 
-🧪 An open-source, up-to-date toolkit for building decentralized applications (dapps) on the Ethereum blockchain. It's designed to make it easier for developers to create and deploy smart contracts and build user interfaces that interact with those contracts.
+Created through the ViniApp create-eth + ve scaffold, followed by a build/design spec, implementation, build/lint checks, live database verification and Chromium browser scenarios. This is a standalone local app, not a record in the ViniApp deployment controller. No platform repositories were changed.
 
-> [!NOTE]
-> 🤖 Scaffold-ETH 2 is AI-ready! It has everything agents need to build on Ethereum. Check `.agents/`, `.claude/`, `.opencode` or `.cursor/` for more info.
+## Run locally
 
-⚙️ Built using NextJS, RainbowKit, Hardhat, Wagmi, Viem, and Typescript.
+Requires Node 24+ and Yarn 4 (bundled).
 
-- ✅ **Contract Hot Reload**: Your frontend auto-adapts to your smart contract as you edit it.
-- 🪝 **[Custom hooks](https://docs.scaffoldeth.io/hooks/)**: Collection of React hooks wrapper around [wagmi](https://wagmi.sh/) to simplify interactions with smart contracts with typescript autocompletion.
-- 🧱 [**Components**](https://docs.scaffoldeth.io/components/): Collection of common web3 components to quickly build your frontend.
-- 🔥 **Burner Wallet & Local Faucet**: Quickly test your application with a burner wallet and local faucet.
-- 🔐 **Integration with Wallet Providers**: Connect to different wallet providers and interact with the Ethereum network.
-
-![Debug Contracts tab](https://github.com/scaffold-eth/scaffold-eth-2/assets/55535804/b237af0c-5027-4849-a5c1-2e31495cccb1)
-
-## Requirements
-
-Before you begin, you need to install the following tools:
-
-- [Node (>= v20.18.3)](https://nodejs.org/en/download/)
-- Yarn ([v1](https://classic.yarnpkg.com/en/docs/install/) or [v2+](https://yarnpkg.com/getting-started/install))
-- [Git](https://git-scm.com/downloads)
-
-## Quickstart
-
-To get started with Scaffold-ETH 2, follow the steps below:
-
-1. Install dependencies if it was skipped in CLI:
-
-```
-cd my-dapp-example
+```sh
 yarn install
-```
-
-2. Run a local network in the first terminal:
-
-```
-yarn chain
-```
-
-This command starts a local Ethereum network using Hardhat. The network runs on your local machine and can be used for testing and development. You can customize the network configuration in `packages/hardhat/hardhat.config.ts`.
-
-3. On a second terminal, deploy the test contract:
-
-```
-yarn deploy
-```
-
-This command deploys a test smart contract to the local network. The contract is located in `packages/hardhat/contracts` and can be modified to suit your needs. The `yarn deploy` command uses the deploy script located in `packages/hardhat/deploy` to deploy the contract to the network. You can also customize the deploy script.
-
-4. On a third terminal, start your NextJS app:
-
-```
+yarn test
+yarn lint
+yarn build
 yarn start
 ```
 
-Visit your app on: `http://localhost:3000`. You can interact with your smart contract using the `Debug Contracts` page. You can tweak the app config in `packages/nextjs/scaffold.config.ts`.
+Open http://localhost:3100. `yarn dev` starts a development server on the same port; stop production first. The initial example uses FID 366713. In Farcaster, host context can select your own FID automatically; My activity also loads it. On the web, enter your username/FID without signing in.
 
-Run smart contract test with `yarn hardhat:test`
+The existing private connection settings were copied into the ignored, owner-readable `packages/nextjs/.env.local`. They are never included in client code. The original file was not changed. See `.env.example` for configuration names. Never commit credentials.
 
-- Edit your smart contracts in `packages/hardhat/contracts`
-- Edit your frontend homepage at `packages/nextjs/app/page.tsx`. For guidance on [routing](https://nextjs.org/docs/app/building-your-application/routing/defining-routes) and configuring [pages/layouts](https://nextjs.org/docs/app/building-your-application/routing/pages-and-layouts) checkout the Next.js documentation.
-- Edit your deployment scripts in `packages/hardhat/deploy`
+## Data and dates
 
-## 🚀 Miniapp Functionality
+`farcaster.activities` supplies all captured signed actions, without activity-type filtering. `usernames` resolves name proofs, `profiles` supplies display names, and `dataset_status` supplies coverage/freshness. UInt64 FIDs remain strings. Every query uses typed parameters, verified HTTPS with an inline CA, a 35-second deadline, and a capped response. Results cache for five minutes (dataset status: one minute); there is no background polling.
 
-Miniapp extension adds functionality to easily create a Farcaster/Base MiniApp. It will take care of manifest file generation at .well-known/farcaster.json as well as generation of the metatags required for miniapp rendering in Farcaster/Base feed.
+The 365-day view includes today plus the previous 364 UTC days. Calendar views include leap days and dim future dates. Missing days are zero-filled. Daily details work with hover, tap, or keyboard. The chart scrolls horizontally on mobile; the page itself fits narrow screens.
 
-### Requirements
+Counts describe captured history, not all network history. Retained backfill cannot recover all pruned/deleted messages. The source reported it was catching up during testing; the UI shows its live state. A zero square is not proof that someone did nothing.
 
-According to [MiniApp SDK documentation](https://miniapps.farcaster.xyz/docs/getting-started):
+## Sharing
 
-- Node.js 22.11.0 or higher (LTS version recommended)
-- Check your version: ```node --version```
-- Download from [nodejs.org](https://nodejs.org)
+The canonical link is `/share/<fid>?period=365|<year>&end=YYYY-MM-DD`. The anchor preserves the selected window. It renders real chart HTML and per-user metadata, with no server redirect.
 
-### Installation
-- Copy packages/nextjs/.env.example to packages/nextjs/.env
-- Run ngrok (or other) externally available tunnel
-```typescript
-ngrok http http://localhost:3000 --url https://yoursubdomian.ngrok.dev
-```
-- Update ```NEXT_PUBLIC_URL``` in packages/nextjs/.env for your domain
-- Go to https://farcaster.xyz/~/developers/mini-apps/preview , enter your app domain and click "Open URL as Mini App"
+- `/api/og/farcaster.png?fid=<fid>&period=<period>&end=<anchor>`: 1200×800 PNG (3:2).
+- `/api/og/x.png?fid=<fid>&period=<period>&end=<anchor>`: 1200×600 PNG (2:1).
+- Farcaster uses `fc:miniapp` and the native composer inside Farcaster; web falls back to the composer URL. X uses a web intent and `twitter:image`. Copy link and image download also work locally.
 
-Your miniapp should render as a MiniApp in Farcaster Preview
+Social networks cannot fetch localhost URLs. For real feed previews, the app needs a reachable HTTPS origin in `NEXT_PUBLIC_URL` and a rebuild. Public Farcaster registration additionally requires a signed `FARCASTER_ACCOUNT_ASSOCIATION` from the Farcaster developer tool. Neither public hosting nor account registration was performed for this local-only request. The app does not post without user action.
 
-![MiniApp Preview](https://raw.githubusercontent.com/NikolaiL/miniapp/master/images/MiniAppScreenshot.png)
+## Verification
 
-For production you will need to generate the manifest accountAssociation values for your production domain and add them to the .env file (```FARCASTER_HEADER, FARCASTER_PAYLOAD, FARCASTER_SIGNATURE```). You can generate them using [Farcaster Manifest Tools](https://farcaster.xyz/~/developers/mini-apps/manifest).
+`yarn test` covers date boundaries, leap years, zero filling, future days, calendar alignment, UInt64 validation and share selection. `yarn lint` and `yarn build` check the actual app.
 
-### 🔗 Links
+`tests/browser.cjs` runs with the existing global `@playwright/test` (no project-local browser dependency). Supply its module directory through `NODE_PATH`; if its expected Chromium revision differs from the installed one, set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to the installed Chromium executable. Start production first, then run `node tests/browser.cjs`. Screenshots and results go in ignored `artifacts/`.
 
-- [Farcaster MiniApp Documentation](https://miniapps.farcaster.xyz)
-- [Farcaster MiniApp DevTools](https://farcaster.xyz/~/developers/)
-- [Base Miniapp Preview](https://www.base.dev/preview)
+`VINIAPP_BROWSER_SCENARIOS.json` keeps the main lookup/year interaction in the platform's replayable data-only format. A ViniApp controller audit and real signed-in host smoke are not available for this standalone local app; they are not claimed as passed.
 
-## Documentation
-
-Visit our [docs](https://docs.scaffoldeth.io) to learn how to start building with Scaffold-ETH 2.
-
-To know more about its features, check out our [website](https://scaffoldeth.io).
-
-## Contributing to Scaffold-ETH 2
-
-We welcome contributions to Scaffold-ETH 2!
-
-Please see [CONTRIBUTING.MD](https://github.com/scaffold-eth/scaffold-eth-2/blob/main/CONTRIBUTING.md) for more information and guidelines for contributing to Scaffold-ETH 2.
+See `APP_BUILD_CHECKLIST.md` for verified checks and limitations.
