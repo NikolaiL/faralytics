@@ -1,3 +1,4 @@
+import { LOGO_PIXELS } from "~~/lib/brand";
 import { ImageResponse } from "next/og";
 import { withErrorReporting } from "~~/utils/reportServerError";
 export const runtime = "nodejs";
@@ -14,15 +15,15 @@ export const GET = withErrorReporting("/api/icon", (request) => {
         justifyContent: "center",
       }}
     >
-      <svg width={Math.round(size * 0.586)} height={Math.round(size * 0.586)} viewBox="0 0 300 300">
-        {Array.from({ length: 9 }, (_, i) => (
+      <svg width={Math.round(size * 0.586)} height={Math.round(size * 0.586)} viewBox="0 0 288 288">
+        {LOGO_PIXELS.map(([x, y], i) => (
           <rect
             key={i}
-            x={(i % 3) * 106}
-            y={Math.floor(i / 3) * 106}
-            width="84"
-            height="84"
-            rx="15"
+            x={x * 60}
+            y={y * 60}
+            width="48"
+            height="48"
+            rx="9"
             fill={i === 2 ? "#d6ff3f" : i === 6 ? "#b596f2" : "#855dcd"}
           />
         ))}

@@ -13,3 +13,16 @@ const letters: Record<string, string[]> = {
 export const BRAND_GRID = Array.from({ length: 7 }, (_, row) =>
   [..."FARALYTICS"].map((letter) => letters[letter][row]).join("0"),
 );
+
+// Nine activity squares form an arrow pointing northeast.
+export const LOGO_PIXELS = [
+  [2, 0],
+  [3, 0],
+  [4, 0],
+  [3, 1],
+  [4, 1],
+  [2, 2],
+  [4, 2],
+  [1, 3],
+  [0, 4],
+] as const;

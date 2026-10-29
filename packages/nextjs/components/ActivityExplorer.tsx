@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { Activity, Day } from "~~/lib/activity";
 import { dateKey, periodLabel, PURPLES, sharePath, utcDate } from "~~/lib/activity";
+import { LOGO_PIXELS } from "~~/lib/brand";
 import { Heatmap } from "./Heatmap";
 import { AccountSearch } from "./AccountSearch";
 import { useMiniapp } from "./MiniappProvider";
@@ -11,8 +12,8 @@ import { useMiniapp } from "./MiniappProvider";
 function Mark() {
   return (
     <span className="mark" aria-hidden="true">
-      {Array.from({ length: 9 }, (_, i) => (
-        <i key={i} />
+      {LOGO_PIXELS.map(([x, y], i) => (
+        <i key={i} style={{ gridColumn: x + 1, gridRow: y + 1 }} />
       ))}
     </span>
   );
