@@ -23,7 +23,7 @@ export const GET = withErrorReporting("/api/icon", (request) => {
             width="84"
             height="84"
             rx="15"
-            fill={i === 2 ? "#211b2e" : i === 6 ? "#b596f2" : "#855dcd"}
+            fill={i === 2 ? "#d6ff3f" : i === 6 ? "#b596f2" : "#855dcd"}
           />
         ))}
       </svg>

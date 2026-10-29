@@ -8,8 +8,8 @@ export const GET = withErrorReporting("/.well-known/farcaster.json", () => {
       version: "1",
       name: "Faralytics",
       homeUrl: origin,
-      iconUrl: `${origin}/api/icon?size=1024`,
-      splashImageUrl: `${origin}/api/icon?size=200`,
+      iconUrl: `${origin}/api/icon?size=1024&v=accent1`,
+      splashImageUrl: `${origin}/api/icon?size=200&v=accent1`,
       splashBackgroundColor: "#0d0b12",
       subtitle: "Your year in purple",
       description: "Explore and share your captured Farcaster activity, one purple square at a time.",
@@ -17,7 +17,7 @@ export const GET = withErrorReporting("/.well-known/farcaster.json", () => {
       tags: ["farcaster", "activity", "analytics"],
       ogTitle: "Faralytics",
       ogDescription: "Your year, one purple square at a time.",
-      ogImageUrl: `${origin}/og/faralytics-farcaster-v2.png`,
+      ogImageUrl: `${origin}/og/faralytics-farcaster-v3.png`,
     },
   });
 });

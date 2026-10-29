@@ -70,7 +70,7 @@ export const GET = withErrorReporting<{ params: Promise<{ format: string }> }>(
           }}
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", fontSize: 27, fontWeight: 700, color: "#b596f2" }}>faralytics.</div>
+            <div style={{ display: "flex", fontSize: 27, fontWeight: 700, color: "#d6ff3f" }}>faralytics.</div>
             <div style={{ display: "flex", fontSize: 16, color: "#a99aba" }}>FARCASTER, DAY BY DAY</div>
           </div>
           <div

@@ -10,7 +10,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "Faralytics — your Farcaster activity",
   description: "Your year, one purple square at a time. Explore and share captured Farcaster activity.",
-  icons: { icon: "/icon.svg" },
+  icons: { icon: "/icon.svg?v=accent1" },
 };
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (

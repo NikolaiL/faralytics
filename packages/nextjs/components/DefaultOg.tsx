@@ -19,7 +19,7 @@ export function DefaultOg({ height, generatedAt }: { height: number; generatedAt
       }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ display: "flex", fontSize: 27, fontWeight: 700, color: "#b596f2" }}>faralytics.</div>
+        <div style={{ display: "flex", fontSize: 27, fontWeight: 700, color: "#d6ff3f" }}>faralytics.</div>
         <div style={{ display: "flex", fontSize: 16, color: "#a99aba" }}>FARCASTER, DAY BY DAY</div>
       </div>
       <div
