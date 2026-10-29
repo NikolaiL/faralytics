@@ -7,3 +7,7 @@ Data: SELECT-only farcaster.activities, usernames, profiles, dataset_status. Par
 Platform matrix: Farcaster/Base uses SDK ready, context for My activity, native composer; anonymous web supports every lookup and browser share links. X uses web intent. Other embedded hosts use web fallback. No wallet, payments, token, contract, app-owned persistence, notification, or AI art required.
 
 Files: app/page + layout, ActivityExplorer, Heatmap, MiniappProvider, lib/activity + clickhouse + data, /api/activity, /api/og/[format], /share/[fid], manifest/icon routes. Unit tests, production build/lint, live API checks and mobile/desktop browser checks. Local production server on port 3100. No GitHub/Vercel publication in this task.
+
+## Search enhancement
+
+Search as you type with selectable username/FID suggestions, keyboard navigation, loading/empty/error states, and cancellation of stale requests. Reuse the same ClickHouse reader and activity loader.

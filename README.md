@@ -1,6 +1,6 @@
 # Cast Year
 
-A dark Farcaster activity miniapp with a GitHub-style purple heatmap. Look up a username (with or without @) or FID, view exactly the past 365 UTC days or a calendar year, and share that person and period.
+A dark Farcaster activity miniapp with a GitHub-style purple heatmap. Search as you type (from two username characters, or any valid FID), select a matching account from the dropdown, and view exactly the past 365 UTC days or a calendar year, and share that person and period.
 
 Created through the ViniApp create-eth + ve scaffold, followed by a build/design spec, implementation, build/lint checks, live database verification and Chromium browser scenarios. This is a standalone local app, not a record in the ViniApp deployment controller. No platform repositories were changed.
 
@@ -19,6 +19,8 @@ yarn start
 Open http://localhost:3100. `yarn dev` starts a development server on the same port; stop production first. The initial example uses FID 366713. In Farcaster, host context can select your own FID automatically; My activity also loads it. On the web, enter your username/FID without signing in.
 
 The existing private connection settings were copied into the ignored, owner-readable `packages/nextjs/.env.local`. They are never included in client code. The original file was not changed. See `.env.example` for configuration names. Never commit credentials.
+
+Username suggestions wait 250 ms after typing, show up to eight prefix matches with display names and FIDs, and cancel outdated requests. Use the arrow keys and Enter to select, or Escape to dismiss. Exact lookup still works with Enter or the Look up button.
 
 ## Data and dates
 
@@ -42,7 +44,7 @@ Social networks cannot fetch localhost URLs. For real feed previews, the app nee
 
 `yarn test` covers date boundaries, leap years, zero filling, future days, calendar alignment, UInt64 validation and share selection. `yarn lint` and `yarn build` check the actual app.
 
-`tests/browser.cjs` runs with the existing global `@playwright/test` (no project-local browser dependency). Supply its module directory through `NODE_PATH`; if its expected Chromium revision differs from the installed one, set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to the installed Chromium executable. Start production first, then run `node tests/browser.cjs`. Screenshots and results go in ignored `artifacts/`.
+`tests/browser.cjs` runs with the existing global `@playwright/test` (no project-local browser dependency). Supply its module directory through `NODE_PATH`; if its expected Chromium revision differs from the installed one, set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to the installed Chromium executable. Start production first, then run `node tests/browser.cjs` and `node tests/search.cjs`. Screenshots and results go in ignored `artifacts/`.
 
 `VINIAPP_BROWSER_SCENARIOS.json` keeps the main lookup/year interaction in the platform's replayable data-only format. A ViniApp controller audit and real signed-in host smoke are not available for this standalone local app; they are not claimed as passed.
 

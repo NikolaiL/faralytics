@@ -82,3 +82,37 @@ export async function loadActivity(input: string, period = "365", anchor?: strin
     coverage: status.coverage,
   };
 }
+
+const usernameSuggestions = unstable_cache(
+  async (prefix: string): Promise<Profile[]> => {
+    const names = await query<{ fid: string; username: string }>(
+      `SELECT DISTINCT toString(u.fid) AS fid, u.username
+FROM farcaster.usernames AS u
+WHERE startsWith(u.username, {prefix:String}) AND u.fid > 0
+ORDER BY u.username = {prefix:String} DESC, length(u.username), u.username, u.fid LIMIT 8`,
+      { prefix },
+    );
+    if (!names.length) return [];
+    const profiles = await query<Profile>(
+      "SELECT toString(p.fid) AS fid, username, display_name FROM farcaster.profiles AS p WHERE p.fid IN {fids:Array(UInt64)}",
+      { fids: `[${names.map((name) => name.fid).join(",")}]` },
+    );
+    const byFid = new Map(profiles.map((profile) => [profile.fid, profile]));
+    return names.map((name) => ({ ...name, display_name: byFid.get(name.fid)?.display_name || null }));
+  },
+  ["username-suggestions-v1"],
+  { revalidate: 60 },
+);
+
+export async function searchAccounts(input: string): Promise<Profile[]> {
+  const prefix = input.trim().replace(/^@/, "").toLowerCase();
+  if (!prefix) return [];
+  if (/^\d+$/.test(prefix)) {
+    if (!validFid(prefix)) throw new InputError("Enter a valid positive FID.");
+    return [await profileByFid(prefix)];
+  }
+  if (prefix.length > 63 || !/^[a-z0-9][a-z0-9.-]*$/.test(prefix))
+    throw new InputError("Enter a valid username or FID.");
+  if (prefix.length < 2) return [];
+  return usernameSuggestions(prefix);
+}

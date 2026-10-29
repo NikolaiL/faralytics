@@ -14,3 +14,9 @@
 - [x] Six unit tests, lint and production build pass.
 - [x] Full Chromium production checks pass after final hydration repair, including username/FID, year/leap switching, sharing URLs and metadata, keyboard day selection, five viewport sizes, validation, empty state, and no runtime errors. See ignored artifacts/browser-checks.json.
 - [ ] Platform controller audit and real signed-in Farcaster/X preview are not run: standalone local-only app. Localhost cannot be scraped by social clients; public HTTPS URL/signature are future publishing requirements.
+
+## Search-as-you-type enhancement
+
+- [x] Cached, typed ClickHouse username-prefix and exact-FID suggestions, limited to eight matches; server-only reader unchanged.
+- [x] Debounced dropdown, stale-request cancellation, click selection, Up/Down/Enter navigation with active-option scrolling, Escape/outside dismissal, and loading/empty/error states.
+- [x] Live search and selected chart tested on the production server; mobile dropdown fits. Focused tests/search.cjs, full existing browser suite, lint/build, and the ViniApp search scenario pass.

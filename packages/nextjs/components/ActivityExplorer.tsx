@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Activity, Day } from "~~/lib/activity";
 import { dateKey, periodLabel, PURPLES, sharePath, utcDate } from "~~/lib/activity";
 import { Heatmap } from "./Heatmap";
+import { AccountSearch } from "./AccountSearch";
 import { useMiniapp } from "./MiniappProvider";
 
 function Mark() {
@@ -150,30 +151,7 @@ export function ActivityExplorer({
         }}
         aria-label="Look up Farcaster activity"
       >
-        <div className="search-field">
-          <span aria-hidden="true" className="search-icon">
-            ⌕
-          </span>
-          <label className="sr-only" htmlFor="username">
-            Username or FID
-          </label>
-          <input
-            id="username"
-            data-testid="lookup-input"
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
-            placeholder="Username or FID"
-            autoComplete="off"
-            autoCapitalize="none"
-            spellCheck={false}
-            maxLength={64}
-            required
-          />
-          <button data-testid="lookup-submit" type="submit" disabled={busy}>
-            {busy ? "Looking up…" : "Look up"}
-            <span aria-hidden="true">↗</span>
-          </button>
-        </div>
+        <AccountSearch value={input} onChange={setInput} onSelect={(fid) => void load(fid, "365")} busy={busy} />
         <div className="search-hint">
           <span>No sign-in. Just curiosity.</span>
           <button

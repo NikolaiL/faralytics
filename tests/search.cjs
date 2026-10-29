@@ -1,0 +1,73 @@
+const assert = require('node:assert/strict');
+const { chromium, expect } = require('@playwright/test');
+(async () => {
+  const browser = await chromium.launch({ headless: true, executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH });
+  try {
+    const page = await browser.newPage({ viewport: { width: 375, height: 900 } });
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await page.goto('http://localhost:3100/', { waitUntil: 'networkidle' });
+    await expect(page.getByTestId('lookup-submit')).toBeEnabled();
+    const input = page.getByTestId('lookup-input');
+    await input.fill('niko');
+    await expect(page.getByTestId('search-result').first()).toBeVisible({timeout:15000});
+    const count = await page.getByTestId('search-result').count();
+    assert.ok(count > 0 && count <= 8);
+    await input.press('ArrowUp');
+    await expect(input).toHaveAttribute('aria-activedescendant', `account-result-${count - 1}`);
+    const selected = await page.locator(`#account-result-${count - 1}`).boundingBox();
+    const list = await page.getByRole('listbox').boundingBox();
+    assert.ok(selected.y >= list.y && selected.y + selected.height <= list.y + list.height + 1);
+    await input.fill('@nikolaii.e');
+    await expect(page.getByTestId('search-result').filter({hasText:'366713'})).toBeVisible({timeout:15000});
+    const box = await page.getByTestId('search-dropdown').boundingBox();
+    assert.ok(box.x >= 0 && box.x + box.width <= 375);
+    await page.screenshot({path:'artifacts/search-mobile.png',fullPage:true});
+    await page.getByTestId('search-result').filter({hasText:'366713'}).click();
+    await expect(page.getByTestId('search-dropdown')).toHaveCount(0);
+    await expect(page.getByTestId('lookup-submit')).toBeEnabled();
+    await input.fill('3');
+    await expect(page.getByTestId('search-result')).toHaveCount(1);
+    await page.getByTestId('search-result').click();
+    await expect(page).toHaveURL(/user=3&/);
+    await expect(page.getByTestId('profile-name')).toHaveText('Dan Romero');
+    await input.fill('366713');
+    await expect(page.getByTestId('search-result')).toHaveCount(1);
+    await input.press('ArrowDown');
+    await expect(input).toHaveAttribute('aria-activedescendant','account-result-0');
+    await input.press('Enter');
+    await expect(page).toHaveURL(/user=366713&/);
+    await expect(page.getByTestId('search-dropdown')).toHaveCount(0);
+    await input.focus();
+    await expect(page.getByTestId('search-dropdown')).toBeVisible();
+    await input.press('Escape');
+    await expect(input).toHaveAttribute('aria-expanded','false');
+    await input.fill('zzzzzznotanaccount');
+    await expect(page.getByRole('status').filter({hasText:'No matching accounts'})).toBeVisible({timeout:15000});
+    await page.locator('h1').click();
+    await expect(page.getByTestId('search-dropdown')).toHaveCount(0);
+    await page.route('**/api/search?*', async route => {
+      const q = new URL(route.request().url()).searchParams.get('q');
+      if(q==='unavailable') return route.fulfill({status:503,json:{error:'Search temporarily unavailable.'}});
+      if(q==='slowname') {
+        await new Promise(resolve => setTimeout(resolve,800));
+        return route.fulfill({json:[{fid:'1',username:'stale-result',display_name:'Old response'}]}).catch(()=>{});
+      }
+      return route.continue();
+    });
+    await input.fill('unavailable');
+    await expect(page.getByRole('status').filter({hasText:'Search temporarily unavailable.'})).toBeVisible();
+    await input.fill('slowname');
+    await page.waitForRequest(request => request.url().includes('/api/search?q=slowname'));
+    await input.fill('366713');
+    await expect(page.getByTestId('search-result')).toContainText('366713');
+    await page.waitForTimeout(1000);
+    await expect(page.getByTestId('search-result')).not.toContainText('stale-result');
+    assert.deepEqual(errors,[]);
+    for(const [q,status] of [['0',400],['18446744073709551616',400],["' OR 1=1",400],['',200],['n',200]]) {
+      const response = await page.request.get('http://localhost:3100/api/search?'+new URLSearchParams({q}));
+      assert.equal(response.status(),status);
+    }
+    console.log('Search checks passed: live prefixes/FID, mouse and keyboard selection, dismissal, empty/error states, cancellation, validation, mobile fit.');
+  } finally { await browser.close(); }
+})().catch(error => { console.error(error); process.exit(1); });
