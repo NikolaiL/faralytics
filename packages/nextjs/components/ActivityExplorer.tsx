@@ -380,12 +380,6 @@ export function ActivityExplorer({
           </p>
         )}
       </details>
-      {data?.catchingUp && (
-        <p className="freshness">
-          <span className="status-dot amber" />
-          Source catching up · historical coverage is incomplete
-        </p>
-      )}
       <footer>
         <span>A little activity goes a long way.</span>
         <a href="https://viniapp.xyz" target="_blank" rel="noreferrer">

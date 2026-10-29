@@ -183,7 +183,7 @@ export const GET = withErrorReporting<{ params: Promise<{ format: string }> }>(
               color: "#857594",
             }}
           >
-            <div style={{ display: "flex" }}>Captured activity · incomplete history · UTC</div>
+            <div style={{ display: "flex" }}>Captured activity · UTC</div>
             <div style={{ display: "flex" }}>{`created with viniapp · ${generatedAt} UTC`}</div>
           </div>
         </div>,
