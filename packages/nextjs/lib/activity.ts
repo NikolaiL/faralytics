@@ -93,8 +93,10 @@ export function grid(days: Day[]) {
 export function periodLabel(period: string) {
   return period === "365" ? "the past 365 days" : period;
 }
-export function sharePath(fid: string, period: string, anchor: string) {
-  return `/share/${fid}?${new URLSearchParams({ period, end: anchor })}`;
+export function sharePath(fid: string, period: string, anchor: string, timestamp?: string) {
+  const params = new URLSearchParams({ period, end: anchor });
+  if (timestamp) params.set("ts", timestamp);
+  return `/share/${fid}?${params}`;
 }
 
 export type SearchProfile = Profile & { followerCount: number | null; pfp_url: string | null };

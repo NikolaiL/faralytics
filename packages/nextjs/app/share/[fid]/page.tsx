@@ -10,17 +10,20 @@ async function selection(props: Props) {
   const params = await props.searchParams;
   if (!validFid(fid)) notFound();
   const period = typeof params.period === "string" ? params.period : "365";
+  const ts = params.ts;
+  if (ts !== undefined && (typeof ts !== "string" || !/^\d{1,16}$/.test(ts))) notFound();
   try {
-    return { fid, period, ...getRange(period, typeof params.end === "string" ? params.end : undefined) };
+    return { fid, period, ts, ...getRange(period, typeof params.end === "string" ? params.end : undefined) };
   } catch {
     notFound();
   }
 }
 export async function generateMetadata(props: Props): Promise<Metadata> {
-  const { fid, period, anchor } = await selection(props);
+  const { fid, period, anchor, ts } = await selection(props);
   const origin = process.env.NEXT_PUBLIC_URL || "http://localhost:3100";
-  const url = `${origin}${sharePath(fid, period, anchor)}`;
+  const url = `${origin}${sharePath(fid, period, anchor, ts)}`;
   const imageParams = new URLSearchParams({ fid, period, end: anchor });
+  if (ts) imageParams.set("ts", ts);
   const image = `${origin}/api/og/farcaster.png?${imageParams}`;
   const xImage = `${origin}/api/og/x.png?${imageParams}`;
   let title = `FID ${fid} — Cast Year`;

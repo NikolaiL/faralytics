@@ -90,7 +90,7 @@ export function ActivityExplorer({
   async function share(target: "farcaster" | "x" | "copy") {
     if (!data) return;
     const origin = process.env.NEXT_PUBLIC_URL || window.location.origin;
-    const url = `${origin}${sharePath(data.profile.fid, data.period, data.anchor)}`;
+    const url = `${origin}${sharePath(data.profile.fid, data.period, data.anchor, Date.now().toString())}`;
     const name = data.profile.username ? `@${data.profile.username}` : `FID ${data.profile.fid}`;
     const text = `${name}: ${data.total.toLocaleString()} captured Farcaster actions in ${periodLabel(data.period)}. A year, one square at a time.`;
     if (target === "copy") {

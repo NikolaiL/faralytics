@@ -11,7 +11,7 @@
 - [x] Farcaster 1200×800 PNG and X 1200×600 PNG fetched, decoded and visually inspected. Both contain the same real chart and totals on dark backgrounds.
 - [x] SDK ready on mount; host context queried only after miniapp detection. Browser fallback works, safe-area variables used, viewport-fit=cover set. No framing-blocking headers. Wallet/approval/RPC checks not applicable: no web3 reads or writes.
 - [x] API routes retain error reporting wrapper. No bypassed build/type checks. Browser contract includes live API probe and real action/assertion. The actual ViniApp scenarioChecks harness passed every step, framing headers, runtime and API-5xx checks against the local production server (artifacts/platform-harness.json).
-- [x] Nine unit tests, lint and production build pass.
+- [x] Ten unit tests, lint and production build pass.
 - [x] Full Chromium production checks pass after final hydration repair, including username/FID, year/leap switching, sharing URLs and metadata, keyboard day selection, five viewport sizes, validation, empty state, and no runtime errors. See ignored artifacts/browser-checks.json.
 - [ ] Platform controller audit and real signed-in Farcaster/X preview are not run: standalone local-only app. Localhost cannot be scraped by social clients; public HTTPS URL/signature are future publishing requirements.
 
@@ -24,3 +24,5 @@
 - [x] Follower ranking and count labels verified against live search results; unit tests cover ranking before truncation, deduplication, exact-FID priority, absent counts, malformed records and UInt64 preservation.
 
 - [x] Search dropdown includes Farcaster PFPs with initials for missing/failed images; HTTP(S) URL normalization and live image load/fallback covered by tests.
+
+- [x] Every share/copy action generates a fresh `ts` query parameter; share-page canonical/Open Graph/Farcaster launch metadata and Farcaster/X image URLs preserve that exact timestamp. Unit and browser checks cover propagation and distinct keys between shares.

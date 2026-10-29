@@ -62,3 +62,12 @@ test("search keeps HTTP(S) profile images and ignores missing or unsafe image UR
   assert.equal(users.find(user=>user.fid==="2")?.pfp_url, null);
   assert.equal(users.find(user=>user.fid==="3")?.pfp_url, null);
 });
+
+
+test("share links preserve an explicit cache-busting timestamp without changing the chart selection", () => {
+  const url = new URL(sharePath("366713", "2026", "2026-10-29", "1793250000123"), "http://localhost");
+  assert.equal(url.searchParams.get("ts"), "1793250000123");
+  assert.equal(url.searchParams.get("period"), "2026");
+  assert.equal(url.searchParams.get("end"), "2026-10-29");
+  assert.equal(new URL(sharePath("366713", "2026", "2026-10-29"), "http://localhost").searchParams.has("ts"), false);
+});
