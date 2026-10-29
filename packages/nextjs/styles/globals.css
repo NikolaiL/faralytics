@@ -7,7 +7,7 @@
 
 .result-avatar{position:relative;overflow:hidden}.result-avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 
-.stats strong.busiest-date{font-size:clamp(12px,3vw,20px);letter-spacing:-.3px;white-space:nowrap}
+.stats strong.busiest-total{font-weight:750}.stats .busiest-caption{line-height:1.6}.busiest-caption time{white-space:nowrap}
 
 .avatar{position:relative;overflow:hidden}.avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 

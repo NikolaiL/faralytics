@@ -296,8 +296,14 @@ export function ActivityExplorer({
                   <span>Longest streak</span>
                 </div>
                 <div>
-                  <span>Busiest day:</span>
-                  <strong className="busiest-date">{activityDate(data?.peakDate ?? null)}</strong>
+                  <strong className="busiest-total" data-testid="busiest-actions">
+                    {data?.peak.toLocaleString() || "—"}
+                    <small>actions</small>
+                  </strong>
+                  <span className="busiest-caption">
+                    on busiest day:{" "}
+                    <time dateTime={data?.peakDate ?? undefined}>{activityDate(data?.peakDate ?? null)}</time>
+                  </span>
                 </div>
               </div>
             </div>

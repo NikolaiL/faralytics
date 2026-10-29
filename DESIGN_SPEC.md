@@ -15,3 +15,5 @@ All OG cards include the purple northeast arrow logo next to the citron Faralyti
 Anonymous homepage shows the same decorative FARALYTICS activity grid as the default OG card instead of an account chart. Cell colors gently breathe on staggered 10–14 second cycles, keeping the letters brightest; reduced-motion preferences disable the animation. No account lookup occurs until selection.
 
 The page intro now has a single heading: “Your year. One square at a time.” in the former eyebrow’s 11px monospace, weight600 and2px tracking, keeping the neon citron color. Removes “FARCASTER, DAY BY DAY” and the larger duplicate headline from the web intro.
+
+Busiest-day stat shows the peak action count in large bold type, followed by “on busiest day: May 24, 2026” on the next line, on web and personalized OG cards.

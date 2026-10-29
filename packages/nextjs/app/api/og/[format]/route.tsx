@@ -150,14 +150,18 @@ export const GET = withErrorReporting<{ params: Promise<{ format: string }> }>(
             {[
               { label: "Active days", value: `${data.activeDays.toLocaleString("en-US")} days` },
               { label: "Longest streak", value: `${data.longestStreak.toLocaleString("en-US")} days` },
-              { label: "Busiest day:", value: activityDate(data.peakDate) },
+              {
+                label: `on busiest day: ${activityDate(data.peakDate)}`,
+                value: `${data.peak.toLocaleString("en-US")} actions`,
+                valueFirst: true,
+              },
             ].map((stat) => (
               <div
                 key={stat.label}
                 style={{
                   display: "flex",
                   flex: 1,
-                  flexDirection: "column",
+                  flexDirection: stat.valueFirst ? "column-reverse" : "column",
                   justifyContent: "center",
                   gap: 10,
                   padding: "14px 22px",
