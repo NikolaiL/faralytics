@@ -10,6 +10,8 @@
     "build": "yarn workspace @cast-year/web build",
     "start": "yarn workspace @cast-year/web start",
     "lint": "yarn workspace @cast-year/web lint",
-    "test": "node --experimental-strip-types --test tests/*.test.ts"
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "vercel:build": "vercel build --prod --yes",
+    "vercel:deploy": "vercel deploy --prebuilt --prod"
   }
 }

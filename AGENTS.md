@@ -7,3 +7,5 @@ Read BUILD_SPEC.md, DESIGN_SPEC.md and README.md. Code is in packages/nextjs. Us
 Commands: yarn install, yarn test, yarn lint, yarn build; yarn start serves the production build on port 3100, yarn dev serves development on the same port. Use existing globally installed Playwright for browser checks, never install it into the app.
 
 Share pages must render real HTML, Farcaster fc:miniapp uses 1200×800 PNG, twitter:image uses 1200×600 PNG. Keep the person, period and anchor date in all share URLs. Future days do not count. Server routes retain withErrorReporting/reportServerError; source coverage and freshness come from dataset_status. No framing-blocking response headers.
+
+Deployment must follow ViniApp’s local-build/prebuilt workflow: from the repo root, `vercel pull --yes --environment=production`, `yarn vercel:build`, then `yarn vercel:deploy`. Do not deploy source with `vercel --prod`. Preserve packages/nextjs/.env.local; production settings belong under ignored .vercel/ and in Vercel project environment settings.

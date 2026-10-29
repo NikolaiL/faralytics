@@ -52,7 +52,15 @@ Production share metadata uses the configured `NEXT_PUBLIC_URL=https://faralytic
 
 Vercel team: `viniapp`; project: `faralytics`; root directory: `packages/nextjs`; runtime: Node 24. The production CLICKHOUSE settings are sensitive server-side environment variables. The production origin is configured separately from the unchanged local app settings. Deployment protection is disabled for this public miniapp so visitors and social crawlers can access it. The temporary castyear domain was removed after switching to the requested Faralytics address.
 
-The repository is linked through ignored `.vercel/` metadata. Deploy the repository root with `vercel --prod --yes` using the authorized account. Source uploads remain private; there is no GitHub repository connection or automatic Git deployment. Local development remains on port 3100.
+The repository is linked through ignored `.vercel/` metadata. Use the same local-build/prebuilt deployment sequence as ViniApp’s DeployToVercelJob, from the repository root with the authorized account:
+
+```sh
+vercel pull --yes --environment=production
+yarn vercel:build
+yarn vercel:deploy
+```
+
+`vercel:build` runs `vercel build --prod --yes` locally. `vercel:deploy` uploads `.vercel/output` with `vercel deploy --prebuilt --prod`; it does not invoke a remote source build. Pull writes production settings under ignored `.vercel/`; preserve the app’s existing `.env.local`. Production server secrets remain configured on the Vercel project. Do not use a source-upload `vercel --prod` deployment for this app. Source uploads remain private; there is no GitHub repository connection or automatic Git deployment. Local development remains on port 3100.
 
 Verified production: homepage, live activity and ranked user search, per-share metadata and cache keys, Farcaster/X PNG generation (1200×800 and 1200×600), responsive browser flow, and response headers permitting Farcaster framing. The manifest serves the supplied signed account association, a 1024×1024 icon and a 200×200 splash image. Signed-in Farcaster host testing and real posted feed previews remain untested.
 
