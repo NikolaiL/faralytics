@@ -1,3 +1,4 @@
+import { ogChartLayout } from "~~/lib/og-layout";
 import { OgLogo } from "~~/components/OgLogo";
 import { ImageResponse } from "next/og";
 import { DefaultOg } from "~~/components/DefaultOg";
@@ -34,10 +35,8 @@ export const GET = withErrorReporting<{ params: Promise<{ format: string }> }>(
       const generatedAt = new Date().toISOString().slice(0, 19).replace("T", " ");
       const height = format === "x.png" ? 600 : 800;
       const { cells, columns } = grid(data.days);
-      const step = 19,
-        cellSize = 17;
-      const left = 70,
-        chartTop = height === 600 ? 280 : 360;
+      const { left, width: chartWidth, height: chartHeight, step, cellSize } = ogChartLayout(columns);
+      const chartTop = height === 600 ? 280 : 360;
       const months = cells.filter(
         (day, index) => utcDate(day.date).getUTCDate() === 1 || (index === 0 && utcDate(day.date).getUTCDate() <= 21),
       );
@@ -119,9 +118,9 @@ export const GET = withErrorReporting<{ params: Promise<{ format: string }> }>(
             </div>
           ))}
           <svg
-            width={columns * step}
-            height={7 * step}
-            viewBox={`0 0 ${columns * step} ${7 * step}`}
+            width={chartWidth}
+            height={chartHeight}
+            viewBox={`0 0 ${chartWidth} ${chartHeight}`}
             style={{ position: "absolute", left, top: chartTop }}
           >
             {cells.map((day) => (

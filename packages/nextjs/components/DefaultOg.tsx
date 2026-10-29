@@ -1,11 +1,11 @@
+import { ogChartLayout } from "~~/lib/og-layout";
 import { OgLogo } from "~~/components/OgLogo";
 import { PURPLES } from "~~/lib/activity";
 import { BRAND_GRID, brandCellLevel } from "~~/lib/brand";
 
 export function DefaultOg({ height, generatedAt }: { height: number; generatedAt: string }) {
   const chartTop = height === 600 ? 260 : 350;
-  const step = 17;
-  const width = BRAND_GRID[0].length * step;
+  const { left, width, height: chartHeight, step, cellSize } = ogChartLayout(BRAND_GRID[0].length);
   return (
     <div
       style={{
@@ -39,9 +39,9 @@ export function DefaultOg({ height, generatedAt }: { height: number; generatedAt
       </div>
       <svg
         width={width}
-        height={7 * step}
-        viewBox={`0 0 ${width} ${7 * step}`}
-        style={{ position: "absolute", left: (1200 - width) / 2, top: chartTop }}
+        height={chartHeight}
+        viewBox={`0 0 ${width} ${chartHeight}`}
+        style={{ position: "absolute", left, top: chartTop }}
       >
         {BRAND_GRID.flatMap((row, y) =>
           [...row].map((pixel, x) => (
@@ -49,8 +49,8 @@ export function DefaultOg({ height, generatedAt }: { height: number; generatedAt
               key={`${x}:${y}`}
               x={x * step}
               y={y * step}
-              width={15}
-              height={15}
+              width={cellSize}
+              height={cellSize}
               rx="3"
               fill={PURPLES[brandCellLevel(pixel, x, y)]}
             />
