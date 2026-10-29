@@ -183,7 +183,7 @@ export function ActivityExplorer({
     const text = data
       ? activityShareText(data, fid)
       : "Your year. One square at a time. Look up your Farcaster activity with Faralytics.\n\nHow about you?";
-    const credit = "created by @nikolaii.eth with @viniapp";
+    const credit = "faralytics - created by @nikolaii.eth with @viniapp";
     if (target === "copy") {
       try {
         await navigator.clipboard.writeText(url);
