@@ -4,7 +4,7 @@ Faralytics — your year, one square at a time. Near-black #0d0b12 canvas, warm 
 
 Headline refinement: electric citron #D6FF3F replaces champagne gold at the creator’s request. Use this neon yellow-green for the complete hero heading and OG usernames, retaining the purple activity grid and neutral supporting text. The complete hero tagline stays on one line with no forced break: fluid type from 16 to 28 px (18 px at 375 px viewport), 1.25 line height and -0.5 px tracking. OG identity rows include a circular PFP, with initials when the avatar is unavailable.
 
-Share actions sit in the page header at the top right. Mobile keeps Farcaster, a compact X label, and a copy icon with accessible labels and 44 px targets; obsolete sharing promotion text below the chart is removed.
+Share actions sit in the page header at the top right. All sizes show explicit Share on Farcaster, Share on X and Copy link labels with a copy icon and 44 px mobile targets. The group has the caption “a year worth sharing:” above it; mobile uses a separate right-aligned header row; obsolete sharing promotion text below the chart is removed.
 
 Logo lockup: faralytics wordmark and punctuation use the electric-citron accent, and the arrow mark’s top-right square uses the base purple #855DCD. Arrange the nine activity squares on a five-by-five lattice into a northeast arrow. Preserve this mark in favicon, manifest icon/splash and OG wordmark treatments.
 
