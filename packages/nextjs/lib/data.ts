@@ -112,7 +112,7 @@ const farcasterSuggestions = unstable_cache(
     }
     return rankSearchUsers(users, numeric ? prefix : undefined);
   },
-  ["farcaster-suggestions-followers-v1"],
+  ["farcaster-suggestions-followers-v2"],
   { revalidate: 60 },
 );
 

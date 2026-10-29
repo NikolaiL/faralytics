@@ -97,7 +97,7 @@ export function sharePath(fid: string, period: string, anchor: string) {
   return `/share/${fid}?${new URLSearchParams({ period, end: anchor })}`;
 }
 
-export type SearchProfile = Profile & { followerCount: number | null };
+export type SearchProfile = Profile & { followerCount: number | null; pfp_url: string | null };
 export function rankSearchUsers(users: unknown[], exactFid?: string): SearchProfile[] {
   const unique = new Map<string, SearchProfile>();
   for (const value of users) {
@@ -106,10 +106,12 @@ export function rankSearchUsers(users: unknown[], exactFid?: string): SearchProf
     if (typeof user.fid !== "string" && (typeof user.fid !== "number" || !Number.isSafeInteger(user.fid))) continue;
     const fid = String(user.fid);
     if (!validFid(fid) || unique.has(fid)) continue;
+    const pfp = (user.pfp as { url?: unknown } | undefined)?.url;
     unique.set(fid, {
       fid,
       username: typeof user.username === "string" ? user.username : null,
       display_name: typeof user.displayName === "string" ? user.displayName : null,
+      pfp_url: typeof pfp === "string" && /^https?:\/\//i.test(pfp) ? pfp : null,
       followerCount:
         typeof user.followerCount === "number" && Number.isSafeInteger(user.followerCount) && user.followerCount >= 0
           ? user.followerCount

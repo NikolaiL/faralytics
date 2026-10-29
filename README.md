@@ -20,7 +20,7 @@ Open http://localhost:3100. `yarn dev` starts a development server on the same p
 
 The existing private connection settings were copied into the ignored, owner-readable `packages/nextjs/.env.local`. They are never included in client code. The original file was not changed. See `.env.example` for configuration names. Never commit credentials.
 
-Username suggestions wait 250 ms after typing, use the ViniApp farcaster-user-search skill’s public Farcaster client API to show up to eight matching accounts with display names, FIDs and follower counts, and cancel outdated requests. Use the arrow keys and Enter to select, or Escape to dismiss. The API returns up to 25 candidates; these are deduplicated and sorted by follower count before taking the top eight. Numeric queries merge the exact FID first, followed by other matches ranked by followers. Search results cache for 60 seconds. Exact lookup still works with Enter or the Look up button.
+Username suggestions wait 250 ms after typing, use the ViniApp farcaster-user-search skill’s public Farcaster client API to show up to eight matching accounts with profile pictures, display names, FIDs and follower counts, and cancel outdated requests. Use the arrow keys and Enter to select, or Escape to dismiss. The API returns up to 25 candidates; these are deduplicated and sorted by follower count before taking the top eight. Numeric queries merge the exact FID first, followed by other matches ranked by followers. Search results cache for 60 seconds. Missing or failed profile images fall back to initials. Exact lookup still works with Enter or the Look up button.
 
 ## Data and dates
 

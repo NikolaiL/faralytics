@@ -53,3 +53,12 @@ test("search preserves UInt64 strings and handles malformed or absent follower c
   assert.equal(ranked[0].fid, "2");
   assert.equal(ranked.find(user => user.fid === "18446744073709551615")?.followerCount, null);
 });
+
+
+test("search keeps HTTP(S) profile images and ignores missing or unsafe image URLs", async () => {
+  const { rankSearchUsers } = await import("../packages/nextjs/lib/activity.ts");
+  const users = rankSearchUsers([{fid:1,pfp:{url:"https://example.com/avatar.png"}}, {fid:2,pfp:{url:"javascript:alert(1)"}}, {fid:3}]);
+  assert.equal(users.find(user=>user.fid==="1")?.pfp_url, "https://example.com/avatar.png");
+  assert.equal(users.find(user=>user.fid==="2")?.pfp_url, null);
+  assert.equal(users.find(user=>user.fid==="3")?.pfp_url, null);
+});
