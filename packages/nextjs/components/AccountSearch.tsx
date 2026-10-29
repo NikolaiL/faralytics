@@ -10,6 +10,7 @@ export function AccountSearch({
   busy,
   resolved,
   onReset,
+  onShowMe,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -17,6 +18,7 @@ export function AccountSearch({
   busy: boolean;
   resolved: boolean;
   onReset: () => void;
+  onShowMe?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [results, setResults] = useState<SearchProfile[]>([]);
@@ -169,8 +171,28 @@ export function AccountSearch({
               <path d="m6 6 12 12M18 6 6 18" />
             </svg>
           </button>
+        ) : !value.trim() && onShowMe ? (
+          <button
+            key="show-me"
+            data-testid="show-me"
+            type="button"
+            disabled={busy}
+            onClick={() => {
+              setOpen(false);
+              onShowMe();
+            }}
+          >
+            {busy ? "Looking up…" : "Show me"}
+            <span aria-hidden="true">↗</span>
+          </button>
         ) : (
-          <button key="submit" data-testid="lookup-submit" type="submit" disabled={busy} onClick={() => setOpen(false)}>
+          <button
+            key="submit"
+            data-testid="lookup-submit"
+            type="submit"
+            disabled={busy || !value.trim()}
+            onClick={() => setOpen(false)}
+          >
             {busy ? "Looking up…" : "Look up"}
             <span aria-hidden="true">↗</span>
           </button>

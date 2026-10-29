@@ -1,0 +1,11 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const { spawn } = require('node:child_process');
+const root = path.resolve(__dirname, '..');
+const envFile = path.join(root, '.env.local');
+if (fs.existsSync(envFile)) process.loadEnvFile(envFile);
+const command = process.argv[2];
+if (!['dev', 'build', 'start'].includes(command)) throw new Error('Choose dev, build or start.');
+const child = spawn('yarn', ['workspace', '@cast-year/web', command], { cwd: root, stdio: 'inherit' });
+for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => child.kill(signal));
+child.on('exit', code => { process.exitCode = code ?? 1; });

@@ -12,3 +12,7 @@ artifacts/
 .yarn/unplugged/
 .vercel
 .env*.local
+
+packages/hardhat/cache/
+packages/hardhat/artifacts/
+packages/hardhat/.deploy-wallet.json

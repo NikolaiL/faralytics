@@ -1,6 +1,7 @@
 "use client";
 import { sdk } from "@farcaster/miniapp-sdk";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import type { Activity, Day } from "~~/lib/activity";
 import { activityShareText, activityDate, dateKey, periodLabel, PURPLES, sharePath, utcDate } from "~~/lib/activity";
@@ -10,6 +11,9 @@ import { AvatarImage } from "./AvatarImage";
 import { Heatmap } from "./Heatmap";
 import { AccountSearch } from "./AccountSearch";
 import { useMiniapp } from "./MiniappProvider";
+import { AddMiniappButton } from "./AddMiniappButton";
+
+const OnchainActions = dynamic(() => import("./OnchainActions"), { ssr: false });
 
 function Mark() {
   return (
@@ -102,12 +106,13 @@ export function ActivityExplorer({
   const [period, setPeriod] = useState(initialData?.period || initialPeriod);
   const [error, setError] = useState("");
   const [note, setNote] = useState("");
+  const [hasMeaningfulInteraction, setHasMeaningfulInteraction] = useState(false);
   const [day, setDay] = useState<Day>();
   const controller = useRef<AbortController | null>(null);
   const chart = useRef<HTMLDivElement>(null);
   const selfLoaded = useRef(false);
 
-  async function load(user: string, selectedPeriod: string, end?: string) {
+  async function load(user: string, selectedPeriod: string, end?: string, interactive = true) {
     controller.current?.abort();
     const abort = new AbortController();
     controller.current = abort;
@@ -124,6 +129,7 @@ export function ActivityExplorer({
       if (!response.ok) throw new Error(body.error || "Could not load activity.");
       const next = body as Activity;
       setData(next);
+      if (interactive) setHasMeaningfulInteraction(true);
       setDay(undefined);
       setInput(next.profile.username ? `@${next.profile.username}` : next.profile.fid);
       window.history.replaceState(
@@ -138,7 +144,7 @@ export function ActivityExplorer({
     }
   }
   useEffect(() => {
-    if (!initialData && initialUser) void load(initialUser, initialPeriod, initialEnd);
+    if (!initialData && initialUser) void load(initialUser, initialPeriod, initialEnd, false);
     return () => controller.current?.abort();
     // Initial URL is consumed once; later changes come from the form and year controls.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -146,7 +152,7 @@ export function ActivityExplorer({
   useEffect(() => {
     if (fid && !selfLoaded.current && !initialData && !initialUser) {
       selfLoaded.current = true;
-      void load(fid, "365");
+      void load(fid, "365", undefined, false);
     }
   }, [fid, initialData, initialUser]);
   useEffect(() => {
@@ -177,6 +183,7 @@ export function ActivityExplorer({
       try {
         await navigator.clipboard.writeText(url);
         setNote("Chart link copied.");
+        setHasMeaningfulInteraction(true);
       } catch {
         setNote(`Copy this chart link: ${url}`);
       }
@@ -184,7 +191,8 @@ export function ActivityExplorer({
     }
     if (target === "farcaster" && isMiniApp) {
       try {
-        await sdk.actions.composeCast({ text: `${text}\n\n${credit}`, embeds: [url] });
+        const result = await sdk.actions.composeCast({ text: `${text}\n\n${credit}`, embeds: [url] });
+        if (result.cast) setHasMeaningfulInteraction(true);
         return;
       } catch {
         setNote("Could not open the in-app composer. Opening the web composer.");
@@ -213,15 +221,12 @@ export function ActivityExplorer({
       </header>
       <section className="intro">
         <h1 className="eyebrow">Your year. One square at a time.</h1>
-        <p>
-          Every cast, like, and little connection.
-          <br className="mobile-break" /> See how you show up on Farcaster.
-        </p>
       </section>
       <form
         className="search-form"
         onSubmit={(event) => {
           event.preventDefault();
+          if (!input.trim() || busy) return;
           void load(input, "365");
         }}
         aria-label="Look up Farcaster activity"
@@ -233,22 +238,21 @@ export function ActivityExplorer({
           busy={busy}
           resolved={isResolved}
           onReset={resetLookup}
+          onShowMe={isMiniApp && fid ? () => void load(fid, "365") : undefined}
         />
         <div className="search-hint">
           <span>No sign-in. Just curiosity.</span>
-          <button
-            type="button"
-            className="text-button"
-            onClick={() => {
-              if (fid) void load(fid, "365");
-              else {
-                setNote("Enter your username or FID above. Inside Farcaster, My activity finds you automatically.");
-                document.getElementById("username")?.focus();
-              }
-            }}
-          >
-            My activity <span aria-hidden="true">↗</span>
-          </button>
+          {isMiniApp && fid && input.trim() && data && data.profile.fid !== fid && (
+            <button
+              type="button"
+              className="my-activity-button"
+              data-testid="my-activity"
+              disabled={busy}
+              onClick={() => void load(fid, "365")}
+            >
+              My activity <span aria-hidden="true">↗</span>
+            </button>
+          )}
         </div>
       </form>
       {error && (
@@ -303,7 +307,12 @@ export function ActivityExplorer({
               {data ? (
                 <>
                   <div className="chart-scroll" ref={chart} data-testid="activity-graph">
-                    <Heatmap days={data.days} peak={data.peak} onSelect={setDay} />
+                    <Heatmap
+                      days={data.days}
+                      peak={data.peak}
+                      onSelect={setDay}
+                      onActivate={() => setHasMeaningfulInteraction(true)}
+                    />
                   </div>
                   <div className="chart-caption">
                     <span className="day-detail" role="status" aria-live="polite">
@@ -375,6 +384,7 @@ export function ActivityExplorer({
             </nav>
           </div>
           {data && <ShareActions disabled={busy || !!error} onShare={share} placement="below" />}
+          {data && <OnchainActions activity={data} disabled={busy || !!error} />}
           {data && data.total === 0 && (
             <p className="empty-note" data-testid="empty-activity">
               No captured actions in this period. Try another year; missing history can also mean zero recorded
@@ -433,7 +443,7 @@ export function ActivityExplorer({
         )}
       </details>
       <footer>
-        <span>A little activity goes a long way.</span>
+        <AddMiniappButton meaningfulInteraction={hasMeaningfulInteraction} />
         <a href="https://viniapp.xyz" target="_blank" rel="noreferrer">
           created with <b>viniapp</b> ↗
         </a>

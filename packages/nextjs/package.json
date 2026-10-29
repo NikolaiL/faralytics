@@ -9,15 +9,23 @@
     "lint": "eslint . --max-warnings 0"
   },
   "dependencies": {
+    "@coinbase/wallet-sdk": "^4.3.6",
     "@farcaster/miniapp-sdk": "^0.3.0",
+    "@farcaster/miniapp-wagmi-connector": "^2.0.0",
+    "@tanstack/react-query": "^5.90.0",
+    "@wagmi/core": "^2.22.0",
+    "multiformats": "^13.3.7",
     "next": "~16.2.4",
     "react": "~19.2.5",
     "react-dom": "~19.2.5",
-    "sharp": "0.34.5"
+    "sharp": "0.34.5",
+    "viem": "^2.38.0",
+    "wagmi": "^2.19.0"
   },
   "devDependencies": {
     "@types/node": "~18.19.130",
     "@types/react": "~19.2.14",
+    "@types/react-dom": "~19.2.0",
     "eslint": "~9.39.0",
     "eslint-config-next": "~16.2.4",
     "eslint-config-prettier": "~10.1.8",

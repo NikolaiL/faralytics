@@ -1,0 +1,24 @@
+{
+  "name": "@faralytics/contracts",
+  "private": true,
+  "scripts": {
+    "account:import": "node scripts/import-wallet.cjs",
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "fork": "hardhat node --fork https://base-rpc.publicnode.com --port 8547",
+    "deploy": "hardhat run scripts/deploy-ipfs.cjs --network base",
+    "deploy:ipfs": "hardhat run scripts/deploy-ipfs.cjs --network base",
+    "verify:ipfs": "node scripts/verify-ipfs.cjs",
+    "deploy:legacy": "hardhat run scripts/deploy.cjs --network base"
+  },
+  "devDependencies": {
+    "@inquirer/password": "^4.0.0",
+    "@nomicfoundation/hardhat-ethers": "3.1.2",
+    "ethers": "6.16.0",
+    "hardhat": "2.28.0",
+    "solc": "0.8.30"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "5.4.0"
+  }
+}

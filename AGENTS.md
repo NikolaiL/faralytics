@@ -1,8 +1,8 @@
 # Faralytics
 
-User-requested local read-only Farcaster miniapp. Scaffolded using create-eth + the local ViniApp ve extension; unused contract/wallet examples and their dependencies were removed because the app has no onchain operations.
+User-requested Farcaster activity miniapp, scaffolded using create-eth + the local ViniApp ve extension. It now supports Base NFT minting with immutable IPFS metadata, wallet connection and USDC coffee tips; see README.md for the current architecture.
 
-Read BUILD_SPEC.md, DESIGN_SPEC.md and README.md. Code is in packages/nextjs. Use the ~~ alias. Preserve server-only ClickHouse credentials, parameterized queries, verified inline-CA HTTPS, positive UInt64 FIDs as strings, UTC days, and incomplete-history disclosures. Never edit or print .env.local. The user subsequently authorized public deployment to https://faralytics.vercel.app, using the ViniApp Vercel team and project faralytics with packages/nextjs as its root directory. No GitHub push was requested.
+Read BUILD_SPEC.md, DESIGN_SPEC.md and README.md. Code is in packages/nextjs. Use the ~~ alias. Preserve server-only ClickHouse credentials, parameterized queries, verified inline-CA HTTPS, positive UInt64 FIDs as strings, UTC days, and incomplete-history disclosures. Never edit or print .env.local. The user subsequently authorized public deployment to https://faralytics.vercel.app, using the ViniApp Vercel team and project faralytics with packages/nextjs as its root directory. The creator has authorized committing, pushing and deploying the app; use the configured repository remote.
 
 Commands: yarn install, yarn test, yarn lint, yarn build; yarn start serves the production build on port 3100, yarn dev serves development on the same port. Use existing globally installed Playwright for browser checks, never install it into the app.
 

@@ -7,7 +7,7 @@ const { chromium, expect } = require('@playwright/test');
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto('http://localhost:3100/', { waitUntil: 'networkidle' });
-    await expect(page.getByTestId('lookup-submit')).toBeEnabled();
+    await expect(page.getByTestId('lookup-submit')).toBeDisabled();
     const input = page.getByTestId('lookup-input');
     const singleRequest = page.waitForRequest(request => request.url().includes('/api/search?') && new URL(request.url()).searchParams.get('q') === '@v');
     const typedAt = Date.now();

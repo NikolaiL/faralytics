@@ -1,7 +1,17 @@
 import { colorLevel, grid, PURPLES, utcDate } from "~~/lib/activity";
 import type { Day } from "~~/lib/activity";
 
-export function Heatmap({ days, peak, onSelect }: { days: Day[]; peak: number; onSelect?: (day: Day) => void }) {
+export function Heatmap({
+  days,
+  peak,
+  onSelect,
+  onActivate,
+}: {
+  days: Day[];
+  peak: number;
+  onSelect?: (day: Day) => void;
+  onActivate?: () => void;
+}) {
   const { cells, columns } = grid(days);
   const size = 15,
     gap = 2,
@@ -43,11 +53,19 @@ export function Heatmap({ days, peak, onSelect }: { days: Day[]; peak: number; o
           aria-label={`${day.date}: ${day.future ? "future date" : `${day.actions} captured actions`}`}
           onMouseEnter={() => !day.future && onSelect?.(day)}
           onFocus={() => !day.future && onSelect?.(day)}
-          onClick={() => !day.future && onSelect?.(day)}
+          onClick={() => {
+            if (!day.future) {
+              onSelect?.(day);
+              onActivate?.();
+            }
+          }}
           onKeyDown={(event) => {
             if (event.key === "Enter" || event.key === " ") {
               event.preventDefault();
-              if (!day.future) onSelect?.(day);
+              if (!day.future) {
+                onSelect?.(day);
+                onActivate?.();
+              }
             }
           }}
         >

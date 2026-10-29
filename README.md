@@ -67,3 +67,43 @@ yarn vercel:deploy
 Verified production: homepage, live activity and ranked user search, per-share metadata and cache keys, Farcaster/X PNG generation (1200×800 and 1200×600), responsive browser flow, and response headers permitting Farcaster framing. The manifest serves the supplied signed account association, a 1024×1024 icon and a 200×200 splash image. Signed-in Farcaster host testing and real posted feed previews remain untested.
 
 See `APP_BUILD_CHECKLIST.md` for verified checks and limitations.
+
+## Activity NFTs and coffee
+
+Current Base collection: [`0xD8551C4AafCBDb0475f87b48646c334a16d36B37`](https://basescan.org/address/0xD8551C4AafCBDb0475f87b48646c334a16d36B37#code), source-verified Exact Match. Deployment transaction `0x160b5c6741372e7414c95d74bfea77652c32510e0cd8e98f96ea1af2a8262284`, block 53238332. Mint fee remains **0.001 ETH** plus gas. Owner and immutable fee recipient remain `0x8D6230427a37986D25Fe4D5B3d0aaEF1b924fEd6`.
+
+New NFTs store an immutable `ipfs://` metadata CID. PNG artwork and JSON are pinned to public IPFS through Pinata, whose server-only credentials are configured in Vercel production. The image uses the same shared ActivityOg renderer as social images, including PFP, logo, chart and stats. Metadata also archives the captured activity data. This is user-submitted artwork, not proof of Farcaster account ownership or complete historical coverage. Ownership transfers use Ownable2Step, and owner-only `withdrawFees()` always pays the fixed recipient.
+
+The server prepares a PNG (at most 256 KiB), JSON, and their deterministic raw-block CIDv1 SHA-256 addresses. The user previews the exact PNG and mints the metadata address. After two receipt confirmations, `/api/nft/publish` checks the server package signature and that tokenURI matches the bytes before making either Pinata upload. Unpaid token IDs, altered bytes and mismatched CIDs are rejected. The uploader checks Pinata’s returned CIDs, caches successful pins and never accepts arbitrary unpaid file uploads. IPFS availability depends on maintained pinning; CID content cannot be changed.
+
+If uploading fails, the submitted hash and complete public file package are saved in sessionStorage. The UI offers **Finish NFT upload / Retry artwork upload**, including after reload, without another mint transaction. Confetti appears after successful pinning. Do not offer another mint as upload recovery. Storage-disabled hosts retain in-memory retry only. Keep the app open until upload completion.
+
+Legacy collection `0x55163a5d0df9727C68a01d39782DD111f9D226db` and its NFT #1 remain valid and immutable. The original onchain renderer needs about 7.07 million gas to read; the new IPFS URI needs about 33,600. NFT #1’s original PNG and JSON are also backed up on IPFS (see `artifacts/token-1-ipfs-backup.json`); these backups cannot rewrite the original tokenURI.
+
+Coffee remains 2 USDC on Base to the same recipient, using native Farcaster sendToken when supported or a connected-wallet ERC20 transfer. Connecting wallets never sends money. Confirmation and exact receipt checks remain required.
+
+Root `yarn account:import` stores the encrypted, ignored deployer wallet. Root `yarn deploy` now deploys the IPFS collection idempotently and preserves both registry entries; contract workspace `deploy:legacy` explicitly targets the old version. `verify:ipfs` verifies the new source. Local root scripts load root `.env.local` without rewriting it; the Next.js package continues loading its existing package settings. `PINATA_JWT` authorizes server-side pinning. `PINATA_API_SECRET` authenticates server-prepared packages with HMAC, preventing paid callers from using the account for arbitrary file uploads. Both are sensitive Vercel server settings; the API key and deployer credentials stay local. None enter the browser bundle.
+
+Checks: ten Base-fork contract tests; eighteen existing unit tests; CID matching against actual Pinata upload; tampered package rejection; unpaid publishing rejection; `tests/ipfs-mint.cjs` proves confirmed fork mint, simulated upload failure, recovery after reload without a second payment, public JSON/PNG retrieval and confetti. Real mainnet deployment is confirmed; test mint transactions run only on the fork. A paid mainnet mint is left for the owner to test.
+
+## Add miniapp and notification opt-in
+
+The footer’s Add miniapp button calls `sdk.actions.addMiniApp()` only inside Farcaster on the signed production domain. It reflects the host’s existing added state, handles rejection without treating it as an error, prevents duplicate requests, and resets when the host emits `miniAppRemoved`. The button is hidden outside Farcaster. On the signed production domain it automatically prompts once after the first successful user lookup/year change, chart-square activation, copied link or published Farcaster share. Initial URL/host auto-loads, hovering and failed lookups do not prompt. Dismissal is remembered per FID in local storage; manual retry remains available inside Farcaster, and explicit removals never trigger automatic re-add.
+
+The manifest’s `miniapp.webhookUrl` uses the configured Neynar-hosted event endpoint. Neynar manages notification subscriptions and revocations. No API key is required for this add/opt-in flow, so no Neynar key is stored in the app or browser bundle. No public notification-sending route or automatic notification schedule is created. Future server-side notification triggers require a separately configured server-only key and explicitly chosen events.
+
+`tests/add-miniapp.cjs` checks the manifest, browser fallback, rejection/retry, duplicate-tap prevention, notification opt-in result and removal using a simulated native SDK bridge. A real Farcaster add/permission prompt and webhook delivery must be checked in the production host.
+
+### Browser wallet connection
+
+Outside Farcaster, Connect wallet opens a picker of detected EIP6963/injected browser wallets plus Coinbase Wallet (SDK v4). Coinbase offers a connection window without requiring an installed browser extension; its account pairing remains user-approved. Farcaster continues to use the host’s wallet connector. Connecting targets Base and never sends a payment; the payment still needs its own confirmation. `tests/wallet-connect.cjs` verifies an extension-free Coinbase popup and installed-wallet rejection/retry/duplicate-tap handling without sending funds.
+
+Confirmed NFT mints and coffee payments trigger a short purple/lime confetti burst. The decoration runs once per transaction hash, automatically removes itself, respects reduced-motion preferences, and cannot interrupt payment completion if animation is unavailable. Native Farcaster tips with a user-adjusted positive USDC amount also celebrate when the receipt confirms delivery to the creator. No confetti appears on rejection, reversion, or a transfer to another recipient.
+
+The deployed FaralyticsNFT source is verified on BaseScan as an **Exact Match**: Solidity `v0.8.30+commit.73712a01`, optimizer 200 runs, viaIR, Paris EVM, MIT license. Source: https://basescan.org/address/0x55163a5d0df9727C68a01d39782DD111f9D226db#code . Exact standard compiler input and API verification result are saved under `packages/hardhat/verification/`; no API key is saved there. This is source/bytecode verification, not an independent security audit.
+
+The purple My activity button is visible only inside Farcaster when the SDK supplies the viewer’s FID and the filled input displays someone else’s profile. It loads the viewer’s rolling 365-day chart. It stays hidden in ordinary browsers and on the viewer’s own profile when the input is filled. With empty or whitespace input inside Farcaster, Show me replaces Look up in the search field and loads the viewer’s rolling 365-day chart. Typing restores Look up, and the duplicate My activity hint stays hidden while empty. Outside Farcaster, empty Look up stays disabled. `tests/my-activity.cjs` checks these states using a simulated host.
+
+The search area reserves stable space for conditional My activity visibility: a compact 28px hint row and a 58px minimum search-field height prevent layout shifts when the button appears/disappears or Look up switches to Clear. The My activity button keeps a 44px touch target through its non-layout pseudo-element. The browser check compares chart position before and after clearing/refilling the same profile’s input.
+
+Once Farcaster reports the miniapp is added, the add control and its success status disappear entirely. The component stays hidden while initially reading host state to avoid flashing an Add/Added badge. Removing the app restores the manual add control without another automatic prompt.

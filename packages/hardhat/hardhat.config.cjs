@@ -1,0 +1,5 @@
+require('@nomicfoundation/hardhat-ethers');
+const {subtask}=require('hardhat/config');
+const {TASK_COMPILE_SOLIDITY_GET_SOLC_BUILD}=require('hardhat/builtin-tasks/task-names');
+subtask(TASK_COMPILE_SOLIDITY_GET_SOLC_BUILD).setAction(async({solcVersion},hre,runSuper)=>solcVersion==='0.8.30'?{compilerPath:require.resolve('solc/soljson.js'),isSolcJs:true,version:solcVersion,longVersion:require('solc').version()}:runSuper());
+module.exports={solidity:{version:'0.8.30',settings:{optimizer:{enabled:true,runs:200},viaIR:true,evmVersion:'paris'}},networks:{hardhat:{forking:{url:process.env.BASE_FORK_RPC_URL||'https://base-rpc.publicnode.com',...(process.env.FORK_BLOCK?{blockNumber:Number(process.env.FORK_BLOCK)}:{})},chainId:Number(process.env.FORK_CHAIN_ID)||31337},base:{url:process.env.BASE_RPC_URL||'https://base-rpc.publicnode.com',chainId:8453,accounts:process.env.DEPLOYER_PRIVATE_KEY?[process.env.DEPLOYER_PRIVATE_KEY]:[]}},paths:{sources:'./contracts',tests:'./test',cache:'./cache',artifacts:'./artifacts'}};

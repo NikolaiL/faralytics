@@ -15,3 +15,7 @@ Search as you type with selectable username/FID suggestions, keyboard navigation
 ## Public deployment authorized
 
 The creator requested production deployment, then selected https://faralytics.vercel.app as the final domain. Vercel project faralytics on team viniapp, Next.js root packages/nextjs, production-only sensitive ClickHouse environment settings. Keep local .env.local unchanged. No GitHub publication requested.
+
+## Current release scope
+
+Subsequent creator requests supersede the initial read-only/local-only scope: publish to Faralytics on Vercel, support Base NFT minting through the verified IPFS collection, USDC coffee tips, wallet connection, and native Farcaster add-miniapp opt-in. See README.md for deployed addresses, storage and confirmation behavior. Git commit, push and deploy are authorized.

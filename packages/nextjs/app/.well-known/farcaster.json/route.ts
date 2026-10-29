@@ -8,6 +8,7 @@ export const GET = withErrorReporting("/.well-known/farcaster.json", () => {
       version: "1",
       name: "Faralytics",
       homeUrl: origin,
+      webhookUrl: "https://api.neynar.com/f/app/a7310ba9-e0d6-4353-9c29-cae3fa5fa523/event",
       iconUrl: `${origin}/api/icon?size=1024&v=grid5-v2`,
       splashImageUrl: `${origin}/api/icon?size=200&v=grid5-v2`,
       splashBackgroundColor: "#0d0b12",

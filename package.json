@@ -6,12 +6,14 @@
   ],
   "packageManager": "yarn@4.13.0",
   "scripts": {
-    "dev": "yarn workspace @cast-year/web dev",
-    "build": "yarn workspace @cast-year/web build",
-    "start": "yarn workspace @cast-year/web start",
+    "account:import": "yarn workspace @faralytics/contracts account:import",
+    "dev": "node scripts/web.cjs dev",
+    "build": "node scripts/web.cjs build",
+    "start": "node scripts/web.cjs start",
     "lint": "yarn workspace @cast-year/web lint",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "vercel:build": "vercel build --prod --yes",
-    "vercel:deploy": "vercel deploy --prebuilt --prod"
+    "vercel:deploy": "vercel deploy --prebuilt --prod",
+    "deploy": "yarn workspace @faralytics/contracts deploy"
   }
 }

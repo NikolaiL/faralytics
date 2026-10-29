@@ -1,0 +1,57 @@
+const assert=require('node:assert/strict');
+const {chromium}=require('@playwright/test');
+const {createRequire}=require('node:module');
+const {Interface}=createRequire(require('node:path').resolve('packages/hardhat/package.json'))('ethers');
+const LOCAL='http://127.0.0.1:8547';
+const USDC='0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
+const TREASURY='0x8D6230427a37986D25Fe4D5B3d0aaEF1b924fEd6';
+let lastPage;
+let sequence=0;
+async function rpc(method,params=[]){const r=await(await fetch(LOCAL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:++sequence,method,params})})).json();if(r.error)throw new Error(r.error.message);return r.result;}
+(async()=>{
+ assert.equal(await rpc('eth_chainId'),'0x2105','only run against local Base fork');
+ const [account]=await rpc('eth_accounts');
+ const whale='0x4d4454cfaaa011cc3a8c3527a4d59430860c70e6';
+ const erc20=new Interface(['function transfer(address,uint256)','function balanceOf(address) view returns(uint256)']);
+ await rpc('hardhat_impersonateAccount',[whale]);await rpc('hardhat_setBalance',[whale,'0x1000000000000000000']);
+ await rpc('eth_sendTransaction',[{from:whale,to:USDC,data:erc20.encodeFunctionData('transfer',[account,6000000n])}]);
+ await rpc('hardhat_stopImpersonatingAccount',[whale]);
+ const before=BigInt(await rpc('eth_call',[{to:USDC,data:erc20.encodeFunctionData('balanceOf',[TREASURY])},'latest']));
+ console.log('Fork funded; starting browser');
+ const browser=await chromium.launch({executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH});
+ const page=await browser.newPage({viewport:{width:375,height:900}});
+ lastPage=page;
+ let writes=0,reject=false;
+ await page.exposeFunction('walletRpc',async({method,params})=>{
+  if(method==='eth_requestAccounts'||method==='eth_accounts')return [account];
+  if(method==='wallet_switchEthereumChain')return null;
+  if(method==='eth_sendTransaction'){writes++;console.log('Wallet send request',writes);if(reject){reject=false;throw new Error('User rejected the request');}}
+  const result=await rpc(method,params);
+  if(method==='eth_sendTransaction')await rpc('evm_mine');
+  return result;
+ });
+ await page.addInitScript(({account})=>{window.ethereum={isMetaMask:true,selectedAddress:account,chainId:'0x2105',request:async args=>{try{return await window.walletRpc(args)}catch(error){if(/User rejected/.test(error.message))error.code=4001;throw error}},on(){},removeListener(){}};},{account});
+ await page.route('https://base-rpc.publicnode.com/**',async route=>{const body=route.request().postDataJSON();const result=await(await fetch(LOCAL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).text();await route.fulfill({status:200,contentType:'application/json',body:result});});
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://localhost:3100/?user=366713');
+ await page.getByTestId('mint-nft').waitFor();console.log('Chart and buttons loaded');
+ await page.getByTestId('mint-nft').click();
+ await page.locator('.nft-preview').waitFor({timeout:60000});console.log('NFT preview rendered');
+ assert.equal(writes,0,'opening modal never sends money');
+ await page.getByRole('button',{name:'Cancel',exact:true}).click();assert.equal(writes,0);
+ await page.getByTestId('buy-coffee').click();console.log('Coffee modal open');
+ await page.getByTestId('confirm-payment').click();
+ await page.getByTestId('connect-injected').click();
+ await page.getByTestId('confirm-payment').filter({hasText:'Confirm coffee'}).waitFor();console.log('Wallet connected');
+ reject=true;await page.getByTestId('confirm-payment').click();
+ await page.getByTestId('payment-status').filter({hasText:'Cancelled'}).waitFor();
+ assert.equal(writes,1);assert.equal(await page.getByTestId('transaction-confetti').count(),0);console.log('Wallet rejection recovered');
+ await page.getByTestId('confirm-payment').click();
+ await page.getByTestId('payment-status').filter({hasText:'Thank you'}).waitFor({timeout:60000});
+ assert.equal(writes,2);console.log('Coffee confirmed');assert.equal(await page.getByTestId('transaction-confetti').count(),1);await page.getByTestId('transaction-confetti').waitFor({state:'detached'});
+ const after=BigInt(await rpc('eth_call',[{to:USDC,data:erc20.encodeFunctionData('balanceOf',[TREASURY])},'latest']));assert.equal(after-before,2000000n);
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+ assert.deepEqual(errors,[]);
+ await page.screenshot({path:'artifacts/payments-mobile.png',fullPage:true});
+ await browser.close();console.log('PASS: mobile confirmation/cancel, wallet connection/rejection/retry, exact 2 USDC, verified coffee success confetti and receipt verification on local Base fork (NFT mint coverage: tests/ipfs-mint.cjs).');
+})().catch(async e=>{console.error(e);if(lastPage)console.log(await lastPage.locator('.payment-modal').innerText().catch(()=>''));process.exit(1)});
