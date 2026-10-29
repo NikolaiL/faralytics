@@ -41,3 +41,5 @@ Duplicate sharing controls appear immediately below the loaded chart, in additio
 Default chart transition refinement: every cell changes shade, including darkest and middle background levels. Lettercells crossfade between purplelevels3/4; backgroundcells cycle to the next shade inlevels0–2. Staggered12–18second cycles maintain readablelettercontrast. Reduced-motion stilldisablesanimation.
 
 Creator requested more visible defaultchartglow:6–10second cycles, brighterlavenderhighlights (#cdb0ff/#e6d6ff), largerbackgroundshadechanges andsoft6pxpurplebloom.
+
+Mobile lower share buttons use fulltext Share on Farcaster / Share on X / Copy link. Header controls stay compact FC / X / copyicon. Lower controls wrap only if needed on narrow screens.

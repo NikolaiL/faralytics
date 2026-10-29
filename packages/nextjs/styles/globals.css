@@ -20,3 +20,5 @@
 .search-field button.search-clear{background:transparent!important;border-color:transparent!important;color:var(--muted)!important;width:44px;height:44px;min-width:44px;padding:10px;display:grid;place-items:center;flex-shrink:0}.search-field button.search-clear:hover{color:var(--accent)!important}
 
 .share-actions.share-actions-below{align-items:flex-start;margin:24px 0 0;gap:9px}.share-actions-below .share-buttons{margin-left:0}
+
+@media(max-width:760px){.share-actions-below .share-label-full{display:inline}.share-actions-below .share-label-short{display:none}.share-actions-below .share-buttons{width:100%;flex-wrap:wrap}.share-actions-below .share-buttons button{width:auto;padding:10px 8px;font-size:11px}}
