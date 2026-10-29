@@ -32,10 +32,10 @@ export function ActivityExplorer({
 }) {
   const { fid, isMiniApp } = useMiniapp();
   const [input, setInput] = useState(
-    initialData?.profile.username ? `@${initialData.profile.username}` : initialUser || "366713",
+    initialData?.profile.username ? `@${initialData.profile.username}` : initialUser || "",
   );
   const [data, setData] = useState<Activity | undefined>(initialData);
-  const [busy, setBusy] = useState(!initialData);
+  const [busy, setBusy] = useState(!initialData && !!initialUser);
   const [period, setPeriod] = useState(initialData?.period || initialPeriod);
   const [error, setError] = useState("");
   const [note, setNote] = useState("");
@@ -74,7 +74,7 @@ export function ActivityExplorer({
     }
   }
   useEffect(() => {
-    if (!initialData) void load(initialUser || "366713", initialPeriod, initialEnd);
+    if (!initialData && initialUser) void load(initialUser, initialPeriod, initialEnd);
     return () => controller.current?.abort();
     // Initial URL is consumed once; later changes come from the form and year controls.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -224,127 +224,135 @@ export function ActivityExplorer({
           )}
         </div>
       )}
-      <section className={`activity-section ${busy ? "is-loading" : ""}`} aria-busy={busy}>
-        <div className="profile-heading">
-          <div className="identity">
-            <div className="avatar" aria-hidden="true">
-              {(username || "fc").slice(0, 2)}
-              <AvatarImage source={data?.profile.pfp_url} size={44} />
+      {!data && !busy && !error && (
+        <p className="empty-note" data-testid="lookup-empty">
+          Look up a username or FID to see their year in squares.
+        </p>
+      )}
+      {(data || busy) && (
+        <section className={`activity-section ${busy ? "is-loading" : ""}`} aria-busy={busy}>
+          <div className="profile-heading">
+            <div className="identity">
+              <div className="avatar" aria-hidden="true">
+                {(username || "fc").slice(0, 2)}
+                <AvatarImage source={data?.profile.pfp_url} size={44} />
+              </div>
+              <div>
+                <h2 data-testid="profile-name">
+                  {data
+                    ? data.profile.display_name || (username ? `@${username}` : `FID ${data.profile.fid}`)
+                    : "Finding your squares…"}
+                </h2>
+                <span>
+                  {data
+                    ? `${username ? `@${username} · ` : ""}FID ${data.profile.fid}`
+                    : "Reading captured Farcaster activity"}
+                </span>
+              </div>
             </div>
-            <div>
-              <h2 data-testid="profile-name">
-                {data
-                  ? data.profile.display_name || (username ? `@${username}` : `FID ${data.profile.fid}`)
-                  : "Finding your squares…"}
-              </h2>
-              <span>
-                {data
-                  ? `${username ? `@${username} · ` : ""}FID ${data.profile.fid}`
-                  : "Reading captured Farcaster activity"}
-              </span>
-            </div>
+            <span className="captured-badge">Captured activity</span>
           </div>
-          <span className="captured-badge">Captured activity</span>
-        </div>
-        <div className="chart-layout">
-          <div className="chart-card" data-testid="activity-card">
-            <div className="chart-title">
-              <h3>
-                <strong data-testid="activity-total">{data ? data.total.toLocaleString() : "—"}</strong> actions{" "}
-                <span>in {periodLabel(data?.period || period)}</span>
-              </h3>
-              <span className="utc-label">UTC</span>
-            </div>
-            {data ? (
-              <>
-                <div className="chart-scroll" ref={chart} data-testid="activity-graph">
-                  <Heatmap days={data.days} peak={data.peak} onSelect={setDay} />
-                </div>
-                <div className="chart-caption">
-                  <span className="day-detail" role="status" aria-live="polite">
-                    {day
-                      ? `${day.actions.toLocaleString()} actions · ${utcDate(day.date).toLocaleDateString("en", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })}`
-                      : "Each square is a day. Make it purple."}
-                  </span>
-                  <div className="legend" aria-label="Activity intensity from less to more">
-                    <span>Less</span>
-                    {PURPLES.map((color) => (
-                      <i key={color} style={{ background: color }} />
-                    ))}
-                    <span>More</span>
+          <div className="chart-layout">
+            <div className="chart-card" data-testid="activity-card">
+              <div className="chart-title">
+                <h3>
+                  <strong data-testid="activity-total">{data ? data.total.toLocaleString() : "—"}</strong> actions{" "}
+                  <span>in {periodLabel(data?.period || period)}</span>
+                </h3>
+                <span className="utc-label">UTC</span>
+              </div>
+              {data ? (
+                <>
+                  <div className="chart-scroll" ref={chart} data-testid="activity-graph">
+                    <Heatmap days={data.days} peak={data.peak} onSelect={setDay} />
                   </div>
+                  <div className="chart-caption">
+                    <span className="day-detail" role="status" aria-live="polite">
+                      {day
+                        ? `${day.actions.toLocaleString()} actions · ${utcDate(day.date).toLocaleDateString("en", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })}`
+                        : "Each square is a day. Make it purple."}
+                    </span>
+                    <div className="legend" aria-label="Activity intensity from less to more">
+                      <span>Less</span>
+                      {PURPLES.map((color) => (
+                        <i key={color} style={{ background: color }} />
+                      ))}
+                      <span>More</span>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="chart-skeleton" role="status">
+                  Loading activity…
                 </div>
-              </>
-            ) : (
-              <div className="chart-skeleton" role="status">
-                Loading activity…
-              </div>
-            )}
-            <div className="stats">
-              <div>
-                <strong>
-                  {data?.activeDays.toLocaleString() || "—"}
-                  <small>days</small>
-                </strong>
-                <span>Active days</span>
-              </div>
-              <div>
-                <strong>
-                  {data?.longestStreak.toLocaleString() || "—"}
-                  <small>days</small>
-                </strong>
-                <span>Longest streak</span>
-              </div>
-              <div>
-                <span>Busiest day:</span>
-                <strong className="busiest-date">{activityDate(data?.peakDate ?? null)}</strong>
+              )}
+              <div className="stats">
+                <div>
+                  <strong>
+                    {data?.activeDays.toLocaleString() || "—"}
+                    <small>days</small>
+                  </strong>
+                  <span>Active days</span>
+                </div>
+                <div>
+                  <strong>
+                    {data?.longestStreak.toLocaleString() || "—"}
+                    <small>days</small>
+                  </strong>
+                  <span>Longest streak</span>
+                </div>
+                <div>
+                  <span>Busiest day:</span>
+                  <strong className="busiest-date">{activityDate(data?.peakDate ?? null)}</strong>
+                </div>
               </div>
             </div>
-          </div>
-          <nav className="year-picker" aria-label="Activity year">
-            <button
-              data-testid="period-365"
-              disabled={busy}
-              aria-pressed={period === "365"}
-              onClick={() => data && void load(data.profile.fid, "365")}
-            >
-              Last 365 days
-            </button>
-            {years.map((year) => (
+            <nav className="year-picker" aria-label="Activity year">
               <button
-                data-testid={`year-${year}`}
-                key={year}
+                data-testid="period-365"
                 disabled={busy}
-                aria-pressed={period === String(year)}
-                onClick={() => data && void load(data.profile.fid, String(year), dateKey(new Date()))}
+                aria-pressed={period === "365"}
+                onClick={() => data && void load(data.profile.fid, "365")}
               >
-                {year}
+                Last 365 days
               </button>
-            ))}
-          </nav>
-        </div>
-        {data && data.total === 0 && (
-          <p className="empty-note" data-testid="empty-activity">
-            No captured actions in this period. Try another year; missing history can also mean zero recorded activity.
-          </p>
-        )}
-        {data && (
-          <div className="image-links">
-            <span>Download your chart</span>
-            <a
-              href={`/api/og/farcaster.png?${imageParams}`}
-              download="faralytics-farcaster.png"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Farcaster · 3:2 ↗
-            </a>
-            <a href={`/api/og/x.png?${imageParams}`} download="faralytics-x.png" target="_blank" rel="noreferrer">
-              X · 2:1 ↗
-            </a>
+              {years.map((year) => (
+                <button
+                  data-testid={`year-${year}`}
+                  key={year}
+                  disabled={busy}
+                  aria-pressed={period === String(year)}
+                  onClick={() => data && void load(data.profile.fid, String(year), dateKey(new Date()))}
+                >
+                  {year}
+                </button>
+              ))}
+            </nav>
           </div>
-        )}
-      </section>
+          {data && data.total === 0 && (
+            <p className="empty-note" data-testid="empty-activity">
+              No captured actions in this period. Try another year; missing history can also mean zero recorded
+              activity.
+            </p>
+          )}
+          {data && (
+            <div className="image-links">
+              <span>Download your chart</span>
+              <a
+                href={`/api/og/farcaster.png?${imageParams}`}
+                download="faralytics-farcaster.png"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Farcaster · 3:2 ↗
+              </a>
+              <a href={`/api/og/x.png?${imageParams}`} download="faralytics-x.png" target="_blank" rel="noreferrer">
+                X · 2:1 ↗
+              </a>
+            </div>
+          )}
+        </section>
+      )}
       {note && (
         <p className="notice" data-testid="share-status" role="status">
           {note}
