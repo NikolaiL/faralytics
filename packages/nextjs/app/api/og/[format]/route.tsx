@@ -97,7 +97,7 @@ export const GET = withErrorReporting<{ params: Promise<{ format: string }> }>(
               {data.profile.username ? `@${data.profile.username}` : `FID ${data.profile.fid}`}
             </div>
           </div>
-          <div style={{ display: "flex", alignItems: "baseline", marginTop: 14, gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", marginTop: 14, gap: 12 }}>
             <div style={{ display: "flex", fontSize: height === 600 ? 54 : 66, fontWeight: 700 }}>
               {data.total.toLocaleString("en-US")}
             </div>
@@ -153,7 +153,6 @@ export const GET = withErrorReporting<{ params: Promise<{ format: string }> }>(
               {
                 label: `on busiest day: ${activityDate(data.peakDate)}`,
                 value: `${data.peak.toLocaleString("en-US")} actions`,
-                valueFirst: true,
               },
             ].map((stat) => (
               <div
@@ -161,7 +160,7 @@ export const GET = withErrorReporting<{ params: Promise<{ format: string }> }>(
                 style={{
                   display: "flex",
                   flex: 1,
-                  flexDirection: stat.valueFirst ? "column-reverse" : "column",
+                  flexDirection: "column",
                   justifyContent: "center",
                   gap: 10,
                   padding: "14px 22px",
@@ -170,8 +169,8 @@ export const GET = withErrorReporting<{ params: Promise<{ format: string }> }>(
                   borderRadius: 12,
                 }}
               >
-                <div style={{ display: "flex", fontSize: 15, color: "#a99aba" }}>{stat.label}</div>
                 <div style={{ display: "flex", fontSize: height === 600 ? 26 : 32, fontWeight: 700 }}>{stat.value}</div>
+                <div style={{ display: "flex", fontSize: 15, color: "#a99aba" }}>{stat.label}</div>
               </div>
             ))}
           </div>

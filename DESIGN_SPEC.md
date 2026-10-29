@@ -21,3 +21,5 @@ Busiest-day stat shows the peak action count in large bold type, followed by “
 Mobile sharing revision: FC, X and copy-icon-only buttons keep accessible full labels. Caption and buttons form a compact group beside the logo on the same header row; full button text remains on desktop.
 
 Tagline size is 13px. At widths up to360px, tracking tightens to0.75px so the text stays on one line.
+
+Personalized OG cards vertically center the period description beside the large action total; all three stat boxes consistently put the value above the description.
