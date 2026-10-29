@@ -36,3 +36,5 @@
 - [x] Vercel production build passes. Public homepage, live activity, ranked search, manifest, both OG PNGs, share metadata/cache keys, mobile/desktop browser flows and Farcaster framing checks pass.
 - [x] Supplied signed Farcaster account association published for faralytics.vercel.app; manifest icon and splash use 1024×1024 and 200×200 PNGs.
 - [ ] A real signed-in Farcaster host/feed preview remains untested.
+
+- [x] One-character searches enabled in client and server with a 650 ms delay (longer input: 250 ms). Browser coverage verifies @v (FID 2) can be found and selected.

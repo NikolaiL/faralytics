@@ -125,6 +125,5 @@ export async function searchAccounts(input: string): Promise<SearchProfile[]> {
   }
   if (prefix.length > 63 || !/^[a-z0-9][a-z0-9.-]*$/.test(prefix))
     throw new InputError("Enter a valid username or FID.");
-  if (prefix.length < 2) return [];
   return farcasterSuggestions(prefix);
 }

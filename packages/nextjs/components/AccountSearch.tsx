@@ -23,10 +23,10 @@ export function AccountSearch({
   useEffect(() => {
     if (!open) return;
     const prefix = value.trim().replace(/^@/, "");
-    if (!prefix || (prefix.length < 2 && !/^\d+$/.test(prefix))) {
+    if (!prefix) {
       setSearching(false);
       setResults([]);
-      setMessage("Type at least 2 characters, or enter a FID.");
+      setMessage("Enter a username or FID.");
       return;
     }
     const abort = new AbortController();
@@ -34,21 +34,24 @@ export function AccountSearch({
     setResults([]);
     setActive(-1);
     setMessage("");
-    const timer = setTimeout(async () => {
-      try {
-        const response = await fetch(`/api/search?${new URLSearchParams({ q: value })}`, { signal: abort.signal });
-        const body = await response.json();
-        if (!response.ok) throw new Error(body.error || "Could not search accounts.");
-        if (!abort.signal.aborted) {
-          setResults(body);
-          setMessage(body.length ? "" : "No matching accounts. Try their full username or FID.");
+    const timer = setTimeout(
+      async () => {
+        try {
+          const response = await fetch(`/api/search?${new URLSearchParams({ q: value })}`, { signal: abort.signal });
+          const body = await response.json();
+          if (!response.ok) throw new Error(body.error || "Could not search accounts.");
+          if (!abort.signal.aborted) {
+            setResults(body);
+            setMessage(body.length ? "" : "No matching accounts. Try their full username or FID.");
+          }
+        } catch (error) {
+          if (!abort.signal.aborted) setMessage(error instanceof Error ? error.message : "Could not search accounts.");
+        } finally {
+          if (!abort.signal.aborted) setSearching(false);
         }
-      } catch (error) {
-        if (!abort.signal.aborted) setMessage(error instanceof Error ? error.message : "Could not search accounts.");
-      } finally {
-        if (!abort.signal.aborted) setSearching(false);
-      }
-    }, 250);
+      },
+      prefix.length === 1 ? 650 : 250,
+    );
     return () => {
       clearTimeout(timer);
       abort.abort();
