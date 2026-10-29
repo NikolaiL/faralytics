@@ -38,3 +38,5 @@
 - [ ] A real signed-in Farcaster host/feed preview remains untested.
 
 - [x] One-character searches enabled in client and server with a 650 ms delay (longer input: 250 ms). Browser coverage verifies @v (FID 2) can be found and selected.
+
+- [x] Sharing controls moved to the top-right page header, with compact accessible mobile labels. Existing share/browser flow and header fit checked at 320/360/375/390/768/1280 px.

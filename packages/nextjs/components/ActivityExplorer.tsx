@@ -127,9 +127,48 @@ export function ActivityExplorer({
           <Mark />
           faralytics<span className="wordmark-dot">.</span>
         </Link>
-        <span className="top-note">
-          <span className="status-dot" /> A little more purple.
-        </span>
+        <div className="share-buttons">
+          <button
+            data-testid="share-farcaster"
+            disabled={!data || busy || !!error}
+            className="button-primary"
+            onClick={() => void share("farcaster")}
+          >
+            <span className="share-arrow" aria-hidden="true">
+              ↗
+            </span>{" "}
+            Farcaster
+          </button>
+          <button
+            data-testid="share-x"
+            aria-label="Share on X"
+            disabled={!data || busy || !!error}
+            onClick={() => void share("x")}
+          >
+            <span className="share-label-desktop">Share on </span>X
+          </button>
+          <button
+            data-testid="copy-link"
+            disabled={!data || busy || !!error}
+            aria-label="Copy chart link"
+            onClick={() => void share("copy")}
+          >
+            <span className="share-label-desktop">Copy link</span>
+            <svg
+              className="share-copy-icon"
+              aria-hidden="true"
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+            >
+              <rect x="9" y="9" width="11" height="11" rx="2" />
+              <path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" />
+            </svg>
+          </button>
+        </div>
       </header>
       <section className="intro">
         <div className="eyebrow">FARCASTER, DAY BY DAY</div>
@@ -289,33 +328,6 @@ export function ActivityExplorer({
             No captured actions in this period. Try another year; missing history can also mean zero recorded activity.
           </p>
         )}
-        <div className="share-row">
-          <div>
-            <h3>A year worth sharing.</h3>
-            <p>Your squares, or someone else’s. Pass it on.</p>
-          </div>
-          <div className="share-buttons">
-            <button
-              data-testid="share-farcaster"
-              disabled={!data || busy || !!error}
-              className="button-primary"
-              onClick={() => void share("farcaster")}
-            >
-              <span aria-hidden="true">↗</span> Farcaster
-            </button>
-            <button data-testid="share-x" disabled={!data || busy || !!error} onClick={() => void share("x")}>
-              Share on X
-            </button>
-            <button
-              data-testid="copy-link"
-              disabled={!data || busy || !!error}
-              aria-label="Copy chart link"
-              onClick={() => void share("copy")}
-            >
-              Copy link
-            </button>
-          </div>
-        </div>
         {data && (
           <div className="image-links">
             <span>Download your chart</span>
