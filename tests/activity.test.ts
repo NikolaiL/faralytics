@@ -119,15 +119,15 @@ test("logo uses exactly 25 activity cells with a bright northeast arrow", async 
   assert.ok(LOGO_PIXELS.find(([x,y])=>x===4&&y===0)![2]>=3);
 });
 
-test("OG grids fill the entire width between equal 64px margins with square cells and 2px gaps", async () => {
+test("OG grids fill the entire width between equal 69px margins with square cells and 2px gaps", async () => {
   const { ogChartLayout } = await import("../packages/nextjs/lib/og-layout.ts");
   for(const columns of [52,53,54,59]) {
     const g=ogChartLayout(columns);
-    assert.equal(g.left,64);
-    assert.equal(g.width,1072);
+    assert.equal(g.left,69);
+    assert.equal(g.width,1062);
     assert.ok(Math.abs((columns-1)*g.step+g.cellSize-g.width)<1e-9);
     assert.ok(Math.abs(6*g.step+g.cellSize-g.height)<1e-9);
     assert.equal(g.step-g.cellSize,2);
-    assert.equal(1200-g.left-g.width,64);
+    assert.equal(1200-g.left-g.width,69);
   }
 });

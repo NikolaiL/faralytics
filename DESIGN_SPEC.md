@@ -31,3 +31,5 @@ Logo/splash revision: full5×5 activity grid (25 visible cells), with9 brighter 
 All rendered charts use2px cell gaps: web/decorative cells15px on17px pitch, personalOG cells17px on19px pitch. Overall chart dimensions and day positions remain consistent.
 
 OG chart width uses all1072px between64px side margins. Compute square cell size from columncount and2px gaps, without trailinggap; monthlabels follow samepitch. Applies to personal and default brand OG charts in bothaspectratios.
+
+OG chart section has5px additional horizontal inset inside the64px card margins: chart starts at69px and fills1062px. Both default/personal cards use this spacing.
