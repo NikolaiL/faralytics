@@ -135,11 +135,13 @@ export function ActivityExplorer({
           <div className="share-buttons">
             <button
               data-testid="share-farcaster"
+              aria-label="Share on Farcaster"
               disabled={!data || busy || !!error}
               className="button-primary"
               onClick={() => void share("farcaster")}
             >
-              Share on Farcaster
+              <span className="share-label-full">Share on Farcaster</span>
+              <span className="share-label-short">FC</span>
             </button>
             <button
               data-testid="share-x"
@@ -147,7 +149,8 @@ export function ActivityExplorer({
               disabled={!data || busy || !!error}
               onClick={() => void share("x")}
             >
-              Share on X
+              <span className="share-label-full">Share on X</span>
+              <span className="share-label-short">X</span>
             </button>
             <button
               data-testid="copy-link"
@@ -155,7 +158,7 @@ export function ActivityExplorer({
               aria-label="Copy chart link"
               onClick={() => void share("copy")}
             >
-              <span>Copy link</span>
+              <span className="share-label-full">Copy link</span>
               <svg
                 className="share-copy-icon"
                 aria-hidden="true"
