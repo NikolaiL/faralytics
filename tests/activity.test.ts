@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { colorLevel, fillDays, getRange, grid, sharePath, summarize, validFid } from "../packages/nextjs/lib/activity.ts";
+import { activityDate, colorLevel, fillDays, getRange, grid, sharePath, summarize, validFid } from "../packages/nextjs/lib/activity.ts";
 
 test("365-day range includes anchor exactly once and crosses leap day correctly", () => {
   const range = getRange("365", "2024-03-01");
@@ -13,7 +13,7 @@ test("calendar year zero-fills leap day, masks future days and preserves every c
   const range = getRange("2024", "2024-03-01");
   const days = fillDays([{ day: "2024-02-28", actions: 3 }, { day: "2024-02-29", actions: 7 }, { day: "2024-03-01", actions: 2 }, { day: "2024-03-02", actions: 99 }], range.start, range.end, range.anchor);
   assert.equal(days.length, 366);
-  assert.deepEqual(summarize(days), { total: 12, activeDays: 3, longestStreak: 3, peak: 7 });
+  assert.deepEqual(summarize(days), { total: 12, activeDays: 3, longestStreak: 3, peak: 7, peakDate: "2024-02-29" });
   assert.equal(days.find(day => day.date === "2024-03-02")?.future, true);
 });
 test("calendar alignment supports Sunday start and 54-week leap years", () => {
@@ -79,4 +79,16 @@ test("default brand chart spells FARALYTICS in a seven-row pixel grid", async ()
   for(const row of BRAND_GRID) { assert.equal(row.length, 59); assert.match(row, /^[01]+$/); }
   assert.equal(BRAND_GRID.map(row=>row.slice(0,5)).join("/"), "11111/10000/10000/11110/10000/10000/10000");
   for(let i=0;i<9;i++) assert.ok(BRAND_GRID.every(row=>row[i*6+5]==="0"));
+});
+
+test("busiest date uses the first tied active day, ignores future days and formats in UTC", () => {
+  const result = summarize([
+    {date:"2026-10-22", actions:79, future:false},
+    {date:"2026-10-23", actions:79, future:false},
+    {date:"2026-10-30", actions:100, future:true},
+  ]);
+  assert.equal(result.peakDate, "2026-10-22");
+  assert.equal(activityDate(result.peakDate), "Oct 22, 2026");
+  assert.equal(summarize([{date:"2026-10-22", actions:0, future:false}]).peakDate, null);
+  assert.equal(activityDate(null), "—");
 });

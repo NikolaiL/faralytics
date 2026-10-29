@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 import { DefaultOg } from "~~/components/DefaultOg";
-import { colorLevel, grid, InputError, periodLabel, PURPLES, utcDate } from "~~/lib/activity";
+import { activityDate, colorLevel, grid, InputError, periodLabel, PURPLES, utcDate } from "~~/lib/activity";
 import { loadActivity } from "~~/lib/data";
 import { reportServerError, withErrorReporting } from "~~/utils/reportServerError";
 export const runtime = "nodejs";
@@ -151,14 +151,40 @@ export const GET = withErrorReporting<{ params: Promise<{ format: string }> }>(
               />
             ))}
           </svg>
-          <div style={{ display: "flex", position: "absolute", left, top: chartTop + 163, gap: 54 }}>
-            <div style={{ display: "flex", fontSize: 19, color: "#bdafce" }}>{data.activeDays} active days</div>
-            <div style={{ display: "flex", fontSize: 19, color: "#bdafce" }}>
-              {data.longestStreak}-day longest streak
-            </div>
-            <div style={{ display: "flex", fontSize: 19, color: "#bdafce" }}>
-              {data.peak} actions on the busiest day
-            </div>
+          <div
+            style={{
+              display: "flex",
+              position: "absolute",
+              left: 64,
+              right: 64,
+              top: chartTop + 160,
+              bottom: 90,
+              gap: 16,
+            }}
+          >
+            {[
+              { label: "Active days", value: `${data.activeDays.toLocaleString("en-US")} days` },
+              { label: "Longest streak", value: `${data.longestStreak.toLocaleString("en-US")} days` },
+              { label: "Busiest day:", value: activityDate(data.peakDate) },
+            ].map((stat) => (
+              <div
+                key={stat.label}
+                style={{
+                  display: "flex",
+                  flex: 1,
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  gap: 10,
+                  padding: "14px 22px",
+                  background: "#18131f",
+                  border: "1px solid #352a43",
+                  borderRadius: 12,
+                }}
+              >
+                <div style={{ display: "flex", fontSize: 15, color: "#a99aba" }}>{stat.label}</div>
+                <div style={{ display: "flex", fontSize: height === 600 ? 26 : 32, fontWeight: 700 }}>{stat.value}</div>
+              </div>
+            ))}
           </div>
           <div
             style={{

@@ -14,6 +14,7 @@ export type Activity = {
   activeDays: number;
   longestStreak: number;
   peak: number;
+  peakDate: string | null;
   updatedAt: string;
   catchingUp: boolean;
   coverage: string;
@@ -66,17 +67,21 @@ export function summarize(days: Day[]) {
     longestStreak = 0,
     streak = 0,
     peak = 0;
+  let peakDate: string | null = null;
   for (const day of days) {
     if (day.future) continue;
     total += day.actions;
-    peak = Math.max(peak, day.actions);
+    if (day.actions > peak) {
+      peak = day.actions;
+      peakDate = day.date;
+    }
     if (day.actions > 0) {
       activeDays++;
       streak++;
       longestStreak = Math.max(longestStreak, streak);
     } else streak = 0;
   }
-  return { total, activeDays, longestStreak, peak };
+  return { total, activeDays, longestStreak, peak, peakDate };
 }
 export function colorLevel(actions: number, peak: number) {
   if (!actions || !peak) return 0;
@@ -128,4 +133,10 @@ export function rankSearchUsers(users: unknown[], exactFid?: string): SearchProf
         (a.username || a.fid).localeCompare(b.username || b.fid),
     )
     .slice(0, 8);
+}
+
+export function activityDate(date: string | null) {
+  return date
+    ? utcDate(date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })
+    : "—";
 }

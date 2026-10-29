@@ -3,7 +3,7 @@ import { sdk } from "@farcaster/miniapp-sdk";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { Activity, Day } from "~~/lib/activity";
-import { dateKey, periodLabel, PURPLES, sharePath, utcDate } from "~~/lib/activity";
+import { activityDate, dateKey, periodLabel, PURPLES, sharePath, utcDate } from "~~/lib/activity";
 import { LOGO_PIXELS } from "~~/lib/brand";
 import { Heatmap } from "./Heatmap";
 import { AccountSearch } from "./AccountSearch";
@@ -294,11 +294,8 @@ export function ActivityExplorer({
                 <span>Longest streak</span>
               </div>
               <div>
-                <strong>
-                  {data?.peak.toLocaleString() || "—"}
-                  <small>actions</small>
-                </strong>
-                <span>Busiest day</span>
+                <span>Busiest day:</span>
+                <strong className="busiest-date">{activityDate(data?.peakDate ?? null)}</strong>
               </div>
             </div>
           </div>
