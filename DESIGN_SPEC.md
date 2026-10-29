@@ -37,3 +37,7 @@ OG chart section has5px additional horizontal inset inside the64px card margins:
 A resolved account replaces the Look up button with a transparent X reset control. Reset clears input, result, errors, selected day/year and URL, cancels pending chart requests and returns to the decorative chart. Typing another name restores Look up.
 
 Duplicate sharing controls appear immediately below the loaded chart, in addition to the header set. Both instances use the same ShareActions component and selected account/year; lower controls disappear after reset. Compact mobile FC/X/copy labels remain consistent.
+
+Default chart transition refinement: every cell changes shade, including darkest and middle background levels. Lettercells crossfade between purplelevels3/4; backgroundcells cycle to the next shade inlevels0–2. Staggered12–18second cycles maintain readablelettercontrast. Reduced-motion stilldisablesanimation.
+
+Creator requested more visible defaultchartglow:6–10second cycles, brighterlavenderhighlights (#cdb0ff/#e6d6ff), largerbackgroundshadechanges andsoft6pxpurplebloom.
