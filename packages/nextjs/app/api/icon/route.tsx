@@ -17,15 +17,7 @@ export const GET = withErrorReporting("/api/icon", (request) => {
     >
       <svg width={Math.round(size * 0.586)} height={Math.round(size * 0.586)} viewBox="0 0 288 288">
         {LOGO_PIXELS.map(([x, y], i) => (
-          <rect
-            key={i}
-            x={x * 60}
-            y={y * 60}
-            width="48"
-            height="48"
-            rx="9"
-            fill={i === 2 ? "#d6ff3f" : i === 6 ? "#b596f2" : "#855dcd"}
-          />
+          <rect key={i} x={x * 60} y={y * 60} width="48" height="48" rx="9" fill={i === 6 ? "#b596f2" : "#855dcd"} />
         ))}
       </svg>
     </div>,

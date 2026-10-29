@@ -6,4 +6,4 @@ Headline refinement: electric citron #D6FF3F replaces champagne gold at the crea
 
 Share actions sit in the page header at the top right. Mobile keeps Farcaster, a compact X label, and a copy icon with accessible labels and 44 px targets; obsolete sharing promotion text below the chart is removed.
 
-Logo lockup: faralytics wordmark and punctuation use the electric-citron accent, and the arrow mark’s top-right square is citron. Arrange the nine activity squares on a five-by-five lattice into a northeast arrow. Preserve this mark in favicon, manifest icon/splash and OG wordmark treatments.
+Logo lockup: faralytics wordmark and punctuation use the electric-citron accent, and the arrow mark’s top-right square uses the base purple #855DCD. Arrange the nine activity squares on a five-by-five lattice into a northeast arrow. Preserve this mark in favicon, manifest icon/splash and OG wordmark treatments.
