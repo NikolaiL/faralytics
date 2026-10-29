@@ -8,3 +8,5 @@
 .result-avatar{position:relative;overflow:hidden}.result-avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 
 .stats strong.busiest-date{font-size:clamp(12px,3vw,20px);letter-spacing:-.3px;white-space:nowrap}
+
+.avatar{position:relative;overflow:hidden}.avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}

@@ -32,7 +32,7 @@ const { chromium, expect } = require('@playwright/test');
     await expect(pfp).toBeVisible();
     await expect.poll(() => pfp.evaluate(img => img.complete && img.naturalWidth > 0), {timeout:15000}).toBe(true);
     await page.screenshot({path:'artifacts/search-pfps.png',fullPage:true});
-    await pfp.evaluate(img => img.dispatchEvent(new Event('error')));
+    await pfp.evaluate(img => { img.dispatchEvent(new Event('error')); img.dispatchEvent(new Event('error')); });
     await expect(pfp).toBeHidden();
     await expect(page.getByTestId('search-result').first().locator('.result-avatar')).toBeVisible();
     await input.press('ArrowUp');

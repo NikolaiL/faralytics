@@ -1,27 +1,10 @@
 import { ImageResponse } from "next/og";
 import { DefaultOg } from "~~/components/DefaultOg";
 import { activityDate, colorLevel, grid, InputError, periodLabel, PURPLES, utcDate } from "~~/lib/activity";
+import { loadAvatar } from "~~/lib/avatar";
 import { loadActivity } from "~~/lib/data";
 import { reportServerError, withErrorReporting } from "~~/utils/reportServerError";
 export const runtime = "nodejs";
-
-async function loadAvatar(source?: string | null) {
-  if (!source) return null;
-  try {
-    const url = new URL(source);
-    // Only fetch Farcaster’s hosted image CDN; arbitrary profile URLs must not reach private services.
-    if (url.origin !== "https://imagedelivery.net") return null;
-    url.pathname = url.pathname.replace(/\/[^/]+$/, "/width=128,height=128,fit=cover");
-    const response = await fetch(url, { redirect: "error", signal: AbortSignal.timeout(5_000) });
-    const type = response.headers.get("content-type")?.split(";")[0];
-    if (!response.ok || !type || !["image/jpeg", "image/png", "image/webp", "image/gif"].includes(type)) return null;
-    const bytes = Buffer.from(await response.arrayBuffer());
-    if (bytes.length > 250_000) return null;
-    return `data:${type};base64,${bytes.toString("base64")}`;
-  } catch {
-    return null;
-  }
-}
 
 export const GET = withErrorReporting<{ params: Promise<{ format: string }> }>(
   "/api/og/[format]",
@@ -45,7 +28,8 @@ export const GET = withErrorReporting<{ params: Promise<{ format: string }> }>(
         params.get("period") || "365",
         params.get("end") || undefined,
       );
-      const avatar = await loadAvatar(data.profile.pfp_url);
+      const avatarBytes = await loadAvatar(data.profile.pfp_url);
+      const avatar = avatarBytes ? `data:image/png;base64,${avatarBytes.toString("base64")}` : null;
       const generatedAt = new Date().toISOString().slice(0, 19).replace("T", " ");
       const height = format === "x.png" ? 600 : 800;
       const { cells, columns } = grid(data.days);

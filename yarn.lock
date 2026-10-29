@@ -209,6 +209,7 @@ __metadata:
     prettier: "npm:~3.8.3"
     react: "npm:~19.2.5"
     react-dom: "npm:~19.2.5"
+    sharp: "npm:0.34.5"
     typescript: "npm:~5.8.2"
   languageName: unknown
   linkType: soft
@@ -4213,7 +4214,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sharp@npm:^0.34.5":
+"sharp@npm:0.34.5, sharp@npm:^0.34.5":
   version: 0.34.5
   resolution: "sharp@npm:0.34.5"
   dependencies:

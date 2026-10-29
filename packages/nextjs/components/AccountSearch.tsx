@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { AvatarImage } from "./AvatarImage";
 import type { SearchProfile } from "~~/lib/activity";
 
 export function AccountSearch({
@@ -155,21 +156,7 @@ export function AccountSearch({
                 >
                   <span className="result-avatar" aria-hidden="true">
                     {(profile.username || "fc").slice(0, 2)}
-                    {profile.pfp_url && (
-                      // Farcaster PFPs are external URLs; keep the initials underneath as a fallback.
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={profile.pfp_url}
-                        alt=""
-                        width={34}
-                        height={34}
-                        loading="lazy"
-                        referrerPolicy="no-referrer"
-                        onError={(event) => {
-                          event.currentTarget.style.display = "none";
-                        }}
-                      />
-                    )}
+                    <AvatarImage source={profile.pfp_url} size={34} />
                   </span>
                   <span className="result-name">
                     <strong>

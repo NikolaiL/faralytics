@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Activity, Day } from "~~/lib/activity";
 import { activityDate, dateKey, periodLabel, PURPLES, sharePath, utcDate } from "~~/lib/activity";
 import { LOGO_PIXELS } from "~~/lib/brand";
+import { AvatarImage } from "./AvatarImage";
 import { Heatmap } from "./Heatmap";
 import { AccountSearch } from "./AccountSearch";
 import { useMiniapp } from "./MiniappProvider";
@@ -228,6 +229,7 @@ export function ActivityExplorer({
           <div className="identity">
             <div className="avatar" aria-hidden="true">
               {(username || "fc").slice(0, 2)}
+              <AvatarImage source={data?.profile.pfp_url} size={44} />
             </div>
             <div>
               <h2 data-testid="profile-name">
