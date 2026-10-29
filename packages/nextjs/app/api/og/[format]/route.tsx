@@ -16,6 +16,7 @@ export const GET = withErrorReporting<{ params: Promise<{ format: string }> }>(
         params.get("period") || "365",
         params.get("end") || undefined,
       );
+      const generatedAt = new Date().toISOString().slice(0, 19).replace("T", " ");
       const height = format === "x.png" ? 600 : 800;
       const { cells, columns } = grid(data.days);
       const step = 19,
@@ -116,7 +117,7 @@ export const GET = withErrorReporting<{ params: Promise<{ format: string }> }>(
             }}
           >
             <div style={{ display: "flex" }}>Captured activity · incomplete history · UTC</div>
-            <div style={{ display: "flex" }}>created with viniapp</div>
+            <div style={{ display: "flex" }}>{`created with viniapp · ${generatedAt} UTC`}</div>
           </div>
         </div>,
         {

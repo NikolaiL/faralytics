@@ -38,7 +38,7 @@ The canonical link is `/share/<fid>?period=365|<year>&end=YYYY-MM-DD`. The ancho
 - `/api/og/x.png?fid=<fid>&period=<period>&end=<anchor>`: 1200×600 PNG (2:1).
 - Farcaster uses `fc:miniapp` and the native composer inside Farcaster; web falls back to the composer URL. X uses a web intent and `twitter:image`. Copy link and image download also work locally.
 
-Social networks cannot fetch localhost URLs. For real feed previews, the app needs a reachable HTTPS origin in `NEXT_PUBLIC_URL` and a rebuild. Public Farcaster registration additionally requires a signed `FARCASTER_ACCOUNT_ASSOCIATION` from the Farcaster developer tool. Neither public hosting nor account registration was performed for this local-only request. The app does not post without user action.
+Social networks cannot fetch localhost URLs. For real feed previews, the app needs a reachable HTTPS origin in `NEXT_PUBLIC_URL` and a rebuild. Public Farcaster registration additionally requires a signed `FARCASTER_ACCOUNT_ASSOCIATION` from the Farcaster developer tool. Neither public hosting nor account registration was performed for this local-only request. The app does not post without user action. Both OG image footers show the actual image generation timestamp in UTC after “created with viniapp”; cached copies retain their original generation timestamp.
 
 ## Verification
 
