@@ -71,3 +71,12 @@ test("share links preserve an explicit cache-busting timestamp without changing 
   assert.equal(url.searchParams.get("end"), "2026-10-29");
   assert.equal(new URL(sharePath("366713", "2026", "2026-10-29"), "http://localhost").searchParams.has("ts"), false);
 });
+
+
+test("default brand chart spells FARALYTICS in a seven-row pixel grid", async () => {
+  const { BRAND_GRID } = await import("../packages/nextjs/lib/brand.ts");
+  assert.equal(BRAND_GRID.length, 7);
+  for(const row of BRAND_GRID) { assert.equal(row.length, 59); assert.match(row, /^[01]+$/); }
+  assert.equal(BRAND_GRID.map(row=>row.slice(0,5)).join("/"), "11111/10000/10000/11110/10000/10000/10000");
+  for(let i=0;i<9;i++) assert.ok(BRAND_GRID.every(row=>row[i*6+5]==="0"));
+});

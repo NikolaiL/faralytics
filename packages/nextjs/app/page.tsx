@@ -5,13 +5,13 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Faralytics",
     description: "Your year, one purple square at a time.",
-    images: [{ url: `${origin}/api/og/farcaster.png`, width: 1200, height: 800 }],
+    images: [{ url: `${origin}/api/og/farcaster.png?v=brand1`, width: 1200, height: 800 }],
   },
-  twitter: { card: "summary_large_image", images: [`${origin}/api/og/x.png`] },
+  twitter: { card: "summary_large_image", images: [`${origin}/api/og/x.png?v=brand1`] },
   other: {
     "fc:miniapp": JSON.stringify({
       version: "1",
-      imageUrl: `${origin}/api/og/farcaster.png`,
+      imageUrl: `${origin}/api/og/farcaster.png?v=brand1`,
       button: {
         title: "Explore activity",
         action: { type: "launch_miniapp", name: "Faralytics", url: origin, splashBackgroundColor: "#0d0b12" },

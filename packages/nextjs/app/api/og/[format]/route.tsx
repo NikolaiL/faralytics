@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { DefaultOg } from "~~/components/DefaultOg";
 import { colorLevel, grid, InputError, periodLabel, PURPLES, utcDate } from "~~/lib/activity";
 import { loadActivity } from "~~/lib/data";
 import { reportServerError, withErrorReporting } from "~~/utils/reportServerError";
@@ -30,8 +31,17 @@ export const GET = withErrorReporting<{ params: Promise<{ format: string }> }>(
       return new Response("Image format not found", { status: 404 });
     const params = request.nextUrl.searchParams;
     try {
+      if (!params.has("fid")) {
+        const height = format === "x.png" ? 600 : 800;
+        const generatedAt = new Date().toISOString().slice(0, 19).replace("T", " ");
+        return new ImageResponse(<DefaultOg height={height} generatedAt={generatedAt} />, {
+          width: 1200,
+          height,
+          headers: { "Cache-Control": "public, max-age=300, s-maxage=300, stale-while-revalidate=600" },
+        });
+      }
       const data = await loadActivity(
-        params.get("fid") || "366713",
+        params.get("fid") || "",
         params.get("period") || "365",
         params.get("end") || undefined,
       );

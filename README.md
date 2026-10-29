@@ -32,6 +32,8 @@ Counts describe captured history, not all network history. Retained backfill can
 
 ## Sharing
 
+The default homepage/manifest OG card uses a decorative purple activity grid spelling FARALYTICS. It contains no account counts and makes no database request. Account-specific shares with an explicit FID still render that person’s actual activity chart.
+
 Each share/copy action creates `/share/<fid>?period=365|<year>&end=YYYY-MM-DD&ts=<Unix-milliseconds>`. The same timestamp is preserved in the canonical URL, `og:url`, Farcaster launch/embed metadata, and both OG image URLs so a new share has distinct page and image cache keys. Older links without `ts` still work. The anchor preserves the selected window. It renders real chart HTML and per-user metadata, with no server redirect.
 
 - `/api/og/farcaster.png?fid=<fid>&period=<period>&end=<anchor>`: 1200×800 PNG (3:2).
