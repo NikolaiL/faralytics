@@ -1,0 +1,52 @@
+const assert = require('node:assert/strict');
+const {chromium, expect} = require('@playwright/test');
+(async () => {
+  const browser = await chromium.launch({headless:true,executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH});
+  try {
+    const page = await browser.newPage({viewport:{width:375,height:900}});
+    await page.goto('http://localhost:3100/?user=366713');
+    await expect(page.getByTestId('lookup-clear')).toBeVisible();
+    await page.evaluate(() => {
+      window.__invalidCount = 0;
+      document.getElementById('username').addEventListener('invalid', () => window.__invalidCount++);
+    });
+    assert.equal(await page.getByTestId('lookup-clear').evaluate(e=>getComputedStyle(e).backgroundColor),'rgba(0, 0, 0, 0)');
+    await page.getByTestId('lookup-clear').click();
+    await expect(page.getByTestId('lookup-input')).toHaveValue('');
+    await expect(page.getByTestId('lookup-input')).toBeFocused();
+    await expect(page.getByTestId('brand-chart')).toBeVisible();
+    await expect(page.getByTestId('search-dropdown')).toHaveCount(0);
+    await expect(page.getByTestId('activity-graph')).toHaveCount(0);
+    assert.equal(new URL(page.url()).search,'');
+    assert.equal(await page.evaluate(()=>window.__invalidCount),0,'reset must not trigger native form validation');
+    await page.getByTestId('lookup-submit').click();
+    assert.equal(await page.evaluate(()=>window.__invalidCount),1,'only an explicit empty lookup triggers validation');
+    await page.getByTestId('lookup-input').fill('366713');
+    await page.getByTestId('lookup-submit').click();
+    await expect(page.getByTestId('lookup-clear')).toBeVisible();
+    const delayedBody = await (await page.request.get('http://localhost:3100/api/activity?user=366713&period=2025')).json();
+    let release;
+    const gate = new Promise(resolve => {release=resolve});
+    await page.route('**/api/activity?**',async route=>{
+      if(new URL(route.request().url()).searchParams.get('period')!=='2025')return route.continue();
+      await gate;
+      await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(delayedBody)}).catch(()=>{});
+    });
+    const pending=page.waitForRequest(r=>r.url().includes('/api/activity?')&&new URL(r.url()).searchParams.get('period')==='2025');
+    await page.getByTestId('year-2025').click();
+    await pending;
+    await page.getByTestId('lookup-clear').click();
+    release();
+    await expect(page.getByTestId('brand-chart')).toBeVisible();
+    await page.waitForTimeout(250);
+    await expect(page.getByTestId('activity-graph')).toHaveCount(0);
+    assert.equal(await page.evaluate(()=>window.__invalidCount),1,'reset while loading must not trigger validation');
+    await page.unrouteAll({behavior:'ignoreErrors'});
+    await page.goto('http://localhost:3100/share/366713?period=365');
+    await expect(page.getByTestId('lookup-clear')).toBeVisible();
+    await page.getByTestId('lookup-clear').click();
+    await expect(page.getByTestId('brand-chart')).toBeVisible();
+    assert.equal(new URL(page.url()).pathname,'/');
+    console.log('Reset checks passed: no automatic validation, empty-submit validation, focus, URL/result reset, request cancellation and share-page reset.');
+  } finally {await browser.close();}
+})().catch(error=>{console.error(error);process.exit(1)});

@@ -33,3 +33,5 @@ All rendered charts use2px cell gaps: web/decorative cells15px on17px pitch, per
 OG chart width uses all1072px between64px side margins. Compute square cell size from columncount and2px gaps, without trailinggap; monthlabels follow samepitch. Applies to personal and default brand OG charts in bothaspectratios.
 
 OG chart section has5px additional horizontal inset inside the64px card margins: chart starts at69px and fills1062px. Both default/personal cards use this spacing.
+
+A resolved account replaces the Look up button with a transparent X reset control. Reset clears input, result, errors, selected day/year and URL, cancels pending chart requests and returns to the decorative chart. Typing another name restores Look up.

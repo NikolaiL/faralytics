@@ -26,10 +26,16 @@ const { chromium } = require("@playwright/test");
   const fidData = await (await page.request.get("http://localhost:3100/api/activity?user=366713")).json();
   assert.equal(await page.getByTestId("activity-total").innerText(), fidData.total.toLocaleString("en-US"));
   assert.ok(fidData.profile.username, "live sample should have a username");
+  assert.equal(await page.getByTestId("lookup-submit").count(),0);
+  await page.getByTestId("lookup-clear").click();
+  assert.equal(await page.getByTestId("lookup-input").inputValue(),"");
+  assert.equal(await page.getByTestId("activity-graph").count(),0);
+  assert.ok(await page.getByTestId("brand-chart").isVisible());
+  assert.equal(new URL(page.url()).search,"");
   await page.getByTestId("lookup-input").fill('@' + fidData.profile.username);
   const lookup = page.waitForResponse(r => r.url().includes('/api/activity?') && r.status() === 200);
   await page.getByTestId("lookup-submit").click(); await lookup;
-  await page.getByTestId("lookup-submit").isEnabled();
+  await page.getByTestId("lookup-clear").waitFor();
   await page.getByTestId("year-2025").click();
   await page.waitForFunction(() => document.querySelector('[data-testid="year-2025"]').getAttribute('aria-pressed') === 'true' && !document.querySelector('.is-loading'));
   assert.equal(await page.locator('.heatmap rect').count(), 365);
@@ -80,7 +86,7 @@ const { chromium } = require("@playwright/test");
   for(const width of [360,375,390,768,1280]) {
     await page.setViewportSize({width,height:900});
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `no page overflow at ${width}`);
-    for(const id of ['lookup-input','lookup-submit','share-x','share-farcaster']) {
+    for(const id of ['lookup-input','lookup-clear','share-x','share-farcaster']) {
       const box = await page.getByTestId(id).boundingBox();
       assert.ok(box && box.x >= 0 && box.x+box.width <= width + 1, `${id} fits at ${width}`);
     }

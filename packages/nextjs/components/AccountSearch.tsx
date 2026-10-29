@@ -8,11 +8,15 @@ export function AccountSearch({
   onChange,
   onSelect,
   busy,
+  resolved,
+  onReset,
 }: {
   value: string;
   onChange: (value: string) => void;
   onSelect: (fid: string) => void;
   busy: boolean;
+  resolved: boolean;
+  onReset: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [results, setResults] = useState<SearchProfile[]>([]);
@@ -94,7 +98,9 @@ export function AccountSearch({
             setActive(-1);
             setSearching(true);
           }}
-          onFocus={() => setOpen(true)}
+          onFocus={() => {
+            if (value.trim()) setOpen(true);
+          }}
           onKeyDown={(event) => {
             if (event.nativeEvent.isComposing) return;
             if (event.key === "Escape") {
@@ -132,10 +138,43 @@ export function AccountSearch({
           maxLength={64}
           required
         />
-        <button data-testid="lookup-submit" type="submit" disabled={busy} onClick={() => setOpen(false)}>
-          {busy ? "Looking up…" : "Look up"}
-          <span aria-hidden="true">↗</span>
-        </button>
+        {resolved ? (
+          <button
+            key="clear"
+            type="button"
+            className="search-clear"
+            data-testid="lookup-clear"
+            aria-label="Clear lookup and chart"
+            title="Clear"
+            onClick={(event) => {
+              event.preventDefault();
+              setOpen(false);
+              setResults([]);
+              setMessage("");
+              setActive(-1);
+              setSearching(false);
+              onReset();
+              requestAnimationFrame(() => input.current?.focus());
+            }}
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              aria-hidden="true"
+            >
+              <path d="m6 6 12 12M18 6 6 18" />
+            </svg>
+          </button>
+        ) : (
+          <button key="submit" data-testid="lookup-submit" type="submit" disabled={busy} onClick={() => setOpen(false)}>
+            {busy ? "Looking up…" : "Look up"}
+            <span aria-hidden="true">↗</span>
+          </button>
+        )}
       </div>
       {open && (
         <div className="search-dropdown" data-testid="search-dropdown">

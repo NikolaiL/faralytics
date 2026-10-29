@@ -16,3 +16,5 @@
 .brand-chart{padding:36px 24px 24px}.brand-chart svg{display:block;width:100%;height:auto}.brand-chart p{margin:24px 0 0;text-align:center;color:var(--muted);font-size:12px;line-height:1.6}.brand-chart rect{animation:cell-glow 12s ease-in-out infinite}@keyframes cell-glow{0%,100%{fill:var(--cell-color)}50%{fill:var(--cell-glow)}}@media(max-width:760px){.brand-chart{padding:28px 16px 20px}.brand-chart p{font-size:11px;margin-top:20px}}@media(prefers-reduced-motion:reduce){.brand-chart rect{animation:none}}
 
 @media(max-width:360px){.intro h1{letter-spacing:.75px}}
+
+.search-field button.search-clear{background:transparent!important;border-color:transparent!important;color:var(--muted)!important;width:44px;height:44px;min-width:44px;padding:10px;display:grid;place-items:center;flex-shrink:0}.search-field button.search-clear:hover{color:var(--accent)!important}

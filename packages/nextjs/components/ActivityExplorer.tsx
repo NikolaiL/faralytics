@@ -58,6 +58,7 @@ export function ActivityExplorer({
       if (end) params.set("end", end);
       const response = await fetch(`/api/activity?${params}`, { signal: abort.signal });
       const body = await response.json();
+      if (abort.signal.aborted) return;
       if (!response.ok) throw new Error(body.error || "Could not load activity.");
       const next = body as Activity;
       setData(next);
@@ -90,6 +91,20 @@ export function ActivityExplorer({
     if (chart.current && data?.period === "365") chart.current.scrollLeft = chart.current.scrollWidth;
   }, [data]);
 
+  function resetLookup() {
+    controller.current?.abort();
+    controller.current = null;
+    selfLoaded.current = true;
+    setInput("");
+    setData(undefined);
+    setBusy(false);
+    setPeriod("365");
+    setError("");
+    setNote("");
+    setDay(undefined);
+    window.history.replaceState(null, "", "/");
+  }
+
   async function share(target: "farcaster" | "x" | "copy") {
     if (!data) return;
     const origin = process.env.NEXT_PUBLIC_URL || window.location.origin;
@@ -119,6 +134,8 @@ export function ActivityExplorer({
     window.open(compose.toString(), "_blank", "noopener,noreferrer");
   }
   const username = data?.profile.username;
+  const isResolved =
+    !!data && [data.profile.fid, username?.toLowerCase()].includes(input.trim().replace(/^@/, "").toLowerCase());
   const years = data?.years || [new Date().getUTCFullYear()];
   const imageParams = data
     ? new URLSearchParams({ fid: data.profile.fid, period: data.period, end: data.anchor }).toString()
@@ -191,7 +208,14 @@ export function ActivityExplorer({
         }}
         aria-label="Look up Farcaster activity"
       >
-        <AccountSearch value={input} onChange={setInput} onSelect={(fid) => void load(fid, "365")} busy={busy} />
+        <AccountSearch
+          value={input}
+          onChange={setInput}
+          onSelect={(fid) => void load(fid, "365")}
+          busy={busy}
+          resolved={isResolved}
+          onReset={resetLookup}
+        />
         <div className="search-hint">
           <span>No sign-in. Just curiosity.</span>
           <button
