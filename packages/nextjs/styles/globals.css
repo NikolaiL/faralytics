@@ -18,3 +18,5 @@
 @media(max-width:360px){.intro h1{letter-spacing:.75px}}
 
 .search-field button.search-clear{background:transparent!important;border-color:transparent!important;color:var(--muted)!important;width:44px;height:44px;min-width:44px;padding:10px;display:grid;place-items:center;flex-shrink:0}.search-field button.search-clear:hover{color:var(--accent)!important}
+
+.share-actions.share-actions-below{align-items:flex-start;margin:24px 0 0;gap:9px}.share-actions-below .share-buttons{margin-left:0}

@@ -17,6 +17,7 @@ const {chromium, expect} = require('@playwright/test');
     await expect(page.getByTestId('brand-chart')).toBeVisible();
     await expect(page.getByTestId('search-dropdown')).toHaveCount(0);
     await expect(page.getByTestId('activity-graph')).toHaveCount(0);
+    await expect(page.locator('.share-actions-below')).toHaveCount(0);
     assert.equal(new URL(page.url()).search,'');
     assert.equal(await page.evaluate(()=>window.__invalidCount),0,'reset must not trigger native form validation');
     await page.getByTestId('lookup-submit').click();
