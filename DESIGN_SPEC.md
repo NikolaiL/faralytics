@@ -13,3 +13,5 @@ Default OG chart: FARALYTICS is formed by uniformly brightest purple cells (#b59
 All OG cards include the purple northeast arrow logo next to the citron Faralytics wordmark in the top-left header. Both default and account cards use the shared OgLogo component.
 
 Anonymous homepage shows the same decorative FARALYTICS activity grid as the default OG card instead of an account chart. Cell colors gently breathe on staggered 10–14 second cycles, keeping the letters brightest; reduced-motion preferences disable the animation. No account lookup occurs until selection.
+
+The page intro now has a single heading: “Your year. One square at a time.” in the former eyebrow’s 11px monospace, weight600 and2px tracking, keeping the neon citron color. Removes “FARCASTER, DAY BY DAY” and the larger duplicate headline from the web intro.

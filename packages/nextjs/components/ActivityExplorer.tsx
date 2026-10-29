@@ -174,10 +174,7 @@ export function ActivityExplorer({
         </div>
       </header>
       <section className="intro">
-        <div className="eyebrow">FARCASTER, DAY BY DAY</div>
-        <h1>
-          Your year. One square at a time<span>.</span>
-        </h1>
+        <h1 className="eyebrow">Your year. One square at a time.</h1>
         <p>
           Every cast, like, and little connection.
           <br className="mobile-break" /> See how you show up on Farcaster.
