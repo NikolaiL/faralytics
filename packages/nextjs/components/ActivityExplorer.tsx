@@ -63,7 +63,7 @@ function ShareActions({
         <button
           data-testid={placement === "header" ? "copy-link" : "copy-link-bottom"}
           disabled={disabled}
-          aria-label="Copy chart link"
+          aria-label="Copy link"
           onClick={() => void onShare("copy")}
         >
           <span className="share-label-full">Copy link</span>
@@ -174,18 +174,23 @@ export function ActivityExplorer({
   }
 
   async function share(target: "farcaster" | "x" | "copy") {
-    if (!data) return;
     const origin = process.env.NEXT_PUBLIC_URL || window.location.origin;
-    const url = `${origin}${sharePath(data.profile.fid, data.period, data.anchor, Date.now().toString())}`;
-    const text = activityShareText(data, fid);
+    const timestamp = Date.now().toString();
+    const url = new URL(
+      data ? sharePath(data.profile.fid, data.period, data.anchor, timestamp) : `/?ts=${timestamp}`,
+      origin,
+    ).toString();
+    const text = data
+      ? activityShareText(data, fid)
+      : "Your year. One square at a time. Look up your Farcaster activity with Faralytics.\n\nHow about you?";
     const credit = "created by @nikolaii.eth with @viniapp";
     if (target === "copy") {
       try {
         await navigator.clipboard.writeText(url);
-        setNote("Chart link copied.");
+        setNote(data ? "Chart link copied." : "App link copied.");
         setHasMeaningfulInteraction(true);
       } catch {
-        setNote(`Copy this chart link: ${url}`);
+        setNote(`Copy this ${data ? "chart" : "app"} link: ${url}`);
       }
       return;
     }
@@ -217,7 +222,7 @@ export function ActivityExplorer({
           <Mark />
           faralytics<span className="wordmark-dot">.</span>
         </Link>
-        <ShareActions disabled={!data || busy || !!error} onShare={share} placement="header" />
+        <ShareActions disabled={!!data && (busy || !!error)} onShare={share} placement="header" />
       </header>
       <section className="intro">
         <h1 className="eyebrow">Your year. One square at a time.</h1>
