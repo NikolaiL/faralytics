@@ -14,18 +14,11 @@ export const BRAND_GRID = Array.from({ length: 7 }, (_, row) =>
   [..."FARALYTICS"].map((letter) => letters[letter][row]).join("0"),
 );
 
-// Nine activity squares form an arrow pointing northeast.
-export const LOGO_PIXELS = [
-  [2, 0],
-  [3, 0],
-  [4, 0],
-  [3, 1],
-  [4, 1],
-  [2, 2],
-  [4, 2],
-  [1, 3],
-  [0, 4],
-] as const;
+// A full 5×5 activity grid, with brighter cells forming a northeast arrow.
+export const LOGO_GRID = ["00111", "00011", "00101", "01000", "10000"] as const;
+export const LOGO_PIXELS = LOGO_GRID.flatMap((row, y) =>
+  [...row].map((pixel, x) => [x, y, pixel === "1" ? ((x + y) % 3 === 0 ? 4 : 3) : (x + y) % 2] as const),
+);
 
 export function brandCellLevel(pixel: string, x: number, y: number) {
   const variation = x * 17 + y * 29 + x * y * 7;

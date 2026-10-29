@@ -108,3 +108,12 @@ test("share text uses first person only when the viewer FID matches the selected
   assert.match(activityShareText({...activity, period:"2024"}, "366713"), /actions in 2024\./);
   assert.match(activityShareText({...activity,profile:{...activity.profile,username:null}}), /^FID 366713 has/);
 });
+
+test("logo uses exactly 25 activity cells with a bright northeast arrow", async () => {
+  const { LOGO_GRID, LOGO_PIXELS } = await import("../packages/nextjs/lib/brand.ts");
+  assert.equal(LOGO_GRID.length, 5);
+  for(const row of LOGO_GRID) assert.equal(row.length,5);
+  assert.equal(LOGO_PIXELS.length,25);
+  assert.equal(LOGO_PIXELS.filter(([, , level])=>level>=3).length,9);
+  assert.ok(LOGO_PIXELS.find(([x,y])=>x===4&&y===0)![2]>=3);
+});

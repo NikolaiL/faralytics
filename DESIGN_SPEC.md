@@ -23,3 +23,5 @@ Mobile sharing revision: FC, X and copy-icon-only buttons keep accessible full l
 Tagline size is 13px. At widths up to360px, tracking tightens to0.75px so the text stays on one line.
 
 Personalized OG cards vertically center the period description beside the large action total; all three stat boxes consistently put the value above the description.
+
+Logo/splash revision: full5×5 activity grid (25 visible cells), with9 brighter purple arrow cells and16 dim cells. Use consistently across header, OG lockup, favicon, manifest icon and splash. App icon/splash grid occupies72% of canvas.

@@ -14,8 +14,8 @@ import { useMiniapp } from "./MiniappProvider";
 function Mark() {
   return (
     <span className="mark" aria-hidden="true">
-      {LOGO_PIXELS.map(([x, y], i) => (
-        <i key={i} style={{ gridColumn: x + 1, gridRow: y + 1 }} />
+      {LOGO_PIXELS.map(([x, y, level], i) => (
+        <i key={i} style={{ gridColumn: x + 1, gridRow: y + 1, background: PURPLES[level] }} />
       ))}
     </span>
   );
