@@ -37,3 +37,19 @@ test("intensity and shared links preserve the selected FID, period and anchor", 
   const url = new URL(sharePath("366713", "2024", "2024-03-01"), "http://localhost");
   assert.equal(url.pathname, "/share/366713"); assert.equal(url.searchParams.get("period"), "2024"); assert.equal(url.searchParams.get("end"), "2024-03-01");
 });
+
+test("search ranks all candidates by followers before limiting and deduplicates FIDs", async () => {
+  const { rankSearchUsers } = await import("../packages/nextjs/lib/activity.ts");
+  const users = Array.from({ length: 12 }, (_, i) => ({ fid: i + 1, username: `user${i}`, followerCount: i * 100 }));
+  const ranked = rankSearchUsers([...users, users[0]]);
+  assert.equal(ranked.length, 8);
+  assert.deepEqual(ranked.map(user => user.fid), ["12", "11", "10", "9", "8", "7", "6", "5"]);
+  assert.equal(rankSearchUsers(users, "1")[0].fid, "1");
+});
+test("search preserves UInt64 strings and handles malformed or absent follower counts", async () => {
+  const { rankSearchUsers } = await import("../packages/nextjs/lib/activity.ts");
+  const ranked = rankSearchUsers([null, {fid:0}, {fid:Number.MAX_SAFE_INTEGER+1}, {fid:"18446744073709551615"}, {fid:2, followerCount:0}, {fid:3, followerCount:-1}]);
+  assert.equal(ranked.length, 3);
+  assert.equal(ranked[0].fid, "2");
+  assert.equal(ranked.find(user => user.fid === "18446744073709551615")?.followerCount, null);
+});

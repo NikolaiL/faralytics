@@ -10,4 +10,4 @@ Files: app/page + layout, ActivityExplorer, Heatmap, MiniappProvider, lib/activi
 
 ## Search enhancement
 
-Search as you type with selectable username/FID suggestions, keyboard navigation, loading/empty/error states, and cancellation of stale requests. Reuse the same ClickHouse reader and activity loader.
+Search as you type with selectable username/FID suggestions, keyboard navigation, loading/empty/error states, and cancellation of stale requests. Use the ViniApp farcaster-user-search skill’s public Farcaster client endpoints for suggestions; deduplicate, rank by follower count, and preserve exact-FID-first behavior for numeric queries. Show follower counts on results. Reuse the ClickHouse activity loader for the selected account.

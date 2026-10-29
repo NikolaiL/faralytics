@@ -1,6 +1,6 @@
 import { unstable_cache } from "next/cache";
-import { dateKey, fillDays, getRange, InputError, summarize, validFid } from "./activity";
-import type { Activity, Profile } from "./activity";
+import { dateKey, fillDays, getRange, InputError, rankSearchUsers, summarize, validFid } from "./activity";
+import type { Activity, Profile, SearchProfile } from "./activity";
 import { query } from "./clickhouse";
 
 const profileByFid = unstable_cache(
@@ -83,36 +83,48 @@ export async function loadActivity(input: string, period = "365", anchor?: strin
   };
 }
 
-const usernameSuggestions = unstable_cache(
-  async (prefix: string): Promise<Profile[]> => {
-    const names = await query<{ fid: string; username: string }>(
-      `SELECT DISTINCT toString(u.fid) AS fid, u.username
-FROM farcaster.usernames AS u
-WHERE startsWith(u.username, {prefix:String}) AND u.fid > 0
-ORDER BY u.username = {prefix:String} DESC, length(u.username), u.username, u.fid LIMIT 8`,
-      { prefix },
-    );
-    if (!names.length) return [];
-    const profiles = await query<Profile>(
-      "SELECT toString(p.fid) AS fid, username, display_name FROM farcaster.profiles AS p WHERE p.fid IN {fids:Array(UInt64)}",
-      { fids: `[${names.map((name) => name.fid).join(",")}]` },
-    );
-    const byFid = new Map(profiles.map((profile) => [profile.fid, profile]));
-    return names.map((name) => ({ ...name, display_name: byFid.get(name.fid)?.display_name || null }));
+const farcasterSuggestions = unstable_cache(
+  async (prefix: string): Promise<SearchProfile[]> => {
+    const numeric = /^\d+$/.test(prefix);
+    async function fetchUsers(path: string, parameters: Record<string, string>) {
+      const url = new URL(`https://client.farcaster.xyz/v2/${path}`);
+      url.search = new URLSearchParams(parameters).toString();
+      const response = await fetch(url, { signal: AbortSignal.timeout(10_000), cache: "no-store" });
+      if (path === "user-by-fid" && (response.status === 404 || response.status === 400)) return {};
+      if (!response.ok) throw new Error("Farcaster search is temporarily unavailable.");
+      const body = await response.json();
+      if (!body.result) throw new Error("Farcaster search returned an unreadable response.");
+      return body.result as { users?: unknown[]; user?: unknown };
+    }
+    const [search, exact] = await Promise.allSettled([
+      fetchUsers("search-summary", { q: prefix, maxChannels: "0", maxUsers: "25" }),
+      numeric ? fetchUsers("user-by-fid", { fid: prefix }) : Promise.resolve({}),
+    ]);
+    if (search.status === "rejected" && (!numeric || exact.status === "rejected"))
+      throw new Error("Farcaster search is temporarily unavailable.");
+    const users: unknown[] =
+      search.status === "fulfilled" && Array.isArray(search.value.users) ? search.value.users : [];
+    const exactUser = exact.status === "fulfilled" && "user" in exact.value ? exact.value.user : undefined;
+    if (exactUser) users.unshift(exactUser);
+    else if (numeric) {
+      const profile = await profileByFid(prefix);
+      users.unshift({ fid: prefix, username: profile.username, displayName: profile.display_name });
+    }
+    return rankSearchUsers(users, numeric ? prefix : undefined);
   },
-  ["username-suggestions-v1"],
+  ["farcaster-suggestions-followers-v1"],
   { revalidate: 60 },
 );
 
-export async function searchAccounts(input: string): Promise<Profile[]> {
+export async function searchAccounts(input: string): Promise<SearchProfile[]> {
   const prefix = input.trim().replace(/^@/, "").toLowerCase();
   if (!prefix) return [];
   if (/^\d+$/.test(prefix)) {
     if (!validFid(prefix)) throw new InputError("Enter a valid positive FID.");
-    return [await profileByFid(prefix)];
+    return farcasterSuggestions(prefix);
   }
   if (prefix.length > 63 || !/^[a-z0-9][a-z0-9.-]*$/.test(prefix))
     throw new InputError("Enter a valid username or FID.");
   if (prefix.length < 2) return [];
-  return usernameSuggestions(prefix);
+  return farcasterSuggestions(prefix);
 }

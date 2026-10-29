@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import type { Profile } from "~~/lib/activity";
+import type { SearchProfile } from "~~/lib/activity";
 
 export function AccountSearch({
   value,
@@ -14,7 +14,7 @@ export function AccountSearch({
   busy: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const [results, setResults] = useState<Profile[]>([]);
+  const [results, setResults] = useState<SearchProfile[]>([]);
   const [searching, setSearching] = useState(false);
   const [message, setMessage] = useState("");
   const [active, setActive] = useState(-1);
@@ -59,7 +59,7 @@ export function AccountSearch({
     if (open && active >= 0) document.getElementById(`account-result-${active}`)?.scrollIntoView({ block: "nearest" });
   }, [active, open]);
 
-  function select(profile: Profile) {
+  function select(profile: SearchProfile) {
     setOpen(false);
     input.current?.blur();
     onSelect(profile.fid);
@@ -159,6 +159,11 @@ export function AccountSearch({
                     </strong>
                     <span>
                       {profile.username ? `@${profile.username} · ` : ""}FID {profile.fid}
+                    </span>
+                    <span className="result-followers">
+                      {profile.followerCount === null
+                        ? "Followers unavailable"
+                        : `${profile.followerCount.toLocaleString("en-US")} followers`}
                     </span>
                   </span>
                   <span aria-hidden="true">↗</span>

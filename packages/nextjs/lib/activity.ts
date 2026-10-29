@@ -96,3 +96,32 @@ export function periodLabel(period: string) {
 export function sharePath(fid: string, period: string, anchor: string) {
   return `/share/${fid}?${new URLSearchParams({ period, end: anchor })}`;
 }
+
+export type SearchProfile = Profile & { followerCount: number | null };
+export function rankSearchUsers(users: unknown[], exactFid?: string): SearchProfile[] {
+  const unique = new Map<string, SearchProfile>();
+  for (const value of users) {
+    if (!value || typeof value !== "object") continue;
+    const user = value as Record<string, unknown>;
+    if (typeof user.fid !== "string" && (typeof user.fid !== "number" || !Number.isSafeInteger(user.fid))) continue;
+    const fid = String(user.fid);
+    if (!validFid(fid) || unique.has(fid)) continue;
+    unique.set(fid, {
+      fid,
+      username: typeof user.username === "string" ? user.username : null,
+      display_name: typeof user.displayName === "string" ? user.displayName : null,
+      followerCount:
+        typeof user.followerCount === "number" && Number.isSafeInteger(user.followerCount) && user.followerCount >= 0
+          ? user.followerCount
+          : null,
+    });
+  }
+  return [...unique.values()]
+    .sort(
+      (a, b) =>
+        Number(b.fid === exactFid) - Number(a.fid === exactFid) ||
+        (b.followerCount ?? -1) - (a.followerCount ?? -1) ||
+        (a.username || a.fid).localeCompare(b.username || b.fid),
+    )
+    .slice(0, 8);
+}
