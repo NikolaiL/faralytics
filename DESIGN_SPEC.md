@@ -9,3 +9,5 @@ Share actions sit in the page header at the top right. Mobile keeps Farcaster, a
 Logo lockup: faralytics wordmark and punctuation use the electric-citron accent, and the arrow mark’s top-right square uses the base purple #855DCD. Arrange the nine activity squares on a five-by-five lattice into a northeast arrow. Preserve this mark in favicon, manifest icon/splash and OG wordmark treatments.
 
 Default OG chart: FARALYTICS is formed by near-black, lowest-activity purple cells (#211b2e), surrounded by a varied brighter purple activity pattern. This decorative grid does not represent a particular account.
+
+All OG cards include the purple northeast arrow logo next to the citron Faralytics wordmark in the top-left header. Both default and account cards use the shared OgLogo component.

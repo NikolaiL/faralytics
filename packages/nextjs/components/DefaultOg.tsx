@@ -1,3 +1,4 @@
+import { OgLogo } from "~~/components/OgLogo";
 import { PURPLES } from "~~/lib/activity";
 import { BRAND_GRID } from "~~/lib/brand";
 
@@ -19,7 +20,7 @@ export function DefaultOg({ height, generatedAt }: { height: number; generatedAt
       }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ display: "flex", fontSize: 27, fontWeight: 700, color: "#d6ff3f" }}>faralytics.</div>
+        <OgLogo />
         <div style={{ display: "flex", fontSize: 16, color: "#a99aba" }}>FARCASTER, DAY BY DAY</div>
       </div>
       <div

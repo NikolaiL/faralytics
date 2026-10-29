@@ -1,3 +1,4 @@
+import { OgLogo } from "~~/components/OgLogo";
 import { ImageResponse } from "next/og";
 import { DefaultOg } from "~~/components/DefaultOg";
 import { activityDate, colorLevel, grid, InputError, periodLabel, PURPLES, utcDate } from "~~/lib/activity";
@@ -54,7 +55,7 @@ export const GET = withErrorReporting<{ params: Promise<{ format: string }> }>(
           }}
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", fontSize: 27, fontWeight: 700, color: "#d6ff3f" }}>faralytics.</div>
+            <OgLogo />
             <div style={{ display: "flex", fontSize: 16, color: "#a99aba" }}>FARCASTER, DAY BY DAY</div>
           </div>
           <div
