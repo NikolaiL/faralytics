@@ -27,3 +27,5 @@ Personalized OG cards vertically center the period description beside the large 
 Logo/splash revision: full5×5 activity grid (25 visible cells), with9 brighter purple arrow cells and16 dim cells. Use consistently across header, OG lockup, favicon, manifest icon and splash. App icon/splash grid occupies72% of canvas.
 
 5×5 logo refinement: all non-arrow cells use the darkest visible purple #211b2e for stronger contrast. Halve the gaps between cells; keep all25visible.
+
+All rendered charts use2px cell gaps: web/decorative cells15px on17px pitch, personalOG cells17px on19px pitch. Overall chart dimensions and day positions remain consistent.

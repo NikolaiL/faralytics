@@ -3,8 +3,8 @@ import type { Day } from "~~/lib/activity";
 
 export function Heatmap({ days, peak, onSelect }: { days: Day[]; peak: number; onSelect?: (day: Day) => void }) {
   const { cells, columns } = grid(days);
-  const size = 13,
-    gap = 4,
+  const size = 15,
+    gap = 2,
     step = size + gap;
   const width = 32 + columns * step;
   return (

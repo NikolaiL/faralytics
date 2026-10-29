@@ -49,8 +49,8 @@ export function DefaultOg({ height, generatedAt }: { height: number; generatedAt
               key={`${x}:${y}`}
               x={x * step}
               y={y * step}
-              width={13}
-              height={13}
+              width={15}
+              height={15}
               rx="3"
               fill={PURPLES[brandCellLevel(pixel, x, y)]}
             />

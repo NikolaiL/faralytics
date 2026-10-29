@@ -21,8 +21,8 @@ export function BrandChart() {
                 key={`${x}:${y}`}
                 x={x * step}
                 y={y * step}
-                width={13}
-                height={13}
+                width={15}
+                height={15}
                 rx={3}
                 fill={PURPLES[level]}
                 style={

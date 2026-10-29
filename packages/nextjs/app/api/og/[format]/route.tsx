@@ -35,7 +35,7 @@ export const GET = withErrorReporting<{ params: Promise<{ format: string }> }>(
       const height = format === "x.png" ? 600 : 800;
       const { cells, columns } = grid(data.days);
       const step = 19,
-        cellSize = 15;
+        cellSize = 17;
       const left = 70,
         chartTop = height === 600 ? 280 : 360;
       const months = cells.filter(
