@@ -125,7 +125,7 @@ export function ActivityExplorer({
       <header className="topbar">
         <Link className="wordmark" href="/">
           <Mark />
-          cast year<span className="wordmark-dot">.</span>
+          faralytics<span className="wordmark-dot">.</span>
         </Link>
         <span className="top-note">
           <span className="status-dot" /> A little more purple.
@@ -323,13 +323,13 @@ export function ActivityExplorer({
             <span>Download your chart</span>
             <a
               href={`/api/og/farcaster.png?${imageParams}`}
-              download="cast-year-farcaster.png"
+              download="faralytics-farcaster.png"
               target="_blank"
               rel="noreferrer"
             >
               Farcaster · 3:2 ↗
             </a>
-            <a href={`/api/og/x.png?${imageParams}`} download="cast-year-x.png" target="_blank" rel="noreferrer">
+            <a href={`/api/og/x.png?${imageParams}`} download="faralytics-x.png" target="_blank" rel="noreferrer">
               X · 2:1 ↗
             </a>
           </div>

@@ -1,4 +1,4 @@
-# Cast Year
+# Faralytics
 
 User-requested local read-only Farcaster miniapp. Scaffolded using create-eth + the local ViniApp ve extension; unused contract/wallet examples and their dependencies were removed because the app has no onchain operations.
 

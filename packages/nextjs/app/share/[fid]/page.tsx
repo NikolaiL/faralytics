@@ -26,11 +26,11 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   if (ts) imageParams.set("ts", ts);
   const image = `${origin}/api/og/farcaster.png?${imageParams}`;
   const xImage = `${origin}/api/og/x.png?${imageParams}`;
-  let title = `FID ${fid} — Cast Year`;
+  let title = `FID ${fid} — Faralytics`;
   let description = `Captured Farcaster activity in ${periodLabel(period)}. Your year, one purple square at a time.`;
   try {
     const data = await loadActivity(fid, period, anchor);
-    title = `${data.profile.username ? `@${data.profile.username}` : `FID ${fid}`} — Cast Year`;
+    title = `${data.profile.username ? `@${data.profile.username}` : `FID ${fid}`} — Faralytics`;
     description = `${data.total.toLocaleString("en-US")} captured actions in ${periodLabel(period)}. ${data.activeDays} active days. Historical coverage is incomplete.`;
   } catch {
     /* The page exposes a retry if the database is temporarily unavailable. */
@@ -58,7 +58,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
         imageUrl: image,
         button: {
           title: "Explore activity",
-          action: { type: "launch_miniapp", name: "Cast Year", url, splashBackgroundColor: "#0d0b12" },
+          action: { type: "launch_miniapp", name: "Faralytics", url, splashBackgroundColor: "#0d0b12" },
         },
       }),
     },

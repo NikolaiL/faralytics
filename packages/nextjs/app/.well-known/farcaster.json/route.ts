@@ -6,7 +6,7 @@ export const GET = withErrorReporting("/.well-known/farcaster.json", () => {
     ...(association ? { accountAssociation: JSON.parse(association) } : {}),
     miniapp: {
       version: "1",
-      name: "Cast Year",
+      name: "Faralytics",
       homeUrl: origin,
       iconUrl: `${origin}/api/icon`,
       splashImageUrl: `${origin}/api/icon`,
@@ -15,7 +15,7 @@ export const GET = withErrorReporting("/.well-known/farcaster.json", () => {
       description: "Explore and share your captured Farcaster activity, one purple square at a time.",
       primaryCategory: "social",
       tags: ["farcaster", "activity", "analytics"],
-      ogTitle: "Cast Year",
+      ogTitle: "Faralytics",
       ogDescription: "Your year, one purple square at a time.",
       ogImageUrl: `${origin}/api/og/farcaster.png`,
     },

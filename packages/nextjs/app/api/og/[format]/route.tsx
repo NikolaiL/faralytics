@@ -3,6 +3,25 @@ import { colorLevel, grid, InputError, periodLabel, PURPLES, utcDate } from "~~/
 import { loadActivity } from "~~/lib/data";
 import { reportServerError, withErrorReporting } from "~~/utils/reportServerError";
 export const runtime = "nodejs";
+
+async function loadAvatar(source?: string | null) {
+  if (!source) return null;
+  try {
+    const url = new URL(source);
+    // Only fetch Farcaster’s hosted image CDN; arbitrary profile URLs must not reach private services.
+    if (url.origin !== "https://imagedelivery.net") return null;
+    url.pathname = url.pathname.replace(/\/[^/]+$/, "/width=128,height=128,fit=cover");
+    const response = await fetch(url, { redirect: "error", signal: AbortSignal.timeout(5_000) });
+    const type = response.headers.get("content-type")?.split(";")[0];
+    if (!response.ok || !type || !["image/jpeg", "image/png", "image/webp", "image/gif"].includes(type)) return null;
+    const bytes = Buffer.from(await response.arrayBuffer());
+    if (bytes.length > 250_000) return null;
+    return `data:${type};base64,${bytes.toString("base64")}`;
+  } catch {
+    return null;
+  }
+}
+
 export const GET = withErrorReporting<{ params: Promise<{ format: string }> }>(
   "/api/og/[format]",
   async (request, context) => {
@@ -16,6 +35,7 @@ export const GET = withErrorReporting<{ params: Promise<{ format: string }> }>(
         params.get("period") || "365",
         params.get("end") || undefined,
       );
+      const avatar = await loadAvatar(data.profile.pfp_url);
       const generatedAt = new Date().toISOString().slice(0, 19).replace("T", " ");
       const height = format === "x.png" ? 600 : 800;
       const { cells, columns } = grid(data.days);
@@ -40,7 +60,7 @@ export const GET = withErrorReporting<{ params: Promise<{ format: string }> }>(
           }}
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", fontSize: 27, fontWeight: 700, color: "#b596f2" }}>cast year.</div>
+            <div style={{ display: "flex", fontSize: 27, fontWeight: 700, color: "#b596f2" }}>faralytics.</div>
             <div style={{ display: "flex", fontSize: 16, color: "#a99aba" }}>FARCASTER, DAY BY DAY</div>
           </div>
           <div
@@ -48,13 +68,39 @@ export const GET = withErrorReporting<{ params: Promise<{ format: string }> }>(
               display: "flex",
               fontSize: 40,
               fontWeight: 700,
+              alignItems: "center",
+              gap: 18,
+              color: "#d6ff3f",
               marginTop: height === 600 ? 32 : 62,
               maxWidth: 1000,
               overflow: "hidden",
               whiteSpace: "nowrap",
             }}
           >
-            {data.profile.username ? `@${data.profile.username}` : `FID ${data.profile.fid}`}
+            <div
+              style={{
+                display: "flex",
+                width: 56,
+                height: 56,
+                flexShrink: 0,
+                borderRadius: "50%",
+                overflow: "hidden",
+                background: "#3f2a61",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 22,
+              }}
+            >
+              {avatar ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={avatar} width={56} height={56} alt="" style={{ borderRadius: "50%" }} />
+              ) : (
+                (data.profile.username || "fc").slice(0, 2)
+              )}
+            </div>
+            <div style={{ display: "flex" }}>
+              {data.profile.username ? `@${data.profile.username}` : `FID ${data.profile.fid}`}
+            </div>
           </div>
           <div style={{ display: "flex", alignItems: "baseline", marginTop: 14, gap: 12 }}>
             <div style={{ display: "flex", fontSize: height === 600 ? 54 : 66, fontWeight: 700 }}>

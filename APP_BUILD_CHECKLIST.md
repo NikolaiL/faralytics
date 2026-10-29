@@ -26,3 +26,5 @@
 - [x] Search dropdown includes Farcaster PFPs with initials for missing/failed images; HTTP(S) URL normalization and live image load/fallback covered by tests.
 
 - [x] Every share/copy action generates a fresh `ts` query parameter; share-page canonical/Open Graph/Farcaster launch metadata and Farcaster/X image URLs preserve that exact timestamp. Unit and browser checks cover propagation and distinct keys between shares.
+
+- [x] Faralytics branding applied to interface, metadata, manifest, download names and OG cards. Electric citron #D6FF3F used for the hero heading and OG usernames. OG PFPs use bounded CDN thumbnails with an initials fallback; both aspect ratios rendered and visually checked.

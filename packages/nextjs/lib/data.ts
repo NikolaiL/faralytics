@@ -6,12 +6,12 @@ import { query } from "./clickhouse";
 const profileByFid = unstable_cache(
   async (fid: string): Promise<Profile> => {
     const rows = await query<Profile>(
-      "SELECT toString(p.fid) AS fid, username, display_name FROM farcaster.profiles AS p WHERE p.fid = {fid:UInt64} LIMIT 1",
+      "SELECT toString(p.fid) AS fid, username, display_name, avatar_url AS pfp_url FROM farcaster.profiles AS p WHERE p.fid = {fid:UInt64} LIMIT 1",
       { fid },
     );
     return rows[0] || { fid, username: null, display_name: null };
   },
-  ["profile-v1"],
+  ["profile-v2"],
   { revalidate: 300 },
 );
 const resolveUsername = unstable_cache(

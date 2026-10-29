@@ -1,7 +1,7 @@
 export const PURPLES = ["#211b2e", "#3f2a61", "#624090", "#855dcd", "#b596f2"];
 const DAY = 86_400_000;
 export type Day = { date: string; actions: number; future: boolean };
-export type Profile = { fid: string; username: string | null; display_name: string | null };
+export type Profile = { fid: string; username: string | null; display_name: string | null; pfp_url?: string | null };
 export type Activity = {
   profile: Profile;
   period: string;

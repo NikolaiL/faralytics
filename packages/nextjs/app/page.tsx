@@ -3,7 +3,7 @@ import { ActivityExplorer } from "~~/components/ActivityExplorer";
 const origin = process.env.NEXT_PUBLIC_URL || "http://localhost:3100";
 export const metadata: Metadata = {
   openGraph: {
-    title: "Cast Year",
+    title: "Faralytics",
     description: "Your year, one purple square at a time.",
     images: [{ url: `${origin}/api/og/farcaster.png`, width: 1200, height: 800 }],
   },
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
       imageUrl: `${origin}/api/og/farcaster.png`,
       button: {
         title: "Explore activity",
-        action: { type: "launch_miniapp", name: "Cast Year", url: origin, splashBackgroundColor: "#0d0b12" },
+        action: { type: "launch_miniapp", name: "Faralytics", url: origin, splashBackgroundColor: "#0d0b12" },
       },
     }),
   },

@@ -1,4 +1,4 @@
-# Cast Year
+# Faralytics
 
 Create a local read-only Farcaster activity miniapp from create-eth + ve. One screen: look up username/FID, inspect a purple GitHub-style UTC heatmap for exactly the past 365 days or a selected calendar year, and share that exact person/period. Default dark theme. Farcaster PNG is 1200×800; X PNG is 1200×600. Share pages render real HTML with per-user metadata.
 
