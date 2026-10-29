@@ -1,6 +1,6 @@
 import { OgLogo } from "~~/components/OgLogo";
 import { PURPLES } from "~~/lib/activity";
-import { BRAND_GRID } from "~~/lib/brand";
+import { BRAND_GRID, brandCellLevel } from "~~/lib/brand";
 
 export function DefaultOg({ height, generatedAt }: { height: number; generatedAt: string }) {
   const chartTop = height === 600 ? 260 : 350;
@@ -52,7 +52,7 @@ export function DefaultOg({ height, generatedAt }: { height: number; generatedAt
               width={13}
               height={13}
               rx="3"
-              fill={pixel === "1" ? PURPLES[4] : PURPLES[(x * 17 + y * 29 + x * y * 7) % 3]}
+              fill={PURPLES[brandCellLevel(pixel, x, y)]}
             />
           )),
         )}

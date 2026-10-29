@@ -11,3 +11,5 @@ Logo lockup: faralytics wordmark and punctuation use the electric-citron accent,
 Default OG chart: FARALYTICS is formed by uniformly brightest purple cells (#b596f2), surrounded by a varied, subdued activity pattern using the three darkest purple levels. This decorative grid does not represent a particular account.
 
 All OG cards include the purple northeast arrow logo next to the citron Faralytics wordmark in the top-left header. Both default and account cards use the shared OgLogo component.
+
+Anonymous homepage shows the same decorative FARALYTICS activity grid as the default OG card instead of an account chart. Cell colors gently breathe on staggered 10–14 second cycles, keeping the letters brightest; reduced-motion preferences disable the animation. No account lookup occurs until selection.

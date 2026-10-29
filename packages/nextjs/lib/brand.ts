@@ -26,3 +26,7 @@ export const LOGO_PIXELS = [
   [1, 3],
   [0, 4],
 ] as const;
+
+export function brandCellLevel(pixel: string, x: number, y: number) {
+  return pixel === "1" ? 4 : (x * 17 + y * 29 + x * y * 7) % 3;
+}

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Activity, Day } from "~~/lib/activity";
 import { activityDate, dateKey, periodLabel, PURPLES, sharePath, utcDate } from "~~/lib/activity";
 import { LOGO_PIXELS } from "~~/lib/brand";
+import { BrandChart } from "./BrandChart";
 import { AvatarImage } from "./AvatarImage";
 import { Heatmap } from "./Heatmap";
 import { AccountSearch } from "./AccountSearch";
@@ -224,11 +225,7 @@ export function ActivityExplorer({
           )}
         </div>
       )}
-      {!data && !busy && !error && (
-        <p className="empty-note" data-testid="lookup-empty">
-          Look up a username or FID to see their year in squares.
-        </p>
-      )}
+      {!data && !busy && !error && <BrandChart />}
       {(data || busy) && (
         <section className={`activity-section ${busy ? "is-loading" : ""}`} aria-busy={busy}>
           <div className="profile-heading">

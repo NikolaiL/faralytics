@@ -12,3 +12,5 @@
 .avatar{position:relative;overflow:hidden}.avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 
 .share-actions{display:flex;flex-direction:column;align-items:flex-end;gap:9px;margin-left:auto}.share-actions p{margin:0;color:var(--muted);font-size:12px;letter-spacing:.1px}@media(max-width:760px){.share-actions{width:100%}.share-actions p{font-size:11px}.share-buttons{max-width:100%}}
+
+.brand-chart{padding:36px 24px 24px}.brand-chart svg{display:block;width:100%;height:auto}.brand-chart p{margin:24px 0 0;text-align:center;color:var(--muted);font-size:12px;line-height:1.6}.brand-chart rect{animation:cell-glow 12s ease-in-out infinite}@keyframes cell-glow{0%,100%{fill:var(--cell-color)}50%{fill:var(--cell-glow)}}@media(max-width:760px){.brand-chart{padding:28px 16px 20px}.brand-chart p{font-size:11px;margin-top:20px}}@media(prefers-reduced-motion:reduce){.brand-chart rect{animation:none}}
