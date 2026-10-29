@@ -52,7 +52,7 @@ export function DefaultOg({ height, generatedAt }: { height: number; generatedAt
               width={13}
               height={13}
               rx="3"
-              fill={pixel === "1" ? PURPLES[0] : PURPLES[2 + ((x * 17 + y * 29 + x * y * 7) % 3)]}
+              fill={pixel === "1" ? PURPLES[4] : PURPLES[(x * 17 + y * 29 + x * y * 7) % 3]}
             />
           )),
         )}

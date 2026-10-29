@@ -17,7 +17,7 @@ export const GET = withErrorReporting("/.well-known/farcaster.json", () => {
       tags: ["farcaster", "activity", "analytics"],
       ogTitle: "Faralytics",
       ogDescription: "Your year, one purple square at a time.",
-      ogImageUrl: `${origin}/og/faralytics-farcaster-v5.png`,
+      ogImageUrl: `${origin}/og/faralytics-farcaster-v6.png`,
     },
   });
 });
