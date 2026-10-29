@@ -17,7 +17,7 @@ export const BRAND_GRID = Array.from({ length: 7 }, (_, row) =>
 // A full 5×5 activity grid, with brighter cells forming a northeast arrow.
 export const LOGO_GRID = ["00111", "00011", "00101", "01000", "10000"] as const;
 export const LOGO_PIXELS = LOGO_GRID.flatMap((row, y) =>
-  [...row].map((pixel, x) => [x, y, pixel === "1" ? ((x + y) % 3 === 0 ? 4 : 3) : (x + y) % 2] as const),
+  [...row].map((pixel, x) => [x, y, pixel === "1" ? ((x + y) % 3 === 0 ? 4 : 3) : 0] as const),
 );
 
 export function brandCellLevel(pixel: string, x: number, y: number) {

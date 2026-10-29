@@ -115,5 +115,6 @@ test("logo uses exactly 25 activity cells with a bright northeast arrow", async 
   for(const row of LOGO_GRID) assert.equal(row.length,5);
   assert.equal(LOGO_PIXELS.length,25);
   assert.equal(LOGO_PIXELS.filter(([, , level])=>level>=3).length,9);
+  assert.equal(LOGO_PIXELS.filter(([, , level])=>level===0).length,16);
   assert.ok(LOGO_PIXELS.find(([x,y])=>x===4&&y===0)![2]>=3);
 });

@@ -16,9 +16,9 @@ export const GET = withErrorReporting("/api/icon", (request) => {
         justifyContent: "center",
       }}
     >
-      <svg width={Math.round(size * 0.72)} height={Math.round(size * 0.72)} viewBox="0 0 288 288">
+      <svg width={Math.round(size * 0.72)} height={Math.round(size * 0.72)} viewBox="0 0 294 294">
         {LOGO_PIXELS.map(([x, y, level], i) => (
-          <rect key={i} x={x * 60} y={y * 60} width="48" height="48" rx="9" fill={PURPLES[level]} />
+          <rect key={i} x={x * 60} y={y * 60} width="54" height="54" rx="9" fill={PURPLES[level]} />
         ))}
       </svg>
     </div>,
