@@ -28,3 +28,11 @@
 - [x] Every share/copy action generates a fresh `ts` query parameter; share-page canonical/Open Graph/Farcaster launch metadata and Farcaster/X image URLs preserve that exact timestamp. Unit and browser checks cover propagation and distinct keys between shares.
 
 - [x] Faralytics branding applied to interface, metadata, manifest, download names and OG cards. Electric citron #D6FF3F used for the hero heading and OG usernames. OG PFPs use bounded CDN thumbnails with an initials fallback; both aspect ratios rendered and visually checked.
+
+## Production deployment
+
+- [x] Requested faralytics.vercel.app domain available, verified, and deployed on Vercel. Correct production origin configured; temporary castyear alias removed.
+- [x] Database settings configured as sensitive server-only production variables; no credentials printed or committed; local app environment unchanged.
+- [x] Vercel production build passes. Public homepage, live activity, ranked search, manifest, both OG PNGs, share metadata/cache keys, mobile/desktop browser flows and Farcaster framing checks pass.
+- [x] Supplied signed Farcaster account association published for faralytics.vercel.app; manifest icon and splash use 1024×1024 and 200×200 PNGs.
+- [ ] A real signed-in Farcaster host/feed preview remains untested.

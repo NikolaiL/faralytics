@@ -2,7 +2,7 @@
 
 A dark Farcaster activity miniapp with a GitHub-style purple heatmap. Search as you type (from two username characters, or any valid FID), select a matching account from the dropdown, and view exactly the past 365 UTC days or a calendar year, and share that person and period.
 
-Created through the ViniApp create-eth + ve scaffold, followed by a build/design spec, implementation, build/lint checks, live database verification and Chromium browser scenarios. This is a standalone local app, not a record in the ViniApp deployment controller. No platform repositories were changed.
+Created through the ViniApp create-eth + ve scaffold, followed by a build/design spec, implementation, build/lint checks, live database verification and Chromium browser scenarios. This is a standalone app, not a record in the ViniApp deployment controller. Production is https://faralytics.vercel.app. No platform repositories were changed.
 
 ## Run locally
 
@@ -38,7 +38,7 @@ Each share/copy action creates `/share/<fid>?period=365|<year>&end=YYYY-MM-DD&ts
 - `/api/og/x.png?fid=<fid>&period=<period>&end=<anchor>`: 1200×600 PNG (2:1).
 - Farcaster uses `fc:miniapp` and the native composer inside Farcaster; web falls back to the composer URL. X uses a web intent and `twitter:image`. Copy link and image download also work locally.
 
-Social networks cannot fetch localhost URLs. For real feed previews, the app needs a reachable HTTPS origin in `NEXT_PUBLIC_URL` and a rebuild. Public Farcaster registration additionally requires a signed `FARCASTER_ACCOUNT_ASSOCIATION` from the Farcaster developer tool. Neither public hosting nor account registration was performed for this local-only request. The app does not post without user action. OG cards include an electric-citron username and a circular PFP from Farcaster’s hosted image CDN; missing, unsupported or unavailable avatars fall back to initials. Both OG image footers show the actual image generation timestamp in UTC after “created with viniapp”; cached copies retain their original generation timestamp.
+Production share metadata uses the configured `NEXT_PUBLIC_URL=https://faralytics.vercel.app`. Social networks cannot fetch localhost URLs; use the production app for publicly reachable share links. Public Farcaster registration additionally requires a signed `FARCASTER_ACCOUNT_ASSOCIATION` from the Farcaster developer tool. Public hosting is deployed and checked. The supplied signed Farcaster account association is configured and published for this exact domain. The app does not post without user action. OG cards include an electric-citron username and a circular PFP from Farcaster’s hosted image CDN; missing, unsupported or unavailable avatars fall back to initials. Both OG image footers show the actual image generation timestamp in UTC after “created with viniapp”; cached copies retain their original generation timestamp.
 
 ## Verification
 
@@ -47,5 +47,13 @@ Social networks cannot fetch localhost URLs. For real feed previews, the app nee
 `tests/browser.cjs` runs with the existing global `@playwright/test` (no project-local browser dependency). Supply its module directory through `NODE_PATH`; if its expected Chromium revision differs from the installed one, set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to the installed Chromium executable. Start production first, then run `node tests/browser.cjs` and `node tests/search.cjs`. Screenshots and results go in ignored `artifacts/`.
 
 `VINIAPP_BROWSER_SCENARIOS.json` keeps the main lookup/year interaction in the platform's replayable data-only format. A ViniApp controller audit and real signed-in host smoke are not available for this standalone local app; they are not claimed as passed.
+
+## Production deployment
+
+Vercel team: `viniapp`; project: `faralytics`; root directory: `packages/nextjs`; runtime: Node 24. The production CLICKHOUSE settings are sensitive server-side environment variables. The production origin is configured separately from the unchanged local app settings. Deployment protection is disabled for this public miniapp so visitors and social crawlers can access it. The temporary castyear domain was removed after switching to the requested Faralytics address.
+
+The repository is linked through ignored `.vercel/` metadata. Deploy the repository root with `vercel --prod --yes` using the authorized account. Source uploads remain private; there is no GitHub repository connection or automatic Git deployment. Local development remains on port 3100.
+
+Verified production: homepage, live activity and ranked user search, per-share metadata and cache keys, Farcaster/X PNG generation (1200×800 and 1200×600), responsive browser flow, and response headers permitting Farcaster framing. The manifest serves the supplied signed account association, a 1024×1024 icon and a 200×200 splash image. Signed-in Farcaster host testing and real posted feed previews remain untested.
 
 See `APP_BUILD_CHECKLIST.md` for verified checks and limitations.

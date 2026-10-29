@@ -11,3 +11,7 @@ Files: app/page + layout, ActivityExplorer, Heatmap, MiniappProvider, lib/activi
 ## Search enhancement
 
 Search as you type with selectable username/FID suggestions, keyboard navigation, loading/empty/error states, and cancellation of stale requests. Use the ViniApp farcaster-user-search skill’s public Farcaster client endpoints for suggestions; deduplicate, rank by follower count, and preserve exact-FID-first behavior for numeric queries. Show follower counts on results. Reuse the ClickHouse activity loader for the selected account.
+
+## Public deployment authorized
+
+The creator requested production deployment, then selected https://faralytics.vercel.app as the final domain. Vercel project faralytics on team viniapp, Next.js root packages/nextjs, production-only sensitive ClickHouse environment settings. Keep local .env.local unchanged. No GitHub publication requested.
