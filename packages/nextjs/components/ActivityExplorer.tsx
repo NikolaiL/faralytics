@@ -134,9 +134,7 @@ export function ActivityExplorer({
       <section className="intro">
         <div className="eyebrow">FARCASTER, DAY BY DAY</div>
         <h1>
-          Your year.
-          <br />
-          One square at a time<span>.</span>
+          Your year. One square at a time<span>.</span>
         </h1>
         <p>
           Every cast, like, and little connection.
