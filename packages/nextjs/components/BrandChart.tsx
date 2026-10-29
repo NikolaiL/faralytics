@@ -28,7 +28,8 @@ export function BrandChart() {
                 style={
                   {
                     "--cell-color": PURPLES[level],
-                    "--cell-glow": pixel === "1" ? "#cbb1fa" : PURPLES[Math.min(2, level + 1)],
+                    "--cell-glow":
+                      pixel === "1" ? (level === 3 ? "#aa86e3" : "#cbb1fa") : PURPLES[Math.min(2, level + 1)],
                     animationDelay: `${-((x * 13 + y * 7) % 140) / 10}s`,
                     animationDuration: `${10 + ((x + y * 3) % 5)}s`,
                   } as CSSProperties

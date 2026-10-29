@@ -74,7 +74,14 @@ test("share links preserve an explicit cache-busting timestamp without changing 
 
 
 test("default brand chart spells FARALYTICS in a seven-row pixel grid", async () => {
-  const { BRAND_GRID } = await import("../packages/nextjs/lib/brand.ts");
+  const { BRAND_GRID, brandCellLevel } = await import("../packages/nextjs/lib/brand.ts");
+  const letterLevels = new Set<number>();
+  BRAND_GRID.forEach((row,y)=>[...row].forEach((pixel,x)=>{
+    const level=brandCellLevel(pixel,x,y);
+    if(pixel === "1") letterLevels.add(level);
+    else assert.ok(level <= 2);
+  }));
+  assert.deepEqual([...letterLevels].sort(),[3,4]);
   assert.equal(BRAND_GRID.length, 7);
   for(const row of BRAND_GRID) { assert.equal(row.length, 59); assert.match(row, /^[01]+$/); }
   assert.equal(BRAND_GRID.map(row=>row.slice(0,5)).join("/"), "11111/10000/10000/11110/10000/10000/10000");
