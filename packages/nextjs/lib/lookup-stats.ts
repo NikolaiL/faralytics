@@ -11,6 +11,7 @@ export type LookupStats = {
     accountCount: string;
   }[];
   popular: { fid: string; lookups: string }[];
+  topUsers: { fid: string; lookups: string }[];
   profiles: { fid: string; username: string | null; display_name: string | null }[];
   namesAvailable: boolean;
 };

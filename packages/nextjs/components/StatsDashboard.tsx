@@ -8,6 +8,7 @@ const time = (value: string) => new Date(value).toLocaleString("en-GB", { timeZo
 const toolName = (tool: string) => tool.replace(/[-_]/g, " ").replace(/^./, (character) => character.toUpperCase());
 export function StatsDashboard() {
   const [data, setData] = useState<LookupStats>();
+  const [tab, setTab] = useState<"latest" | "popular" | "users">("latest");
   const [error, setError] = useState("");
   useEffect(() => {
     let active = true,
@@ -101,7 +102,51 @@ export function StatsDashboard() {
             Updated <NumberText>{time(data.updatedAt)}</NumberText> UTC
           </p>
           {!data.namesAvailable && <p className="notice">Account names are temporarily unavailable. Showing FIDs.</p>}
-          <section className="stats-panel" aria-labelledby="popular-heading">
+          <div className="stats-tabs" role="tablist" aria-label="Lookup statistics">
+            {(
+              [
+                ["latest", "Latest"],
+                ["popular", "Most looked up"],
+                ["users", "Top users"],
+              ] as const
+            ).map(([key, label], index, tabs) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                id={`stats-tab-${key}`}
+                aria-selected={tab === key}
+                aria-controls={`stats-panel-${key}`}
+                tabIndex={tab === key ? 0 : -1}
+                onClick={() => setTab(key)}
+                onKeyDown={(event) => {
+                  const next =
+                    event.key === "ArrowRight"
+                      ? (index + 1) % tabs.length
+                      : event.key === "ArrowLeft"
+                        ? (index + tabs.length - 1) % tabs.length
+                        : event.key === "Home"
+                          ? 0
+                          : event.key === "End"
+                            ? tabs.length - 1
+                            : -1;
+                  if (next < 0) return;
+                  event.preventDefault();
+                  setTab(tabs[next][0]);
+                  document.getElementById(`stats-tab-${tabs[next][0]}`)?.focus();
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <section
+            className="stats-panel"
+            id="stats-panel-popular"
+            role="tabpanel"
+            aria-labelledby="stats-tab-popular"
+            hidden={tab !== "popular"}
+          >
             <h2 id="popular-heading">Most looked-up FIDs</h2>
             <p>
               All-time chart sessions · top <NumberText>20</NumberText>
@@ -125,7 +170,13 @@ export function StatsDashboard() {
               <p>No lookups recorded yet.</p>
             )}
           </section>
-          <section className="stats-panel" aria-labelledby="latest-heading">
+          <section
+            className="stats-panel"
+            id="stats-panel-latest"
+            role="tabpanel"
+            aria-labelledby="stats-tab-latest"
+            hidden={tab !== "latest"}
+          >
             <h2 id="latest-heading">Latest lookups</h2>
             <p>
               Latest <NumberText>50</NumberText> sessions · most recently updated first · UTC
@@ -136,8 +187,8 @@ export function StatsDashboard() {
                   <thead>
                     <tr>
                       <th>Last viewed</th>
-                      <th>Who</th>
-                      <th>Viewed</th>
+                      <th>Looked up by</th>
+                      <th>Viewed accounts</th>
                       <th>Tool</th>
                       <th>Session</th>
                     </tr>
@@ -150,10 +201,10 @@ export function StatsDashboard() {
                             <NumberText>{time(row.lastViewedAt)}</NumberText>
                           </time>
                         </td>
-                        <td data-label="Who">
+                        <td data-label="Looked up by">
                           {row.viewerFid ? profile(row.viewerFid) : <span className="stats-anonymous">Anonymous</span>}
                         </td>
-                        <td data-label="Viewed">
+                        <td data-label="Viewed accounts">
                           <div className="stats-viewed">
                             {row.fids.map((fid) => (
                               <div key={fid}>{profile(fid, row.tool)}</div>
@@ -182,6 +233,37 @@ export function StatsDashboard() {
               </div>
             ) : (
               <p>No lookups recorded yet.</p>
+            )}
+          </section>
+          <section
+            className="stats-panel"
+            id="stats-panel-users"
+            role="tabpanel"
+            aria-labelledby="stats-tab-users"
+            hidden={tab !== "users"}
+          >
+            <h2>Top users</h2>
+            <p>
+              Ranked by chart sessions initiated · top <NumberText>20</NumberText> identified viewers. Anonymous
+              sessions are not attributed to an identified user.
+            </p>
+            {data.topUsers.length ? (
+              <ol className="stats-ranking">
+                {data.topUsers.map((row, index) => (
+                  <li key={row.fid}>
+                    <span className="stats-rank">
+                      <NumberText>{String(index + 1)}</NumberText>
+                    </span>
+                    {profile(row.fid)}
+                    <strong>
+                      <NumberText>{number(row.lookups)}</NumberText>
+                      <small>initiated</small>
+                    </strong>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p>No identified viewers yet.</p>
             )}
           </section>
         </>

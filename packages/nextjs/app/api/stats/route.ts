@@ -19,7 +19,7 @@ export const GET = withErrorReporting("/api/stats", async () => {
   try {
     const sql = getDb();
     // Select public display fields explicitly: never return IPs, cookie IDs or raw metadata.
-    const [latest, popular, totals] = (await sql.transaction([
+    const [latest, popular, totals, topUsers] = (await sql.transaction([
       sql`SELECT e.lookup_id AS "lookupId", e.tool, e.created_at AS "startedAt",
         COALESCE((e.metadata->>'last_seen_at')::timestamptz, e.created_at) AS "lastViewedAt",
         e.viewer_fid::text AS "viewerFid",
@@ -31,11 +31,14 @@ export const GET = withErrorReporting("/api/stats", async () => {
       sql`SELECT fid::text, count(*)::text AS lookups FROM lookup_accounts GROUP BY fid ORDER BY count(*) DESC, fid LIMIT 20`,
       sql`SELECT (SELECT count(*)::text FROM lookup_events) AS sessions,
         count(*)::text AS lookups, count(DISTINCT fid)::text AS fids FROM lookup_accounts`,
-    ])) as unknown as [LookupStats["latest"], LookupStats["popular"], LookupStats["totals"][]];
+      sql`SELECT viewer_fid::text AS fid, count(*)::text AS lookups FROM lookup_events
+        WHERE viewer_fid IS NOT NULL GROUP BY viewer_fid ORDER BY count(*) DESC, viewer_fid LIMIT 20`,
+    ])) as unknown as [LookupStats["latest"], LookupStats["popular"], LookupStats["totals"][], LookupStats["topUsers"]];
     const fids = [
       ...new Set([
         ...latest.flatMap((row) => [...row.fids, ...(row.viewerFid ? [row.viewerFid] : [])]),
         ...popular.map((row) => row.fid),
+        ...topUsers.map((row) => row.fid),
       ]),
     ].sort();
     let profiles: LookupStats["profiles"] = [],
@@ -52,6 +55,7 @@ export const GET = withErrorReporting("/api/stats", async () => {
       totals: totals[0],
       latest,
       popular,
+      topUsers,
       profiles,
       namesAvailable,
     };
