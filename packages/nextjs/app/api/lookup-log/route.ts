@@ -55,14 +55,35 @@ export const POST = withErrorReporting("/api/lookup-log", async (request) => {
   const viewerIp = !viewerFid && forwarded && isIP(forwarded) ? forwarded : null;
   try {
     const sql = getDb();
-    await sql`WITH inserted AS (
-      INSERT INTO lookup_events (lookup_id, tool, user_id, viewer_fid, viewer_ip, identity_source, metadata)
-      VALUES (${lookup.lookupId}::uuid, ${lookup.tool}, ${userId}, ${viewerFid}::numeric, ${viewerIp}::inet,
-        ${viewerFid ? "quick_auth" : "anonymous"}, ${JSON.stringify(lookup.metadata)}::jsonb)
-      ON CONFLICT (lookup_id) DO NOTHING RETURNING lookup_id
-    ) INSERT INTO lookup_accounts (lookup_id, fid, position)
-      SELECT inserted.lookup_id, accounts.fid::numeric, (accounts.ordinality - 1)::smallint
-      FROM inserted CROSS JOIN unnest(${lookup.fids}::text[]) WITH ORDINALITY AS accounts(fid, ordinality)`;
+    const [, sessions] = await sql.transaction([
+      sql`SELECT pg_advisory_xact_lock(hashtextextended(${lookup.lookupId}::text, 0))`,
+      sql`INSERT INTO lookup_events (lookup_id, tool, user_id, viewer_fid, viewer_ip, identity_source, metadata)
+        VALUES (${lookup.lookupId}::uuid, ${lookup.tool}, ${userId}, ${viewerFid}::numeric, ${viewerIp}::inet,
+          ${viewerFid ? "quick_auth" : "anonymous"}, ${JSON.stringify({ ...lookup.metadata, anonymous_id: anonymousId })}::jsonb)
+        ON CONFLICT (lookup_id) DO UPDATE SET
+          metadata = EXCLUDED.metadata,
+          viewer_fid = COALESCE(lookup_events.viewer_fid, EXCLUDED.viewer_fid),
+          user_id = CASE WHEN EXCLUDED.viewer_fid IS NOT NULL THEN EXCLUDED.user_id ELSE lookup_events.user_id END,
+          identity_source = CASE WHEN EXCLUDED.viewer_fid IS NOT NULL THEN EXCLUDED.identity_source ELSE lookup_events.identity_source END,
+          viewer_ip = CASE WHEN COALESCE(lookup_events.viewer_fid, EXCLUDED.viewer_fid) IS NULL THEN COALESCE(lookup_events.viewer_ip, EXCLUDED.viewer_ip) ELSE NULL END
+        WHERE lookup_events.tool = EXCLUDED.tool
+          AND (lookup_events.user_id = EXCLUDED.user_id OR lookup_events.user_id = ${`anon:${anonymousId}`} OR lookup_events.metadata->>'anonymous_id' = ${anonymousId})
+        RETURNING lookup_id`,
+      sql`WITH new_accounts AS (
+        SELECT incoming.fid::numeric AS fid, incoming.ordinality
+        FROM unnest(${lookup.fids}::text[]) WITH ORDINALITY AS incoming(fid, ordinality)
+        WHERE NOT EXISTS (SELECT 1 FROM lookup_accounts a WHERE a.lookup_id = ${lookup.lookupId}::uuid AND a.fid = incoming.fid::numeric)
+      ) INSERT INTO lookup_accounts (lookup_id, fid, position)
+        SELECT ${lookup.lookupId}::uuid, new_accounts.fid,
+          ((SELECT COALESCE(max(position), -1) FROM lookup_accounts WHERE lookup_id = ${lookup.lookupId}::uuid)
+            + row_number() OVER (ORDER BY new_accounts.ordinality))::smallint
+        FROM new_accounts
+        WHERE EXISTS (SELECT 1 FROM lookup_events WHERE lookup_id = ${lookup.lookupId}::uuid AND tool = ${lookup.tool}
+          AND (user_id = ${userId} OR user_id = ${`anon:${anonymousId}`} OR metadata->>'anonymous_id' = ${anonymousId}))
+        ON CONFLICT (lookup_id, fid) DO NOTHING`,
+    ]);
+    if (!Array.isArray(sessions) || !sessions.length)
+      return Response.json({ error: "Lookup session does not match this viewer or tool." }, { status: 409 });
     const response = NextResponse.json({ lookupId: lookup.lookupId }, { headers: { "Cache-Control": "no-store" } });
     if (!existing || existing !== anonymousId)
       response.cookies.set("faralytics_viewer", anonymousId, {

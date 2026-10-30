@@ -48,7 +48,9 @@ export function FollowersExplorer({
   const controller = useRef<AbortController | null>(null);
   const selfLoaded = useRef(false);
   const ids = data?.series.map((s) => s.profile.fid) || [];
-  useLookupLog(data && !busy ? { tool: "followers", fids: ids, period: "all", end: data.anchor } : null);
+  const resetLogSession = useLookupLog(
+    data && !busy ? { tool: "followers", fids: ids, period: "all", end: data.anchor } : null,
+  );
   async function load({ accounts, user }: { accounts?: string[]; user?: string }, interactive = true) {
     controller.current?.abort();
     const abort = new AbortController();
@@ -88,6 +90,7 @@ export function FollowersExplorer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMiniApp, fid, initialData, initialError]);
   function reset() {
+    resetLogSession();
     controller.current?.abort();
     selfLoaded.current = true;
     setData(undefined);

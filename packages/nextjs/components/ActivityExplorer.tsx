@@ -82,7 +82,7 @@ export function ActivityExplorer({
   const controller = useRef<AbortController | null>(null);
   const chart = useRef<HTMLDivElement>(null);
   const selfLoaded = useRef(false);
-  useLookupLog(
+  const resetLogSession = useLookupLog(
     data && !busy && !compareBusy
       ? {
           tool: "activity",
@@ -210,6 +210,7 @@ export function ActivityExplorer({
   }
 
   function resetLookup() {
+    resetLogSession();
     removeComparison();
     setCompareOpen(false);
     controller.current?.abort();
