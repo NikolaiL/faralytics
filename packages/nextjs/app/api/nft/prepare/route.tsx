@@ -1,3 +1,4 @@
+import { OG_FONTS } from "~~/lib/og-fonts";
 import { ImageResponse } from "next/og";
 import sharp from "sharp";
 import { ActivityOg } from "~~/components/ActivityOg";
@@ -23,7 +24,7 @@ export const POST = withErrorReporting("/api/nft/prepare", async (request) => {
     const capturedAt = new Date().toISOString();
     const response = new ImageResponse(
       <ActivityOg data={data} avatar={avatar} generatedAt={capturedAt.slice(0, 19).replace("T", " ")} height={800} />,
-      { width: 1200, height: 800 },
+      { width: 1200, height: 800, fonts: OG_FONTS },
     );
     const image = await sharp(Buffer.from(await response.arrayBuffer()))
       .png({ palette: true, colors: 256, effort: 6 })

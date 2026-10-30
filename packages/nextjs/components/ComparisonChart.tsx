@@ -1,3 +1,4 @@
+import { NumberText } from "./NumberText";
 import { Fragment, useState } from "react";
 import {
   accountName,
@@ -42,7 +43,9 @@ export function ComparisonChart({
         <strong className="account-1" data-testid="activity-total">
           {first.total.toLocaleString("en-US")}
         </strong>
-        <span>Actions in {periodLabel(first.period)}</span>
+        <span>
+          Actions in <NumberText>{periodLabel(first.period)}</NumberText>
+        </span>
         <strong className="account-2" data-testid="comparison-total">
           {second.total.toLocaleString("en-US")}
         </strong>
@@ -70,9 +73,14 @@ export function ComparisonChart({
       </div>
       <div className="chart-caption comparison-caption">
         <span role="status" className="day-detail">
-          {selected
-            ? `${selected.name} · ${selected.day.actions.toLocaleString("en-US")} actions · ${activityDate(selected.day.date)}`
-            : "Same dates. Same intensity scale. UTC."}
+          {selected ? (
+            <>
+              {selected.name} ·{" "}
+              <NumberText>{`${selected.day.actions.toLocaleString("en-US")} actions · ${activityDate(selected.day.date)}`}</NumberText>
+            </>
+          ) : (
+            "Same dates. Same intensity scale. UTC."
+          )}
         </span>
         <div className="comparison-legends">
           {[PURPLES, BLUES].map((palette, index) => (
@@ -115,7 +123,7 @@ export function ComparisonChart({
                     </strong>
                     {stat.key === "peak" && (
                       <time dateTime={(index ? stat.secondDate : stat.firstDate) || undefined}>
-                        {activityDate((index ? stat.secondDate : stat.firstDate) || null)}
+                        <NumberText>{activityDate((index ? stat.secondDate : stat.firstDate) || null)}</NumberText>
                       </time>
                     )}
                   </div>

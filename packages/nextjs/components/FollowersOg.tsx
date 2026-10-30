@@ -1,3 +1,4 @@
+import { NumberText } from "./NumberText";
 import {
   FOLLOWER_COLORS,
   compactNumber,
@@ -51,7 +52,9 @@ export function FollowersOg({
         Followers
       </div>
       <div style={{ display: "flex", position: "absolute", top: 149, left: 64, color: "#a99aba", fontSize: 14 }}>
-        {data.series.length} {data.series.length === 1 ? "account" : "accounts"} · shared scale
+        <NumberText
+          preserveSpaces
+        >{`${data.series.length} ${data.series.length === 1 ? "account" : "accounts"} · shared scale`}</NumberText>
       </div>
       <div style={{ display: "flex", position: "absolute", left: legendLeft, top: 25, color: "#857594", fontSize: 12 }}>
         CURRENT CAPTURED FOLLOWERS
@@ -133,7 +136,7 @@ export function FollowersOg({
                 flexShrink: 0,
                 fontSize: nameSize,
                 lineHeight: 1,
-                fontWeight: 700,
+                fontWeight: 900,
                 color: FOLLOWER_COLORS[index],
               }}
             >
@@ -233,8 +236,14 @@ export function FollowersOg({
           fontSize: 12,
         }}
       >
-        <span>Partial history · UTC · {data.from ? `from ${followerDate(domain.start)}` : "no history"}</span>
-        <span>{`created with viniapp · ${generatedAt} UTC`}</span>
+        <span>
+          <NumberText
+            preserveSpaces
+          >{`Partial history · UTC · ${data.from ? `from ${followerDate(domain.start)}` : "no history"}`}</NumberText>
+        </span>
+        <span>
+          <NumberText preserveSpaces>{`created with viniapp · ${generatedAt} UTC`}</NumberText>
+        </span>
       </div>
     </div>
   );

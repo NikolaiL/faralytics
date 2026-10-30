@@ -1,4 +1,5 @@
 "use client";
+import { NumberText } from "./NumberText";
 import { useMemo } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import {
@@ -70,7 +71,9 @@ export default function FollowerPlot({ data, hidden }: { data: FollowerChartData
             content={({ active, label }) =>
               active && typeof label === "number" ? (
                 <div className="follower-tooltip">
-                  <strong>{followerDate(label)}</strong>
+                  <strong>
+                    <NumberText>{followerDate(label)}</NumberText>
+                  </strong>
                   <span>Nearest sampled points</span>
                   {data.series.map((series, index) => {
                     if (hidden.includes(series.profile.fid)) return null;
@@ -78,7 +81,9 @@ export default function FollowerPlot({ data, hidden }: { data: FollowerChartData
                     return (
                       <div key={series.profile.fid} style={{ color: FOLLOWER_COLORS[index] }}>
                         <b>{followerName(series)}</b>
-                        <span>{point ? point.value.toLocaleString("en-US") : "No history"}</span>
+                        <span>
+                          <NumberText>{point ? point.value.toLocaleString("en-US") : "No history"}</NumberText>
+                        </span>
                       </div>
                     );
                   })}

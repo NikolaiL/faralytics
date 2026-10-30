@@ -1,3 +1,4 @@
+import { NumberText } from "./NumberText";
 import {
   accountName,
   activityDate,
@@ -42,7 +43,7 @@ export function ComparisonOg({
         background: "#0d0b12",
         color: "#f3eff9",
         padding: compact ? "20px 64px" : "38px 64px",
-        fontFamily: "sans-serif",
+        fontFamily: "FaralyticsSans",
       }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -123,9 +124,13 @@ export function ComparisonOg({
           justifyContent: "space-between",
         }}
       >
-        <strong style={{ color: colors[0], fontSize: compact ? 36 : 46 }}>{first.total.toLocaleString("en-US")}</strong>
-        <span style={{ color: "#a99aba", fontSize: 20 }}>Actions in {periodLabel(first.period)}</span>
-        <strong style={{ color: colors[1], fontSize: compact ? 36 : 46 }}>
+        <strong style={{ color: colors[0], fontSize: compact ? 36 : 46, fontWeight: 900 }}>
+          {first.total.toLocaleString("en-US")}
+        </strong>
+        <span style={{ color: "#a99aba", fontSize: 20 }}>
+          <NumberText preserveSpaces>{`Actions in ${periodLabel(first.period)}`}</NumberText>
+        </span>
+        <strong style={{ color: colors[1], fontSize: compact ? 36 : 46, fontWeight: 900 }}>
           {second.total.toLocaleString("en-US")}
         </strong>
       </div>
@@ -234,7 +239,7 @@ export function ComparisonOg({
                     style={{
                       display: "flex",
                       fontSize: compact ? (stat.key === "peak" ? 18 : 20) : 27,
-                      fontWeight: 700,
+                      fontWeight: 900,
                       gap: 5,
                     }}
                   >
@@ -259,7 +264,9 @@ export function ComparisonOg({
                   </div>
                   {stat.key === "peak" && (
                     <div style={{ display: "flex", fontSize: compact ? 9 : 12 }}>
-                      {activityDate((index ? stat.secondDate : stat.firstDate) || null)}
+                      <NumberText preserveSpaces>
+                        {activityDate((index ? stat.secondDate : stat.firstDate) || null)}
+                      </NumberText>
                     </div>
                   )}
                 </div>,
@@ -294,7 +301,9 @@ export function ComparisonOg({
         }}
       >
         <span>Captured activity · shared intensity scale · UTC</span>
-        <span>{`created with viniapp · ${generatedAt} UTC`}</span>
+        <span>
+          <NumberText preserveSpaces>{`created with viniapp · ${generatedAt} UTC`}</NumberText>
+        </span>
       </div>
     </div>
   );

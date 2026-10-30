@@ -1,4 +1,5 @@
 "use client";
+import { NumberText } from "./NumberText";
 import { useEffect, useRef, useState } from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
 import dynamic from "next/dynamic";
@@ -215,11 +216,14 @@ export function FollowersExplorer({
               <h2>
                 Follower history{" "}
                 <span>
-                  {data.series.length} {data.series.length === 1 ? "account" : "accounts"}
+                  <NumberText>{`${data.series.length} ${data.series.length === 1 ? "account" : "accounts"}`}</NumberText>
                 </span>
               </h2>
               <p>
-                {data.from ? `From ${followerDate(followerTimestamp(data.from))}` : "No captured follow history"} · UTC
+                <NumberText>
+                  {data.from ? `From ${followerDate(followerTimestamp(data.from))}` : "No captured follow history"}
+                </NumberText>{" "}
+                · UTC
               </p>
             </div>
             <span className="captured-badge">Captured net actions</span>
@@ -246,9 +250,11 @@ export function FollowersExplorer({
                     <span className="follower-legend-name" style={{ color: FOLLOWER_COLORS[index] }}>
                       <strong>{followerName(series)}</strong>
                       <span>
-                        {series.followers === null
-                          ? "Current count unavailable"
-                          : `${series.followers.toLocaleString("en-US")} current captured followers`}
+                        <NumberText>
+                          {series.followers === null
+                            ? "Current count unavailable"
+                            : `${series.followers.toLocaleString("en-US")} current captured followers`}
+                        </NumberText>
                       </span>
                     </span>
                   </button>
@@ -293,7 +299,8 @@ export function FollowersExplorer({
           What does this curve show? <span aria-hidden="true">＋</span>
         </summary>
         <p>
-          These are cumulative captured follow actions minus captured unfollow actions, downsampled to up to 1,000
+          These are cumulative captured follow actions minus captured unfollow actions, downsampled to up to{" "}
+          <NumberText>1,000</NumberText>
           points per account. Every line uses the same dates and scale, starting at the earliest captured follow among
           the selected accounts. Hover or use the keyboard for the nearest sampled values.
         </p>
@@ -304,8 +311,9 @@ export function FollowersExplorer({
         </p>
         {data && (
           <p>
-            Chart captured {data.updatedAt.replace("T", " ").slice(0, 19)} UTC. Counts and curves refresh about every
-            five minutes. Shared images always include all selected accounts; hiding a line only changes this web view.
+            Chart captured <NumberText>{data.updatedAt.replace("T", " ").slice(0, 19)}</NumberText> UTC. Counts and
+            curves refresh about every five minutes. Shared images always include all selected accounts; hiding a line
+            only changes this web view.
           </p>
         )}
       </details>

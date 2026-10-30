@@ -1,3 +1,4 @@
+import { NumberText } from "./NumberText";
 import { ogChartLayout } from "~~/lib/og-layout";
 import { OgLogo } from "~~/components/OgLogo";
 import { PURPLES } from "~~/lib/activity";
@@ -16,7 +17,7 @@ export function DefaultOg({ height, generatedAt }: { height: number; generatedAt
         background: "#0d0b12",
         color: "#f3eff9",
         padding: "48px 64px",
-        fontFamily: "sans-serif",
+        fontFamily: "FaralyticsSans",
       }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -84,7 +85,9 @@ export function DefaultOg({ height, generatedAt }: { height: number; generatedAt
         }}
       >
         <div style={{ display: "flex" }}>Farcaster activity, visualized</div>
-        <div style={{ display: "flex" }}>{`created with viniapp · ${generatedAt} UTC`}</div>
+        <div style={{ display: "flex" }}>
+          <NumberText preserveSpaces>{`created with viniapp · ${generatedAt} UTC`}</NumberText>
+        </div>
       </div>
     </div>
   );

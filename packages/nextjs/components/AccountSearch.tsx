@@ -1,4 +1,5 @@
 "use client";
+import { NumberText } from "./NumberText";
 import { useEffect, useRef, useState } from "react";
 import { AvatarImage } from "./AvatarImage";
 import type { SearchProfile } from "~~/lib/activity";
@@ -231,12 +232,14 @@ export function AccountSearch({
                       {profile.display_name || (profile.username ? `@${profile.username}` : `FID ${profile.fid}`)}
                     </strong>
                     <span>
-                      {profile.username ? `@${profile.username} · ` : ""}FID {profile.fid}
+                      {profile.username ? `@${profile.username} · ` : ""}FID <NumberText>{profile.fid}</NumberText>
                     </span>
                     <span className="result-followers">
-                      {profile.followerCount === null
-                        ? "Followers unavailable"
-                        : `${profile.followerCount.toLocaleString("en-US")} followers`}
+                      <NumberText>
+                        {profile.followerCount === null
+                          ? "Followers unavailable"
+                          : `${profile.followerCount.toLocaleString("en-US")} followers`}
+                      </NumberText>
                     </span>
                   </span>
                   <span aria-hidden="true">↗</span>

@@ -1,3 +1,4 @@
+import { NumberText } from "./NumberText";
 import { ogChartLayout } from "~~/lib/og-layout";
 import { OgLogo } from "./OgLogo";
 import { activityDate, colorLevel, grid, periodLabel, PURPLES, utcDate, type Activity } from "~~/lib/activity";
@@ -28,7 +29,7 @@ export function ActivityOg({
         background: "#0d0b12",
         color: "#f3eff9",
         padding: "48px 64px",
-        fontFamily: "sans-serif",
+        fontFamily: "FaralyticsSans",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -75,10 +76,12 @@ export function ActivityOg({
         </div>
       </div>
       <div style={{ display: "flex", alignItems: "center", marginTop: 14, gap: 12 }}>
-        <div style={{ display: "flex", fontSize: height === 600 ? 54 : 66, fontWeight: 700 }}>
+        <div style={{ display: "flex", fontSize: height === 600 ? 54 : 66, fontWeight: 900 }}>
           {data.total.toLocaleString("en-US")}
         </div>
-        <div style={{ display: "flex", fontSize: 25, color: "#aa9bbd" }}>actions in {periodLabel(data.period)}</div>
+        <div style={{ display: "flex", fontSize: 25, color: "#aa9bbd" }}>
+          <NumberText preserveSpaces>{`actions in ${periodLabel(data.period)}`}</NumberText>
+        </div>
       </div>
       {months.map((day) => (
         <div
@@ -148,8 +151,12 @@ export function ActivityOg({
               borderRadius: 12,
             }}
           >
-            <div style={{ display: "flex", fontSize: height === 600 ? 26 : 32, fontWeight: 700 }}>{stat.value}</div>
-            <div style={{ display: "flex", fontSize: 15, color: "#a99aba" }}>{stat.label}</div>
+            <div style={{ display: "flex", fontSize: height === 600 ? 26 : 32, fontWeight: 400 }}>
+              <NumberText preserveSpaces>{stat.value}</NumberText>
+            </div>
+            <div style={{ display: "flex", fontSize: 15, color: "#a99aba" }}>
+              <NumberText preserveSpaces>{stat.label}</NumberText>
+            </div>
           </div>
         ))}
       </div>
@@ -166,7 +173,9 @@ export function ActivityOg({
         }}
       >
         <div style={{ display: "flex" }}>Captured activity · UTC</div>
-        <div style={{ display: "flex" }}>{`created with viniapp · ${generatedAt} UTC`}</div>
+        <div style={{ display: "flex" }}>
+          <NumberText preserveSpaces>{`created with viniapp · ${generatedAt} UTC`}</NumberText>
+        </div>
       </div>
     </div>
   );

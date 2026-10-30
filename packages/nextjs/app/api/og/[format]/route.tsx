@@ -1,5 +1,6 @@
 import { ComparisonOg } from "~~/components/ComparisonOg";
 import { ActivityOg } from "~~/components/ActivityOg";
+import { OG_FONTS } from "~~/lib/og-fonts";
 import { ImageResponse } from "next/og";
 import { DefaultOg } from "~~/components/DefaultOg";
 import { InputError, validFid } from "~~/lib/activity";
@@ -22,6 +23,7 @@ export const GET = withErrorReporting<{ params: Promise<{ format: string }> }>(
         return new ImageResponse(<DefaultOg height={height} generatedAt={generatedAt} />, {
           width: 1200,
           height,
+          fonts: OG_FONTS,
           headers: { "Cache-Control": "public, max-age=300, s-maxage=300, stale-while-revalidate=600" },
         });
       }
@@ -57,6 +59,7 @@ export const GET = withErrorReporting<{ params: Promise<{ format: string }> }>(
         {
           width: 1200,
           height,
+          fonts: OG_FONTS,
           headers: { "Cache-Control": "public, max-age=300, s-maxage=300, stale-while-revalidate=600" },
         },
       );

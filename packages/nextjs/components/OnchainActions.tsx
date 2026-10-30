@@ -1,5 +1,6 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- The prepared PNG preview is already a self-contained data URI. */
+import { NumberText } from "./NumberText";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -378,10 +379,15 @@ function Actions({ activity, disabled }: { activity: Activity; disabled?: boolea
       <div className="onchain-actions" data-testid="onchain-actions">
         <button className="mint-button" data-testid="mint-nft" disabled={disabled} onClick={() => open("mint")}>
           {pendingNFT ? "Finish NFT upload" : "Mint my activity NFT"}{" "}
-          <span>{pendingNFT ? "No new mint fee" : "0.001 ETH ↗"}</span>
+          <span>
+            <NumberText>{pendingNFT ? "No new mint fee" : "0.001 ETH ↗"}</NumberText>
+          </span>
         </button>
         <button className="coffee-button" data-testid="buy-coffee" disabled={disabled} onClick={() => open("coffee")}>
-          ☕ Buy @nikolaii.eth a coffee <span>2 USDC</span>
+          ☕ Buy @nikolaii.eth a coffee{" "}
+          <span>
+            <NumberText>2 USDC</NumberText>
+          </span>
         </button>
       </div>
       {selection &&
@@ -422,7 +428,9 @@ function Actions({ activity, disabled }: { activity: Activity; disabled?: boolea
               <dl>
                 <dt>You pay</dt>
                 <dd>
-                  {isMint ? `0.001 ETH${price ? ` (≈ $${(price * 0.001).toFixed(2)})` : ""}` : "2 USDC (about $2)"}
+                  <NumberText>
+                    {isMint ? `0.001 ETH${price ? ` (≈ $${(price * 0.001).toFixed(2)})` : ""}` : "2 USDC (about $2)"}
+                  </NumberText>
                 </dd>
                 <dt>{isMint ? "Mint contract" : "Recipient"}</dt>
                 <dd>
@@ -453,7 +461,10 @@ function Actions({ activity, disabled }: { activity: Activity; disabled?: boolea
                   : "A voluntary tip to support Faralytics. No purchase or NFT is included."}
               </p>
               {nativeCoffee && !isMint && (
-                <p>Farcaster’s send-money screen will open with 2 USDC and the recipient filled in.</p>
+                <p>
+                  Farcaster’s send-money screen will open with <NumberText>2</NumberText> USDC and the recipient filled
+                  in.
+                </p>
               )}
               {showWallets && !account.isConnected && (
                 <div className="wallet-options" data-testid="wallet-options">

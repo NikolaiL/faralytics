@@ -1,4 +1,5 @@
 "use client";
+import { NumberText } from "./NumberText";
 import { useId, useState } from "react";
 import { useMiniapp } from "./MiniappProvider";
 
@@ -36,7 +37,7 @@ export function ChartImages({
                 setPreview(preview === format ? null : format);
               }}
             >
-              {format === "farcaster" ? "Farcaster · 3:2" : "X · 2:1"}
+              <NumberText>{format === "farcaster" ? "Farcaster · 3:2" : "X · 2:1"}</NumberText>
             </button>
           ) : (
             <a
@@ -46,7 +47,7 @@ export function ChartImages({
               target="_blank"
               rel="noreferrer"
             >
-              {format === "farcaster" ? "Farcaster · 3:2 ↗" : "X · 2:1 ↗"}
+              <NumberText>{format === "farcaster" ? "Farcaster · 3:2 ↗" : "X · 2:1 ↗"}</NumberText>
             </a>
           ),
         )}

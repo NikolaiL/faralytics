@@ -1,4 +1,5 @@
 "use client";
+import { NumberText } from "./NumberText";
 import { sdk } from "@farcaster/miniapp-sdk";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -414,9 +415,13 @@ export function ActivityExplorer({
                       : "Finding your squares…"}
                   </h2>
                   <span>
-                    {data
-                      ? `${username ? `@${username} · ` : ""}FID ${data.profile.fid}`
-                      : "Reading captured Farcaster activity"}
+                    {data ? (
+                      <>
+                        {username ? `@${username} · ` : ""}FID <NumberText>{data.profile.fid}</NumberText>
+                      </>
+                    ) : (
+                      "Reading captured Farcaster activity"
+                    )}
                   </span>
                 </div>
               </div>
@@ -437,7 +442,9 @@ export function ActivityExplorer({
                   <div className="chart-title">
                     <h3>
                       <strong data-testid="activity-total">{data ? data.total.toLocaleString() : "—"}</strong> actions{" "}
-                      <span>in {periodLabel(data?.period || period)}</span>
+                      <span>
+                        in <NumberText>{periodLabel(data?.period || period)}</NumberText>
+                      </span>
                     </h3>
                     <span className="utc-label">UTC</span>
                   </div>
@@ -453,9 +460,11 @@ export function ActivityExplorer({
                       </div>
                       <div className="chart-caption">
                         <span className="day-detail" role="status" aria-live="polite">
-                          {day
-                            ? `${day.actions.toLocaleString()} actions · ${utcDate(day.date).toLocaleDateString("en", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })}`
-                            : "Each square is a day. Make it purple."}
+                          <NumberText>
+                            {day
+                              ? `${day.actions.toLocaleString()} actions · ${utcDate(day.date).toLocaleDateString("en", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })}`
+                              : "Each square is a day. Make it purple."}
+                          </NumberText>
                         </span>
                         <div className="legend" aria-label="Activity intensity from less to more">
                           <span>Less</span>
@@ -493,7 +502,9 @@ export function ActivityExplorer({
                       </strong>
                       <span className="busiest-caption">
                         on busiest day:{" "}
-                        <time dateTime={data?.peakDate ?? undefined}>{activityDate(data?.peakDate ?? null)}</time>
+                        <time dateTime={data?.peakDate ?? undefined}>
+                          <NumberText>{activityDate(data?.peakDate ?? null)}</NumberText>
+                        </time>
                       </span>
                     </div>
                   </div>
@@ -507,7 +518,7 @@ export function ActivityExplorer({
                 aria-pressed={period === "365"}
                 onClick={() => data && void load(data.profile.fid, "365", data.anchor)}
               >
-                Last 365 days
+                Last <NumberText>365</NumberText> days
               </button>
               {years.map((year) => (
                 <button
@@ -517,7 +528,7 @@ export function ActivityExplorer({
                   aria-pressed={period === String(year)}
                   onClick={() => data && void load(data.profile.fid, String(year), data.anchor)}
                 >
-                  {year}
+                  <NumberText>{String(year)}</NumberText>
                 </button>
               ))}
             </nav>
