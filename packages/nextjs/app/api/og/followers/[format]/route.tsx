@@ -1,4 +1,6 @@
 import { ImageResponse } from "next/og";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { FollowersOg } from "~~/components/FollowersOg";
 import { DefaultOg } from "~~/components/DefaultOg";
 import { InputError } from "~~/lib/activity";
@@ -7,6 +9,20 @@ import { loadAvatar } from "~~/lib/avatar";
 import { withErrorReporting, reportServerError } from "~~/utils/reportServerError";
 export const runtime = "nodejs";
 export const maxDuration = 60;
+const fonts = [
+  {
+    name: "FaralyticsSans",
+    data: readFileSync(join(process.cwd(), "assets/fonts/FaralyticsSans-Regular.ttf")),
+    weight: 400 as const,
+    style: "normal" as const,
+  },
+  {
+    name: "FaralyticsSans",
+    data: readFileSync(join(process.cwd(), "assets/fonts/FaralyticsSans-Bold.ttf")),
+    weight: 700 as const,
+    style: "normal" as const,
+  },
+];
 export const GET = withErrorReporting<{ params: Promise<{ format: string }> }>(
   "/api/og/followers/[format]",
   async (request, context) => {
@@ -36,6 +52,7 @@ export const GET = withErrorReporting<{ params: Promise<{ format: string }> }>(
         {
           width: 1200,
           height,
+          fonts,
           headers: { "Cache-Control": "public, max-age=300, s-maxage=300, stale-while-revalidate=600" },
         },
       );

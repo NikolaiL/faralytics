@@ -41,7 +41,7 @@ export function FollowersOg({
         display: "flex",
         background: "#0d0b12",
         color: "#f3eff9",
-        fontFamily: "sans-serif",
+        fontFamily: "FaralyticsSans",
       }}
     >
       <div style={{ display: "flex", position: "absolute", left: 64, top: 48 }}>
@@ -119,6 +119,7 @@ export function FollowersOg({
                 display: "flex",
                 flexShrink: 1,
                 fontSize: nameSize,
+                lineHeight: 1,
                 color: FOLLOWER_COLORS[index],
                 whiteSpace: "nowrap",
                 overflow: "hidden",
@@ -126,7 +127,16 @@ export function FollowersOg({
             >
               {name}
             </div>
-            <div style={{ display: "flex", flexShrink: 0, fontSize: many ? 15 : 21, color: FOLLOWER_COLORS[index] }}>
+            <div
+              style={{
+                display: "flex",
+                flexShrink: 0,
+                fontSize: nameSize,
+                lineHeight: 1,
+                fontWeight: 700,
+                color: FOLLOWER_COLORS[index],
+              }}
+            >
               {series.followers === null ? "—" : compactNumber(series.followers)}
             </div>
           </div>
