@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import {
   accountName,
   activityDate,
@@ -92,31 +92,40 @@ export function ComparisonChart({
       </div>
       <div className="stats comparison-stats">
         {comparisonStats(first, second).map((stat) => (
-          <div key={stat.key} data-testid={`comparison-stat-${stat.key}`}>
+          <div
+            key={stat.key}
+            className={stat.key === "peak" ? "comparison-peak-stat" : undefined}
+            data-testid={`comparison-stat-${stat.key}`}
+          >
             {[first, second].map((data, index) => {
               const winner = stat.winner === (index ? "second" : "first");
               return (
-                <div className={`comparison-stat-value account-${index + 1}`} key={index}>
-                  <strong
-                    aria-label={`${accountName(data)}: ${index ? stat.second : stat.first} ${stat.unit}${winner ? ", higher value" : ""}`}
-                  >
-                    {(index ? stat.second : stat.first).toLocaleString("en-US")}
-                    <small>{stat.unit}</small>
-                    {winner && (
-                      <span className="winner" aria-label="Higher value">
-                        ✓
-                      </span>
+                <Fragment key={index}>
+                  <div className={`comparison-stat-value account-${index + 1}`}>
+                    <strong
+                      aria-label={`${accountName(data)}: ${index ? stat.second : stat.first} ${stat.unit}${winner ? ", higher value" : ""}`}
+                    >
+                      {(index ? stat.second : stat.first).toLocaleString("en-US")}
+                      {stat.key !== "peak" && <small>{stat.unit}</small>}
+                      {winner && (
+                        <span className="winner" aria-label="Higher value">
+                          ✓
+                        </span>
+                      )}
+                    </strong>
+                    {stat.key === "peak" && (
+                      <time dateTime={(index ? stat.secondDate : stat.firstDate) || undefined}>
+                        {activityDate((index ? stat.secondDate : stat.firstDate) || null)}
+                      </time>
                     )}
-                  </strong>
-                  {stat.key === "peak" && (
-                    <time dateTime={(index ? stat.secondDate : stat.firstDate) || undefined}>
-                      {activityDate((index ? stat.secondDate : stat.firstDate) || null)}
-                    </time>
+                  </div>
+                  {stat.key === "peak" && index === 0 && (
+                    <span className="comparison-stat-label">actions on busiest day</span>
                   )}
-                </div>
+                </Fragment>
               );
             })}
-            <span className="comparison-stat-label">{stat.label}</span>
+            {stat.key !== "peak" && <span className="comparison-stat-label">{stat.label}</span>}
             {stat.winner === "tie" && <span className="comparison-tie">Tie</span>}
           </div>
         ))}
