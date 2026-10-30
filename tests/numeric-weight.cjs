@@ -5,6 +5,7 @@ const assert=require('node:assert/strict');const fs=require('node:fs');const{chr
   await page.goto('http://localhost:3100'+path);await page.locator('.numeric-value').first().waitFor();await page.evaluate(()=>document.fonts.ready);
   for(const width of [320,390,1280]){await page.setViewportSize({width,height:900});await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)).toBe(false);}
   assert.ok(await page.locator('.numeric-value').evaluateAll(nodes=>nodes.every(n=>getComputedStyle(n).fontWeight==='900')));
+  const cdp=await page.context().newCDPSession(page);await cdp.send('DOM.enable');await cdp.send('CSS.enable');const {root}=await cdp.send('DOM.getDocument');const {nodeId}=await cdp.send('DOM.querySelector',{nodeId:root.nodeId,selector:'.numeric-value'});const {fonts}=await cdp.send('CSS.getPlatformFontsForNode',{nodeId});assert.ok(fonts.some(font=>font.isCustomFont&&font.postScriptName==='FaralyticsNumbers-Black'),'actual numeral glyphs use the Archivo-based Black font');await cdp.detach();
   if(path.startsWith('/followers')){await page.locator('.recharts-cartesian-axis-tick-value').first().waitFor();assert.ok(await page.locator('.recharts-cartesian-axis-tick-value').evaluateAll(nodes=>nodes.every(n=>Number(getComputedStyle(n).fontWeight)<700)),'axes remain regular');}
   else{assert.equal(await page.getByTestId('activity-total').evaluate(n=>getComputedStyle(n).fontWeight),'900');assert.ok(await page.locator('.stats strong').evaluateAll(nodes=>nodes.every(n=>getComputedStyle(n).fontWeight==='900')));}
  }

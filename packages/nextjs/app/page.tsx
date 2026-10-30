@@ -7,13 +7,13 @@ export const metadata: Metadata = {
     url: `${origin}/`,
     title: "Faralytics",
     description: "Your year, one purple square at a time.",
-    images: [{ url: `${origin}/og/faralytics-farcaster-v13.png`, width: 1200, height: 800 }],
+    images: [{ url: `${origin}/og/faralytics-farcaster-v14.png`, width: 1200, height: 800 }],
   },
-  twitter: { card: "summary_large_image", images: [`${origin}/og/faralytics-x-v13.png`] },
+  twitter: { card: "summary_large_image", images: [`${origin}/og/faralytics-x-v14.png`] },
   other: {
     "fc:miniapp": JSON.stringify({
       version: "1",
-      imageUrl: `${origin}/og/faralytics-farcaster-v13.png`,
+      imageUrl: `${origin}/og/faralytics-farcaster-v14.png`,
       button: {
         title: "Check My Faralytics",
         action: { type: "launch_miniapp", name: "Faralytics", url: `${origin}/`, splashBackgroundColor: "#0d0b12" },
