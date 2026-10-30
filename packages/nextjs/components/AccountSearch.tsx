@@ -86,7 +86,7 @@ export function AccountSearch({
     >
       <div className="search-field">
         <span aria-hidden="true" className="search-icon">
-          ⌕
+          {busy ? <span className="search-spinner" data-testid={`${searchId}-spinner`} /> : "⌕"}
         </span>
         <label className="sr-only" htmlFor={searchId === "lookup" ? "username" : `${searchId}-input`}>
           Username or FID
@@ -96,6 +96,7 @@ export function AccountSearch({
           id={searchId === "lookup" ? "username" : `${searchId}-input`}
           data-testid={`${searchId}-input`}
           value={value}
+          disabled={busy}
           onChange={(event) => {
             onChange(event.target.value);
             setOpen(true);
