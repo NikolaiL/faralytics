@@ -1,0 +1,9 @@
+const assert=require('node:assert/strict');const{chromium,expect}=require('@playwright/test');
+(async()=>{const browser=await chromium.launch({executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH});try{
+ const page=await browser.newPage({viewport:{width:390,height:900}});await page.route('**/api/lookup-log',route=>route.fulfill({json:{}}));await page.addInitScript(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async()=>{}}}));
+ for(const path of ['/','/followers']){await page.goto('http://localhost:3100'+path);await page.getByTestId('copy-link').click();await expect(page.locator('.copy-toast')).toHaveText('link copied');}
+ await page.waitForTimeout(1800);await page.getByTestId('copy-link').click();await page.waitForTimeout(1000);await expect(page.locator('.copy-toast')).toBeVisible();await expect(page.locator('.copy-toast')).toHaveCount(0,{timeout:3000});
+ await page.goto('http://localhost:3100/followers?fids=366713,10956');await page.getByTestId('copy-link-bottom').click();await expect(page.locator('.copy-toast')).toHaveText('link copied');const box=await page.locator('.copy-toast').boundingBox();assert.ok(box.y+box.height<820,'toast stays above mobile bottom navigation');await expect(page.locator('.copy-toast')).toHaveCount(0,{timeout:3000});
+ await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async()=>{throw Error('denied')}}}));await page.getByTestId('copy-link').click();await expect(page.getByTestId('followers-status')).toContainText('Copy this link:');await expect(page.locator('.copy-toast')).toHaveCount(0);
+ console.log('PASS copy toast: both tools, empty app, lower share row, repeated-click duration, auto-dismiss, mobile position, and no false success on clipboard failure.');
+}finally{await browser.close();}})().catch(error=>{console.error(error.message);process.exit(1)});

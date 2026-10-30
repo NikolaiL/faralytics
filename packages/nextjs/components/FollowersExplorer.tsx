@@ -4,6 +4,7 @@ import { sdk } from "@farcaster/miniapp-sdk";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useLookupLog } from "~~/hooks/useLookupLog";
+import { CopyToast } from "./CopyToast";
 import { ChartImages } from "./ChartImages";
 import { AccountSearch } from "./AccountSearch";
 import { AddMiniappButton } from "./AddMiniappButton";
@@ -43,6 +44,7 @@ export function FollowersExplorer({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(initialError);
   const [note, setNote] = useState("");
+  const [copyCount, setCopyCount] = useState(0);
   const [hidden, setHidden] = useState<string[]>([]);
   const [meaningful, setMeaningful] = useState(false);
   const controller = useRef<AbortController | null>(null);
@@ -116,7 +118,8 @@ export function FollowersExplorer({
     if (target === "copy") {
       try {
         await navigator.clipboard.writeText(url);
-        setNote("Follower chart link copied.");
+        setNote("");
+        setCopyCount((count) => count + 1);
         setMeaningful(true);
       } catch {
         setNote(`Copy this link: ${url}`);
@@ -140,6 +143,7 @@ export function FollowersExplorer({
   const imageParams = data ? new URLSearchParams({ fids: ids.join(","), end: data.anchor }).toString() : "";
   return (
     <main className="followers-page">
+      <CopyToast count={copyCount} />
       <header className="topbar">
         <Link className="wordmark" href="/">
           <span className="mark" aria-hidden="true">

@@ -44,3 +44,5 @@
 .search-field input:disabled{opacity:.65;cursor:wait}.search-spinner{display:inline-block;width:20px;height:20px;border:2px solid #b596f240;border-top-color:#b596f2;border-radius:50%;vertical-align:middle;animation:search-spin .8s linear infinite}@keyframes search-spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.search-spinner{animation:none}}
 
 .chart-image-preview{margin-top:16px;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--bg)}.chart-image-preview>button{display:block;margin-left:auto;margin-bottom:12px;min-height:32px}.chart-image-preview img{display:block;width:100%;height:auto;border-radius:6px}.chart-image-preview p{font-size:12px;color:var(--muted)}
+
+.copy-toast{position:fixed;z-index:9999;left:50%;bottom:calc(28px + var(--safe-area-inset-bottom));transform:translateX(-50%);padding:12px 20px;border:1px solid #855dcd;border-radius:10px;background:#24182f;color:var(--accent);font-size:13px;font-weight:600;box-shadow:0 6px 28px #0008;pointer-events:none;white-space:nowrap}@media(max-width:760px){.copy-toast{bottom:calc(90px + var(--safe-area-inset-bottom))}}

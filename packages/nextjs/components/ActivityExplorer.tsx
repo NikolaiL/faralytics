@@ -22,6 +22,7 @@ import { AvatarImage } from "./AvatarImage";
 import { ComparisonChart } from "./ComparisonChart";
 import { Heatmap } from "./Heatmap";
 import { useLookupLog } from "~~/hooks/useLookupLog";
+import { CopyToast } from "./CopyToast";
 import { ChartImages } from "./ChartImages";
 import { AccountSearch } from "./AccountSearch";
 import { useMiniapp } from "./MiniappProvider";
@@ -77,6 +78,7 @@ export function ActivityExplorer({
   const [period, setPeriod] = useState(initialData?.period || initialPeriod);
   const [error, setError] = useState("");
   const [note, setNote] = useState("");
+  const [copyCount, setCopyCount] = useState(0);
   const [hasMeaningfulInteraction, setHasMeaningfulInteraction] = useState(false);
   const [day, setDay] = useState<Day>();
   const controller = useRef<AbortController | null>(null);
@@ -244,7 +246,8 @@ export function ActivityExplorer({
     if (target === "copy") {
       try {
         await navigator.clipboard.writeText(url);
-        setNote(data ? "Chart link copied." : "App link copied.");
+        setNote("");
+        setCopyCount((count) => count + 1);
         setHasMeaningfulInteraction(true);
       } catch {
         setNote(`Copy this ${data ? "chart" : "app"} link: ${url}`);
@@ -279,6 +282,7 @@ export function ActivityExplorer({
     : "";
   return (
     <main>
+      <CopyToast count={copyCount} />
       <header className="topbar">
         <Link className="wordmark" href="/">
           <Mark />
