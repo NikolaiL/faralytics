@@ -46,10 +46,7 @@ export function FollowersExplorer({
   const controller = useRef<AbortController | null>(null);
   const selfLoaded = useRef(false);
   const ids = data?.series.map((s) => s.profile.fid) || [];
-  async function load(
-    { accounts, user, top }: { accounts?: string[]; user?: string; top?: boolean },
-    interactive = true,
-  ) {
+  async function load({ accounts, user }: { accounts?: string[]; user?: string }, interactive = true) {
     controller.current?.abort();
     const abort = new AbortController();
     controller.current = abort;
@@ -59,7 +56,6 @@ export function FollowersExplorer({
     const params = new URLSearchParams();
     if (accounts?.length) params.set("fids", accounts.join(","));
     if (user !== undefined) params.set("user", user);
-    if (top) params.set("top", "10");
     if (data?.anchor || initialEnd) params.set("end", data?.anchor || initialEnd!);
     try {
       const response = await fetch(`/api/followers?${params}`, { signal: abort.signal });
@@ -180,9 +176,6 @@ export function FollowersExplorer({
           <p className="followers-limit">Ten accounts selected. Remove one to add another.</p>
         )}
         <div className="followers-control-buttons">
-          <button type="button" data-testid="followers-top10" disabled={busy} onClick={() => void load({ top: true })}>
-            Top 10 <span aria-hidden="true">↗</span>
-          </button>
           {data && (
             <button type="button" className="text-button" data-testid="followers-reset" onClick={reset}>
               Clear chart
@@ -200,7 +193,7 @@ export function FollowersExplorer({
           Reading captured follower history…
         </p>
       )}
-      {!data && !busy && <BrandChart caption="Look up accounts or choose Top 10 to explore follower history." />}
+      {!data && !busy && <BrandChart caption="Look up accounts to explore follower history." />}
       {data && (
         <section
           className={`followers-card chart-card ${busy ? "is-loading" : ""}`}
@@ -310,8 +303,7 @@ export function FollowersExplorer({
         <p>
           Current captured follower counts in the legend include current-state information that this action curve can
           omit, including compact snapshots. Older pruned or deleted actions may be unavailable, and source sync can
-          lag. The curve is not a complete historical follower count. Top 10 ranks the captured database, rather than
-          guaranteeing a live global ranking.
+          lag. The curve is not a complete historical follower count.
         </p>
         {data && (
           <p>
