@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { BLUES, PURPLES, colorLevel, comparisonPeak, comparisonStats, comparisonShareText, sharePath, fillDays, getRange, summarize, type Activity } from "../packages/nextjs/lib/activity.ts";
+import { activityYears, BLUES, PURPLES, colorLevel, comparisonPeak, comparisonStats, comparisonShareText, sharePath, fillDays, getRange, summarize, type Activity } from "../packages/nextjs/lib/activity.ts";
 function activity(fid: string, actions: number[]): Activity {
   const range = getRange("2024", "2024-03-01");
   const days = fillDays(actions.map((count, i) => ({ day: `2024-01-0${i+1}`, actions: count })), range.start, range.end, range.anchor);
@@ -30,4 +30,13 @@ test("comparison share text and URLs preserve both accounts, range and cache-bus
   assert.equal(url.searchParams.get("ts"), "1793250000123");
   assert.match(comparisonShareText(first, second), /^@user18446744073709551615 vs @user2: 10 vs 100 captured Farcaster actions in 2024/);
   assert.match(comparisonShareText({...first, profile:{...first.profile, username:null}}, second), /^FID 18446744073709551615 vs @user2/);
+});
+
+
+test("periods include every year back to the minimum of both accounts regardless of their order", () => {
+  const newer = {years:[2026,2025]}, older = {years:[2026,2022]};
+  assert.deepEqual(activityYears(newer, older, 2026), [2026,2025,2024,2023,2022]);
+  assert.deepEqual(activityYears(older, newer, 2026), [2026,2025,2024,2023,2022]);
+  assert.deepEqual(activityYears(newer, undefined, 2026), [2026,2025]);
+  assert.deepEqual(activityYears(undefined, undefined, 2026), [2026]);
 });

@@ -9,7 +9,7 @@ function fixture(fid, period, anchor) {
   const date=d.toISOString().slice(0,10), active=fid==='2'?[1,2,3]:[1,3];
   days.push({date,actions:date.startsWith(year+'-01-')&&active.includes(d.getUTCDate())?(fid==='2'?100:10):0,future:date>anchor});
  }
- return {profile:{fid,username:fid==='2'?'v':'nikolaii.eth',display_name:fid==='2'?'V':'Nikolai',pfp_url:null},period,anchor,start,end,days,years:[2026,2025,2024,2021],total:fid==='2'?300:20,activeDays:fid==='2'?3:2,longestStreak:fid==='2'?3:1,peak:fid==='2'?100:10,peakDate:year+'-01-01',updatedAt:new Date().toISOString(),catchingUp:false,coverage:'Historical coverage is incomplete.'};
+ return {profile:{fid,username:fid==='2'?'v':'nikolaii.eth',display_name:fid==='2'?'V':'Nikolai',pfp_url:null},period,anchor,start,end,days,years:fid==='2'?[2026,2021]:[2026,2025,2024],total:fid==='2'?300:20,activeDays:fid==='2'?3:2,longestStreak:fid==='2'?3:1,peak:fid==='2'?100:10,peakDate:year+'-01-01',updatedAt:new Date().toISOString(),catchingUp:false,coverage:'Historical coverage is incomplete.'};
 }
 (async()=>{
  const browser=await chromium.launch({executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH});
@@ -28,6 +28,7 @@ function fixture(fid, period, anchor) {
  assert.equal(await page.getByText('No sign-in. Just curiosity.',{exact:true}).count(),0);
  assert.equal(await page.getByTestId('compare-toggle').count(),0);
  await page.getByTestId('lookup-input').fill('366713');await page.getByTestId('lookup-submit').click();
+ await expect(page.getByTestId('year-2021')).toHaveCount(0);
  await page.getByTestId('compare-toggle').click();await expect(page.getByTestId('compare-input')).toBeVisible();
  await expect(page.getByTestId('compare-submit')).toBeDisabled();
  await page.getByTestId('compare-input').fill('v');await page.getByTestId('compare-result').first().waitFor();
@@ -35,6 +36,7 @@ function fixture(fid, period, anchor) {
  assert.equal(await page.getByTestId('compare-input').getAttribute('aria-activedescendant'),'compare-result-0');
  await page.getByTestId('compare-input').press('Enter');await page.getByTestId('comparison-chart').waitFor();
  assert.equal(new URL(page.url()).searchParams.get('compare'),'2');
+ for(const year of [2026,2025,2024,2023,2022,2021]) await expect(page.getByTestId(`year-${year}`)).toBeVisible();
  await expect(page.getByTestId('compare-clear')).toBeVisible();
  assert.equal(await page.getByTestId('comparison-grid-1').locator('rect[aria-label$="10 captured actions"]').first().getAttribute('fill'),'#855dcd');
  assert.equal(await page.getByTestId('comparison-grid-2').locator('rect[aria-label$="100 captured actions"]').first().getAttribute('fill'),'#8bbdff');
@@ -50,7 +52,7 @@ function fixture(fid, period, anchor) {
  await page.setViewportSize({width:390,height:1000});await page.screenshot({path:'artifacts/comparison-mobile.png',fullPage:true});
  await page.setViewportSize({width:1280,height:1100});await page.screenshot({path:'artifacts/comparison-desktop.png',fullPage:true});
  await page.reload();await page.getByTestId('comparison-chart').waitFor();assert.equal(await page.getByTestId('compare-name-2').innerText(),'@v');
- await page.getByTestId('compare-clear').click();assert.equal(await page.getByTestId('comparison-chart').count(),0);assert.equal(new URL(page.url()).searchParams.has('compare'),false);
+ await page.getByTestId('compare-clear').click();await expect(page.getByTestId('year-2021')).toHaveCount(0);assert.equal(await page.getByTestId('comparison-chart').count(),0);assert.equal(new URL(page.url()).searchParams.has('compare'),false);
  await page.getByTestId('compare-input').fill('366713');await page.getByTestId('compare-submit').click();await expect(page.getByTestId('compare-error')).toContainText('different account');
  await page.getByTestId('compare-input').fill('bad');await page.getByTestId('compare-submit').click();await expect(page.getByTestId('compare-error')).toContainText('not found');assert.equal(await page.getByTestId('activity-total').innerText(),'20');
  await page.getByTestId('compare-input').fill('99');await page.getByTestId('compare-submit').click();await page.getByTestId('compare-toggle').click();await page.waitForTimeout(700);assert.equal(await page.getByTestId('comparison-chart').count(),0);assert.equal(await page.getByTestId('compare-search').count(),0);

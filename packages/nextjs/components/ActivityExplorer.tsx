@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Activity, Day } from "~~/lib/activity";
 import {
   activityShareText,
+  activityYears,
   comparisonShareText,
   accountName,
   activityDate,
@@ -313,9 +314,7 @@ export function ActivityExplorer({
   const username = data?.profile.username;
   const isResolved =
     !!data && [data.profile.fid, username?.toLowerCase()].includes(input.trim().replace(/^@/, "").toLowerCase());
-  const years = [...new Set([...(data?.years || [new Date().getUTCFullYear()]), ...(comparison?.years || [])])].sort(
-    (a, b) => b - a,
-  );
+  const years = activityYears(data, comparison);
   const imageParams = data
     ? new URLSearchParams({
         fid: data.profile.fid,

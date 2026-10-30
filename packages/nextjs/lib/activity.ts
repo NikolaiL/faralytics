@@ -182,3 +182,12 @@ export function comparisonStats(first: Activity, second: Activity) {
 export function comparisonShareText(first: Activity, second: Activity) {
   return `${accountName(first)} vs ${accountName(second)}: ${first.total.toLocaleString("en-US")} vs ${second.total.toLocaleString("en-US")} captured Farcaster actions in ${periodLabel(first.period)}. A year, one square at a time.\n\nHow about you?`;
 }
+
+export function activityYears(
+  first?: Pick<Activity, "years">,
+  second?: Pick<Activity, "years">,
+  currentYear = new Date().getUTCFullYear(),
+) {
+  const firstYear = Math.min(currentYear, ...(first?.years || []), ...(second?.years || []));
+  return Array.from({ length: currentYear - firstYear + 1 }, (_, index) => currentYear - index);
+}
