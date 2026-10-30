@@ -19,6 +19,7 @@ function fixture(ids){return{from:'2023-03-18 01:00:13',until:anchor+' 00:00:00'
  await page.getByTestId('followers-input').fill('366713');await page.getByTestId('followers-submit').click();await expect(page.locator('.recharts-line-curve')).toHaveCount(1);
  await page.getByTestId('followers-input').fill('1');await page.getByTestId('followers-result').first().waitFor();await page.getByTestId('followers-input').press('ArrowDown');await page.getByTestId('followers-input').press('Enter');await expect(page.locator('.recharts-line-curve')).toHaveCount(2);
  assert.equal(new URL(page.url()).searchParams.get('fids'),'366713,10956');
+ await expect(page.locator('.image-links a[download]')).toHaveCount(2);
  const firstLine=page.locator('.recharts-line-curve').first();assert.equal(await firstLine.getAttribute('stroke'),'#B596F2');assert.equal(await firstLine.getAttribute('stroke-dasharray'),null);
  await page.getByTestId('follower-toggle-10956').click();await expect(page.locator('.recharts-line-curve')).toHaveCount(1);await page.getByTestId('follower-toggle-10956').click();await expect(page.locator('.recharts-line-curve')).toHaveCount(2);
  const plot=await page.getByTestId('follower-plot').boundingBox();await page.mouse.move(plot.x+plot.width*.6,plot.y+plot.height*.5);await expect(page.locator('.follower-tooltip')).toBeVisible();await page.mouse.move(0,0);

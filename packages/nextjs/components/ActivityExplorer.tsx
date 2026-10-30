@@ -21,6 +21,7 @@ import { BrandChart } from "./BrandChart";
 import { AvatarImage } from "./AvatarImage";
 import { ComparisonChart } from "./ComparisonChart";
 import { Heatmap } from "./Heatmap";
+import { ChartImages } from "./ChartImages";
 import { AccountSearch } from "./AccountSearch";
 import { useMiniapp } from "./MiniappProvider";
 import { ShareActions } from "./ShareActions";
@@ -517,20 +518,12 @@ export function ActivityExplorer({
             </p>
           )}
           {data && (
-            <div className="image-links">
-              <span>Download your chart</span>
-              <a
-                href={`/api/og/farcaster.png?${imageParams}`}
-                download="faralytics-farcaster.png"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Farcaster · 3:2 ↗
-              </a>
-              <a href={`/api/og/x.png?${imageParams}`} download="faralytics-x.png" target="_blank" rel="noreferrer">
-                X · 2:1 ↗
-              </a>
-            </div>
+            <ChartImages
+              basePath="/api/og"
+              params={imageParams.toString()}
+              filename="faralytics"
+              label="Download your chart"
+            />
           )}
         </section>
       )}

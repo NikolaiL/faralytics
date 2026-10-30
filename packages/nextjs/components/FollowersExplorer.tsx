@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { ChartImages } from "./ChartImages";
 import { AccountSearch } from "./AccountSearch";
 import { AddMiniappButton } from "./AddMiniappButton";
 import { AppNavigation } from "./AppNavigation";
@@ -265,25 +266,12 @@ export function FollowersExplorer({
       {data && (
         <>
           <ShareActions disabled={busy} onShare={share} placement="below" />
-          <div className="image-links">
-            <span>Download follower chart</span>
-            <a
-              href={`/api/og/followers/farcaster.png?${imageParams}`}
-              target="_blank"
-              rel="noreferrer"
-              download="faralytics-followers-farcaster.png"
-            >
-              Farcaster · 3:2 ↗
-            </a>
-            <a
-              href={`/api/og/followers/x.png?${imageParams}`}
-              target="_blank"
-              rel="noreferrer"
-              download="faralytics-followers-x.png"
-            >
-              X · 2:1 ↗
-            </a>
-          </div>
+          <ChartImages
+            basePath="/api/og/followers"
+            params={imageParams.toString()}
+            filename="faralytics-followers"
+            label="Download follower chart"
+          />
         </>
       )}
       {note && (
