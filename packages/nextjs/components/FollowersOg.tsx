@@ -30,7 +30,8 @@ export function FollowersOg({
   const legendCols = data.series.length > 5 ? 2 : 1;
   const legendRows = Math.ceil(data.series.length / legendCols);
   const legendRowHeight = many ? 30 : 39;
-  const legendWidth = 710 / legendCols;
+  const legendWidth = legendCols === 1 ? 400 : 710 / legendCols;
+  const legendLeft = legendCols === 1 ? 1136 - legendWidth : 426;
   return (
     <div
       style={{
@@ -51,7 +52,7 @@ export function FollowersOg({
       <div style={{ display: "flex", position: "absolute", top: 149, left: 64, color: "#a99aba", fontSize: 14 }}>
         {data.series.length} {data.series.length === 1 ? "account" : "accounts"} · shared scale
       </div>
-      <div style={{ display: "flex", position: "absolute", left: 426, top: 25, color: "#857594", fontSize: 12 }}>
+      <div style={{ display: "flex", position: "absolute", left: legendLeft, top: 25, color: "#857594", fontSize: 12 }}>
         CURRENT CAPTURED FOLLOWERS
       </div>
       {data.series.map((series, index) => {
@@ -67,7 +68,7 @@ export function FollowersOg({
             style={{
               display: "flex",
               position: "absolute",
-              left: 426 + column * legendWidth,
+              left: legendLeft + column * legendWidth,
               top: 48 + row * legendRowHeight,
               width: legendWidth - 18,
               alignItems: "center",
