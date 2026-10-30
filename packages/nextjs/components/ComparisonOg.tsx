@@ -1,4 +1,3 @@
-import { Fragment } from "react";
 import {
   accountName,
   activityDate,
@@ -220,57 +219,58 @@ export function ComparisonOg({
                 justifyContent: "space-around",
               }}
             >
-              {[stat.first, stat.second].map((value, index) => (
-                <Fragment key={index}>
+              {[stat.first, stat.second].flatMap((value, index) => [
+                <div
+                  key={`value-${index}`}
+                  style={{
+                    display: "flex",
+                    flexDirection: stat.key === "peak" ? "row" : "column",
+                    alignItems: "center",
+                    color: colors[index],
+                    gap: 4,
+                  }}
+                >
                   <div
                     style={{
                       display: "flex",
-                      flexDirection: stat.key === "peak" ? "row" : "column",
-                      alignItems: "center",
-                      color: colors[index],
-                      gap: 4,
+                      fontSize: compact ? (stat.key === "peak" ? 18 : 20) : 27,
+                      fontWeight: 700,
+                      gap: 5,
                     }}
                   >
-                    <div
-                      style={{
-                        display: "flex",
-                        fontSize: compact ? (stat.key === "peak" ? 18 : 20) : 27,
-                        fontWeight: 700,
-                        gap: 5,
-                      }}
-                    >
-                      {value.toLocaleString("en-US")}
-                      {stat.winner === (index ? "second" : "first") && (
-                        <svg
-                          width={compact ? 15 : 20}
-                          height={compact ? 15 : 20}
-                          viewBox="0 0 24 24"
-                          style={{ marginTop: compact ? 3 : 5 }}
-                        >
-                          <path
-                            d="m5 12 4 4L19 6"
-                            fill="none"
-                            stroke={colors[index]}
-                            strokeWidth="2.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      )}
-                    </div>
-                    {stat.key === "peak" && (
-                      <div style={{ display: "flex", fontSize: compact ? 9 : 12 }}>
-                        {activityDate((index ? stat.secondDate : stat.firstDate) || null)}
-                      </div>
+                    {value.toLocaleString("en-US")}
+                    {stat.winner === (index ? "second" : "first") && (
+                      <svg
+                        width={compact ? 15 : 20}
+                        height={compact ? 15 : 20}
+                        viewBox="0 0 24 24"
+                        style={{ marginTop: compact ? 3 : 5 }}
+                      >
+                        <path
+                          d="m5 12 4 4L19 6"
+                          fill="none"
+                          stroke={colors[index]}
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
                     )}
                   </div>
-                  {stat.key === "peak" && index === 0 && (
-                    <div style={{ display: "flex", fontSize: compact ? 10 : 14, color: "#a99aba" }}>
-                      actions on busiest day{stat.winner === "tie" ? " · Tie" : ""}
+                  {stat.key === "peak" && (
+                    <div style={{ display: "flex", fontSize: compact ? 9 : 12 }}>
+                      {activityDate((index ? stat.secondDate : stat.firstDate) || null)}
                     </div>
                   )}
-                </Fragment>
-              ))}
+                </div>,
+                ...(stat.key === "peak" && index === 0
+                  ? [
+                      <div key="peak-label" style={{ display: "flex", fontSize: compact ? 10 : 14, color: "#a99aba" }}>
+                        actions on busiest day{stat.winner === "tie" ? " · Tie" : ""}
+                      </div>,
+                    ]
+                  : []),
+              ])}
             </div>
             {stat.key !== "peak" && (
               <div style={{ display: "flex", fontSize: compact ? 11 : 15, color: "#a99aba" }}>
