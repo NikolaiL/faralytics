@@ -5,8 +5,25 @@ import { NumberText } from "./NumberText";
 import type { LookupStats } from "~~/lib/lookup-stats";
 const number = (value: string) => BigInt(value).toLocaleString("en-US");
 const time = (value: string) => new Date(value).toLocaleString("en-GB", { timeZone: "UTC" });
+const relativeTime = (value: string, now: number) => {
+  const seconds = Math.max(0, Math.floor((now - new Date(value).getTime()) / 1000));
+  const [amount, unit] =
+    seconds < 60
+      ? [seconds, "second"]
+      : seconds < 3600
+        ? [Math.floor(seconds / 60), "minute"]
+        : seconds < 86400
+          ? [Math.floor(seconds / 3600), "hour"]
+          : [Math.floor(seconds / 86400), "day"];
+  return `${amount} ${unit}${amount === 1 ? "" : "s"} ago`;
+};
 const toolName = (tool: string) => tool.replace(/[-_]/g, " ").replace(/^./, (character) => character.toUpperCase());
 export function StatsDashboard() {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
   const [data, setData] = useState<LookupStats>();
   const [tab, setTab] = useState<"latest" | "popular" | "users">("latest");
   const [error, setError] = useState("");
@@ -197,8 +214,8 @@ export function StatsDashboard() {
                     {data.latest.map((row) => (
                       <tr key={row.lookupId}>
                         <td>
-                          <time dateTime={row.lastViewedAt}>
-                            <NumberText>{time(row.lastViewedAt)}</NumberText>
+                          <time dateTime={row.lastViewedAt} title={`${time(row.lastViewedAt)} UTC`}>
+                            <NumberText>{relativeTime(row.lastViewedAt, now)}</NumberText>
                           </time>
                         </td>
                         <td data-label="Looked up by">
