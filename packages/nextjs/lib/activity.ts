@@ -191,3 +191,11 @@ export function activityYears(
   const firstYear = Math.min(currentYear, ...(first?.years || []), ...(second?.years || []));
   return Array.from({ length: currentYear - firstYear + 1 }, (_, index) => currentYear - index);
 }
+
+export function parseFollowerIds(value: string) {
+  if (!value || value.length > 220) throw new InputError("Choose between one and ten accounts.");
+  const ids = value.split(",");
+  if (ids.length > 10 || ids.some((fid) => !validFid(fid)))
+    throw new InputError("Choose up to ten valid positive FIDs.");
+  return [...new Set(ids)];
+}

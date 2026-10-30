@@ -56,15 +56,19 @@ const datasetStatus = unstable_cache(
   { revalidate: 60 },
 );
 
-export async function loadActivity(input: string, period = "365", anchor?: string): Promise<Activity> {
-  const range = getRange(period, anchor);
+export async function resolveAccount(input: string): Promise<string> {
   const lookup = input.trim().replace(/^@/, "").toLowerCase();
   if (!lookup || lookup.length > 64) throw new InputError("Enter a Farcaster username or numeric FID.");
   const numeric = /^\d+$/.test(lookup);
   if (numeric && !validFid(lookup)) throw new InputError("Enter a valid positive FID.");
   if (!numeric && !/^[a-z0-9][a-z0-9.-]{0,62}$/.test(lookup))
     throw new InputError("Enter a valid Farcaster username, without a profile URL.");
-  const fid = numeric ? lookup : await resolveUsername(lookup);
+  return numeric ? lookup : await resolveUsername(lookup);
+}
+
+export async function loadActivity(input: string, period = "365", anchor?: string): Promise<Activity> {
+  const range = getRange(period, anchor);
+  const fid = await resolveAccount(input);
   const today = dateKey(new Date());
   const [profile, history, status] = await Promise.all([profileByFid(fid), dailyActivity(fid, today), datasetStatus()]);
   const days = fillDays(history.rows, range.start, range.end, range.anchor);

@@ -2,7 +2,11 @@ import type { CSSProperties } from "react";
 import { PURPLES } from "~~/lib/activity";
 import { BRAND_GRID, brandCellLevel } from "~~/lib/brand";
 
-export function BrandChart() {
+export function BrandChart({
+  caption = "Look up a username or FID to see their year in squares.",
+}: {
+  caption?: string;
+}) {
   const step = 17;
   return (
     <section className="chart-card brand-chart" data-testid="lookup-empty">
@@ -38,7 +42,7 @@ export function BrandChart() {
           }),
         )}
       </svg>
-      <p>Look up a username or FID to see their year in squares.</p>
+      <p>{caption}</p>
     </section>
   );
 }

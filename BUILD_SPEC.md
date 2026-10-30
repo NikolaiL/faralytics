@@ -19,3 +19,7 @@ The creator requested production deployment, then selected https://faralytics.ve
 ## Current release scope
 
 Subsequent creator requests supersede the initial read-only/local-only scope: publish to Faralytics on Vercel, support Base NFT minting through the verified IPFS collection, USDC coffee tips, wallet connection, and native Farcaster add-miniapp opt-in. See README.md for deployed addresses, storage and confirmation behavior. Git commit, push and deploy are authorized.
+
+## Followers section
+
+Add interactive follower-action curves, up to ten selected accounts and a Top 10 shortcut, using the existing read-only ClickHouse follow-action chart and first-follow timestamp. Keep the current captured count separate from the net-action curve. Expose responsive desktop tabs and mobile bottom navigation for Activity / Followers. Support shareable follower selection URLs and matching 3:2/2:1 OG cards with a top-left logo and right-side legend. Preserve the existing activity, comparison, NFT and payment behavior. Samples: captured Top 10 and FIDs 366713 vs 10956.
