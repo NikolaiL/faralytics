@@ -79,7 +79,6 @@ export default function FollowerPlot({ data, hidden }: { data: FollowerChartData
                       <div key={series.profile.fid} style={{ color: FOLLOWER_COLORS[index] }}>
                         <b>{followerName(series)}</b>
                         <span>{point ? point.value.toLocaleString("en-US") : "No history"}</span>
-                        {point && <small>{followerDate(point.ts)}</small>}
                       </div>
                     );
                   })}
