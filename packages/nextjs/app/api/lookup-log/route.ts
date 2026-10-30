@@ -59,7 +59,7 @@ export const POST = withErrorReporting("/api/lookup-log", async (request) => {
       sql`SELECT pg_advisory_xact_lock(hashtextextended(${lookup.lookupId}::text, 0))`,
       sql`INSERT INTO lookup_events (lookup_id, tool, user_id, viewer_fid, viewer_ip, identity_source, metadata)
         VALUES (${lookup.lookupId}::uuid, ${lookup.tool}, ${userId}, ${viewerFid}::numeric, ${viewerIp}::inet,
-          ${viewerFid ? "quick_auth" : "anonymous"}, ${JSON.stringify({ ...lookup.metadata, anonymous_id: anonymousId })}::jsonb)
+          ${viewerFid ? "quick_auth" : "anonymous"}, ${JSON.stringify({ ...lookup.metadata, anonymous_id: anonymousId })}::jsonb || jsonb_build_object('last_seen_at', now()))
         ON CONFLICT (lookup_id) DO UPDATE SET
           metadata = EXCLUDED.metadata,
           viewer_fid = COALESCE(lookup_events.viewer_fid, EXCLUDED.viewer_fid),

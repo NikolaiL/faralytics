@@ -6,6 +6,10 @@
       "viewport": "mobile",
       "steps": [
         {
+          "probe": "/api/stats",
+          "expect": 200
+        },
+        {
           "probe": "/api/health/db",
           "expect": 200
         },
