@@ -30,7 +30,8 @@ export function FollowersOg({
   const legendCols = data.series.length > 5 ? 2 : 1;
   const legendRows = Math.ceil(data.series.length / legendCols);
   const legendRowHeight = many ? 30 : 39;
-  const legendWidth = legendCols === 1 ? 400 : 710 / legendCols;
+  const legendWidth = legendCols === 1 ? 400 : 320;
+  const legendGap = legendCols === 1 ? 0 : 70;
   const legendLeft = legendCols === 1 ? 1136 - legendWidth : 426;
   return (
     <div
@@ -68,9 +69,9 @@ export function FollowersOg({
             style={{
               display: "flex",
               position: "absolute",
-              left: legendLeft + column * legendWidth,
+              left: legendLeft + column * (legendWidth + legendGap),
               top: 48 + row * legendRowHeight,
-              width: legendWidth - 18,
+              width: legendWidth,
               alignItems: "center",
               gap: 8,
             }}
@@ -116,7 +117,7 @@ export function FollowersOg({
             <div
               style={{
                 display: "flex",
-                flex: 1,
+                flexShrink: 1,
                 fontSize: nameSize,
                 color: FOLLOWER_COLORS[index],
                 whiteSpace: "nowrap",
@@ -125,7 +126,7 @@ export function FollowersOg({
             >
               {name}
             </div>
-            <div style={{ display: "flex", fontSize: many ? 15 : 21, color: "#d4c9e1" }}>
+            <div style={{ display: "flex", flexShrink: 0, fontSize: many ? 15 : 21, color: FOLLOWER_COLORS[index] }}>
               {series.followers === null ? "—" : compactNumber(series.followers)}
             </div>
           </div>
