@@ -42,9 +42,9 @@ const { chromium } = require("@playwright/test");
     assert.ok(html.includes('/og/faralytics-farcaster-v12.png'));
     assert.ok(html.includes('/og/faralytics-x-v12.png'));
   }
-  assert.ok((await page.locator('head meta[property="og:image"]').getAttribute('content')).includes('/og/faralytics-farcaster-v12.png'));
-  assert.ok((await page.locator('head meta[name="twitter:image"]').getAttribute('content')).includes('/og/faralytics-x-v12.png'));
-  assert.ok(JSON.parse(await page.locator('head meta[name="fc:miniapp"]').getAttribute('content')).imageUrl.includes('/og/faralytics-farcaster-v12.png'));
+  assert.ok((await page.locator('meta[property="og:image"]').getAttribute('content')).includes('/og/faralytics-farcaster-v12.png'));
+  assert.ok((await page.locator('meta[name="twitter:image"]').getAttribute('content')).includes('/og/faralytics-x-v12.png'));
+  assert.ok(JSON.parse(await page.locator('meta[name="fc:miniapp"]').getAttribute('content')).imageUrl.includes('/og/faralytics-farcaster-v12.png'));
   const initialActivity = page.waitForResponse(r => r.url().includes('/api/activity?user=366713') && r.status() === 200);
   await page.goto("http://localhost:3100/?user=366713", { waitUntil: "networkidle" });
   await page.getByTestId("activity-graph").waitFor();
@@ -109,16 +109,16 @@ const { chromium } = require("@playwright/test");
   const response = await page.goto(localShare.toString(), { waitUntil: 'networkidle' });
   assert.equal(response.status(), 200);
   assert.equal(await page.locator('.heatmap rect').count(), 365);
-  const meta = await page.locator('head meta[name="fc:miniapp"]').getAttribute('content');
+  const meta = await page.locator('meta[name="fc:miniapp"]').getAttribute('content');
   assert.equal(JSON.parse(meta).button.action.url, copied);
   assert.equal(JSON.parse(meta).button.title, "Check My Faralytics");
   assert.equal(new URL(JSON.parse(meta).imageUrl).searchParams.get('ts'), share.searchParams.get('ts'));
-  for (const selector of ['head meta[name="twitter:image"]', 'head meta[property="og:image"]']) {
+  for (const selector of ['meta[name="twitter:image"]', 'meta[property="og:image"]']) {
     assert.equal(new URL(await page.locator(selector).getAttribute('content')).searchParams.get('ts'), share.searchParams.get('ts'));
   }
   assert.equal(await page.locator('link[rel="canonical"]').getAttribute('href'), copied);
-  assert.ok((await page.locator('head meta[name="twitter:image"]').getAttribute('content')).includes('/api/og/x.png'));
-  assert.ok((await page.locator('head meta[property="og:image"]').getAttribute('content')).includes('/api/og/farcaster.png'));
+  assert.ok((await page.locator('meta[name="twitter:image"]').getAttribute('content')).includes('/api/og/x.png'));
+  assert.ok((await page.locator('meta[property="og:image"]').getAttribute('content')).includes('/api/og/farcaster.png'));
   await page.getByTestId('year-2024').click();
   await page.waitForFunction(() => !document.querySelector('.is-loading'));
   assert.equal(await page.locator('.heatmap rect').count(), 366);

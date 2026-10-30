@@ -6,11 +6,15 @@ export function Heatmap({
   peak,
   onSelect,
   onActivate,
+  palette = PURPLES,
+  label,
 }: {
   days: Day[];
   peak: number;
   onSelect?: (day: Day) => void;
   onActivate?: () => void;
+  palette?: string[];
+  label?: string;
 }) {
   const { cells, columns } = grid(days);
   const size = 15,
@@ -22,7 +26,7 @@ export function Heatmap({
       className="heatmap"
       viewBox={`0 0 ${width} 158`}
       role="group"
-      aria-label="Daily Farcaster activity, Sunday through Saturday. Select a square for details."
+      aria-label={`${label ? `${label}: ` : ""}Daily Farcaster activity, Sunday through Saturday. Select a square for details.`}
     >
       {["Mon", "Wed", "Fri"].map((label, index) => (
         <text key={label} x="0" y={46 + index * 34} fill="#938aab" fontSize="10">
@@ -46,7 +50,7 @@ export function Heatmap({
           width={size}
           height={size}
           rx="3"
-          fill={day.future ? "#14111c" : PURPLES[colorLevel(day.actions, peak)]}
+          fill={day.future ? "#14111c" : palette[colorLevel(day.actions, peak)]}
           opacity={day.future ? 0.5 : 1}
           role={onSelect && !day.future ? "button" : undefined}
           tabIndex={onSelect && !day.future ? 0 : undefined}

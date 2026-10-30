@@ -11,6 +11,7 @@ export function AccountSearch({
   resolved,
   onReset,
   onShowMe,
+  searchId = "lookup",
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -19,6 +20,7 @@ export function AccountSearch({
   resolved: boolean;
   onReset: () => void;
   onShowMe?: () => void;
+  searchId?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [results, setResults] = useState<SearchProfile[]>([]);
@@ -66,8 +68,9 @@ export function AccountSearch({
   }, [value, open]);
 
   useEffect(() => {
-    if (open && active >= 0) document.getElementById(`account-result-${active}`)?.scrollIntoView({ block: "nearest" });
-  }, [active, open]);
+    if (open && active >= 0)
+      document.getElementById(`${searchId}-result-${active}`)?.scrollIntoView({ block: "nearest" });
+  }, [active, open, searchId]);
 
   function select(profile: SearchProfile) {
     setOpen(false);
@@ -85,13 +88,13 @@ export function AccountSearch({
         <span aria-hidden="true" className="search-icon">
           ⌕
         </span>
-        <label className="sr-only" htmlFor="username">
+        <label className="sr-only" htmlFor={searchId === "lookup" ? "username" : `${searchId}-input`}>
           Username or FID
         </label>
         <input
           ref={input}
-          id="username"
-          data-testid="lookup-input"
+          id={searchId === "lookup" ? "username" : `${searchId}-input`}
+          data-testid={`${searchId}-input`}
           value={value}
           onChange={(event) => {
             onChange(event.target.value);
@@ -131,8 +134,8 @@ export function AccountSearch({
           role="combobox"
           aria-autocomplete="list"
           aria-expanded={open}
-          aria-controls="account-results"
-          aria-activedescendant={open && active >= 0 && results[active] ? `account-result-${active}` : undefined}
+          aria-controls={`${searchId}-results`}
+          aria-activedescendant={open && active >= 0 && results[active] ? `${searchId}-result-${active}` : undefined}
           placeholder="Username or FID"
           autoComplete="off"
           autoCapitalize="none"
@@ -145,7 +148,7 @@ export function AccountSearch({
             key="clear"
             type="button"
             className="search-clear"
-            data-testid="lookup-clear"
+            data-testid={`${searchId}-clear`}
             aria-label="Clear lookup and chart"
             title="Clear"
             onClick={(event) => {
@@ -188,7 +191,7 @@ export function AccountSearch({
         ) : (
           <button
             key="submit"
-            data-testid="lookup-submit"
+            data-testid={`${searchId}-submit`}
             type="submit"
             disabled={busy || !value.trim()}
             onClick={() => setOpen(false)}
@@ -199,18 +202,21 @@ export function AccountSearch({
         )}
       </div>
       {open && (
-        <div className="search-dropdown" data-testid="search-dropdown">
-          <ul id="account-results" role="listbox" aria-label="Matching Farcaster accounts" aria-busy={searching}>
+        <div
+          className="search-dropdown"
+          data-testid={searchId === "lookup" ? "search-dropdown" : `${searchId}-dropdown`}
+        >
+          <ul id={`${searchId}-results`} role="listbox" aria-label="Matching Farcaster accounts" aria-busy={searching}>
             {results.map((profile, index) => (
               <li key={`${profile.fid}:${profile.username}`} role="presentation">
                 <button
                   type="button"
                   role="option"
-                  id={`account-result-${index}`}
+                  id={`${searchId}-result-${index}`}
                   aria-selected={active === index}
                   tabIndex={-1}
                   disabled={busy}
-                  data-testid="search-result"
+                  data-testid={searchId === "lookup" ? "search-result" : `${searchId}-result`}
                   onMouseDown={(event) => event.preventDefault()}
                   onMouseEnter={() => setActive(index)}
                   onClick={() => select(profile)}

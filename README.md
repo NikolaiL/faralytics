@@ -107,3 +107,13 @@ The purple My activity button is visible only inside Farcaster when the SDK supp
 The search area reserves stable space for conditional My activity visibility: a compact 28px hint row and a 58px minimum search-field height prevent layout shifts when the button appears/disappears or Look up switches to Clear. The My activity button keeps a 44px touch target through its non-layout pseudo-element. The browser check compares chart position before and after clearing/refilling the same profile’s input.
 
 Once Farcaster reports the miniapp is added, the add control and its success status disappear entirely. The component stays hidden while initially reading host state to avoid flashing an Add/Added badge. Removing the app restores the manual add control without another automatic prompt.
+
+## Account comparisons
+
+With a profile displayed, **Compare to** reveals a second independent username/FID search, including the same follower-ranked suggestions, avatars and keyboard controls. The former “No sign-in. Just curiosity.” line is removed. Clear the second search to return to an individual chart, or collapse Compare to to remove the comparison. Resetting the first profile cancels both requests and returns to the homepage.
+
+Both accounts always use the same UTC range and anchor. Changing years reloads the pair together; the year list is the union of both histories. The first account uses the existing purple scale, the second uses a matching blue scale ending in `#8bbdff`. Both use `max(first.peak, second.peak)` as the logarithmic intensity denominator, so identical action counts have identical intensity levels. Joint stat boxes show both colored values, checkmarks only for strictly higher values, and explicit ties.
+
+Comparison links use `/share/<first-fid>?compare=<second-fid>&period=...&end=...&ts=...`. Both FIDs and the cache-buster propagate into the root view, canonical URL, Farcaster launch link and both OG image URLs. Comparison share text mentions both accounts and totals. `ComparisonOg` generates 1200×800 Farcaster and 1200×600 X cards with both PFPs, centered VS/period, stacked aligned charts, joint stats, logo and generation timestamp. Existing NFT minting continues to capture the first account’s individual chart, with a visible explanation when comparing.
+
+`tests/comparison.test.ts` checks common scaling, winners/ties and share preservation. `tests/comparison.cjs` checks the second search, request cancellation, both-year updates, reset/error states, widths from 320 to 1280px, comparison shares and metadata, and actual PNG generation at both sizes. Next.js may stream metadata into the body for normal browsers; crawler-facing HTML is checked independently when releasing.

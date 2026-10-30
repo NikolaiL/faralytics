@@ -29,6 +29,7 @@ export default async function Home({
   const params = await searchParams;
   return (
     <ActivityExplorer
+      initialCompareUser={typeof params.compare === "string" ? params.compare : undefined}
       initialUser={typeof params.user === "string" ? params.user : undefined}
       initialPeriod={typeof params.period === "string" ? params.period : undefined}
       initialEnd={typeof params.end === "string" ? params.end : undefined}

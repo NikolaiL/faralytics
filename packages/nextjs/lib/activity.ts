@@ -98,9 +98,10 @@ export function grid(days: Day[]) {
 export function periodLabel(period: string) {
   return period === "365" ? "the past 365 days" : period;
 }
-export function sharePath(fid: string, period: string, anchor: string, timestamp?: string) {
+export function sharePath(fid: string, period: string, anchor: string, timestamp?: string, compare?: string) {
   const params = new URLSearchParams({ period, end: anchor });
   if (timestamp) params.set("ts", timestamp);
+  if (compare) params.set("compare", compare);
   return `/share/${fid}?${params}`;
 }
 
@@ -145,4 +146,39 @@ export function activityShareText(activity: Pick<Activity, "profile" | "total" |
   const name = activity.profile.username ? `@${activity.profile.username}` : `FID ${activity.profile.fid}`;
   const subject = viewerFid === activity.profile.fid ? "I have" : `${name} has`;
   return `${subject} ${activity.total.toLocaleString("en-US")} captured Farcaster actions in ${periodLabel(activity.period)}. A year, one square at a time.\n\nHow about you?`;
+}
+
+export const BLUES = ["#192231", "#243c5c", "#365f91", "#528bd0", "#8bbdff"];
+export function accountName(activity: Pick<Activity, "profile">) {
+  return activity.profile.username ? `@${activity.profile.username}` : `FID ${activity.profile.fid}`;
+}
+export function comparisonPeak(first: Pick<Activity, "peak">, second: Pick<Activity, "peak">) {
+  return Math.max(first.peak, second.peak);
+}
+export function comparisonStats(first: Activity, second: Activity) {
+  return [
+    { key: "activeDays", label: "Active days", unit: "days", first: first.activeDays, second: second.activeDays },
+    {
+      key: "longestStreak",
+      label: "Longest streak",
+      unit: "days",
+      first: first.longestStreak,
+      second: second.longestStreak,
+    },
+    {
+      key: "peak",
+      label: "Busiest day",
+      unit: "actions",
+      first: first.peak,
+      second: second.peak,
+      firstDate: first.peakDate,
+      secondDate: second.peakDate,
+    },
+  ].map((stat) => ({
+    ...stat,
+    winner: stat.first === stat.second ? "tie" : stat.first > stat.second ? "first" : "second",
+  }));
+}
+export function comparisonShareText(first: Activity, second: Activity) {
+  return `${accountName(first)} vs ${accountName(second)}: ${first.total.toLocaleString("en-US")} vs ${second.total.toLocaleString("en-US")} captured Farcaster actions in ${periodLabel(first.period)}. A year, one square at a time.\n\nHow about you?`;
 }

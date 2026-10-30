@@ -43,3 +43,5 @@ Default chart transition refinement: every cell changes shade, including darkest
 Creator requested more visible defaultchartglow:6–10second cycles, brighterlavenderhighlights (#cdb0ff/#e6d6ff), largerbackgroundshadechanges andsoft6pxpurplebloom.
 
 Mobile lower share buttons use fulltext Share on Farcaster / Share on X / Copy link. Header controls stay compact FC / X / copyicon. Lower controls wrap only if needed on narrow screens.
+
+Comparison refinement: remove the curiosity tagline and show a compact Compare to toggle only with a loaded profile. Slide down a blue-bordered second search. Account one uses purple; account two uses blue (#192231, #243c5c, #365f91, #528bd0, #8bbdff), paired by intensity against the shared maximum. Identity row: PFP + left username, centered VS, right username + PFP. Totals align to their usernames around a centered period. Stack full-width date-aligned purple and blue heatmaps in one horizontal scroll area. Joint stats retain matching colored figures and higher-value checks, with ties labeled. Comparison OG cards follow the same order in both aspect ratios.
