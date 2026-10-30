@@ -224,7 +224,7 @@ export function ComparisonOg({
                 justifyContent: "space-around",
               }}
             >
-              {[stat.first, stat.second].flatMap((value, index) => [
+              {[stat.first, stat.second].map((value, index) => (
                 <div
                   key={`value-${index}`}
                   style={{
@@ -269,22 +269,13 @@ export function ComparisonOg({
                       </NumberText>
                     </div>
                   )}
-                </div>,
-                ...(stat.key === "peak" && index === 0
-                  ? [
-                      <div key="peak-label" style={{ display: "flex", fontSize: compact ? 10 : 14, color: "#a99aba" }}>
-                        actions on busiest day{stat.winner === "tie" ? " · Tie" : ""}
-                      </div>,
-                    ]
-                  : []),
-              ])}
+                </div>
+              ))}
             </div>
-            {stat.key !== "peak" && (
-              <div style={{ display: "flex", fontSize: compact ? 11 : 15, color: "#a99aba" }}>
-                {stat.label}
-                {stat.winner === "tie" ? " · Tie" : ""}
-              </div>
-            )}
+            <div style={{ display: "flex", fontSize: compact ? 11 : 15, color: "#a99aba" }}>
+              {stat.key === "peak" ? "actions on busiest day" : stat.label}
+              {stat.winner === "tie" ? " · Tie" : ""}
+            </div>
           </div>
         ))}
       </div>

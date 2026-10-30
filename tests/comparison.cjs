@@ -15,7 +15,7 @@ function fixture(fid, period, anchor) {
  const browser=await chromium.launch({executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH});
  try {
  const context=await browser.newContext({viewport:{width:1280,height:1100},permissions:['clipboard-read','clipboard-write']});
- const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const page=await context.newPage();await page.route('**/api/lookup-log',route=>route.fulfill({json:{}}));const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.addInitScript(()=>{window.open=url=>{window.__share=url;return null;};});
  await page.route('**/api/activity?*',async route=>{
   const p=new URL(route.request().url()).searchParams;const fid=p.get('user')==='v'?'2':p.get('user');
@@ -36,6 +36,7 @@ function fixture(fid, period, anchor) {
  assert.equal(await page.getByTestId('compare-input').getAttribute('aria-activedescendant'),'compare-result-0');
  await page.getByTestId('compare-input').press('Enter');await page.getByTestId('comparison-chart').waitFor();
  assert.equal(new URL(page.url()).searchParams.get('compare'),'2');
+ assert.ok(await page.getByTestId('comparison-stat-peak').evaluate(el=>{const label=el.querySelector('.comparison-stat-label');return label.textContent==='actions on busiest day'&&[...el.querySelectorAll('.comparison-stat-value')].every(value=>value.getBoundingClientRect().bottom<=label.getBoundingClientRect().top);}), 'busiest-day label is below both account values');
  for(const year of [2026,2025,2024,2023,2022,2021]) await expect(page.getByTestId(`year-${year}`)).toBeVisible();
  await expect(page.getByTestId('compare-clear')).toBeVisible();
  assert.equal(await page.getByTestId('comparison-grid-1').locator('rect[aria-label$="10 captured actions"]').first().getAttribute('fill'),'#855dcd');
@@ -59,7 +60,7 @@ function fixture(fid, period, anchor) {
  await page.getByTestId('lookup-clear').click();assert.equal(await page.getByTestId('compare-toggle').count(),0);assert.deepEqual(errors,[]);
  // The share page and image endpoints use actual server data, independent of browser API fixtures.
  const sharePath='/share/366713?compare=2&period=2024&end=2026-10-29&ts=1793250000123';
- const shareResponse=await page.goto('http://localhost:3100'+sharePath,{waitUntil:'networkidle'});assert.equal(shareResponse.status(),200);await page.getByTestId('comparison-chart').waitFor();
+ const shareResponse=await page.goto('http://localhost:3100'+sharePath,{waitUntil:'domcontentloaded',timeout:60000});assert.equal(shareResponse.status(),200);await page.getByTestId('comparison-chart').waitFor();
  for(const selector of ['meta[property="og:image"]','meta[name="twitter:image"]']) {const image=new URL(await page.locator(selector).getAttribute('content'));assert.equal(image.searchParams.get('compare'),'2');assert.equal(image.searchParams.get('ts'),'1793250000123');}
  const embed=JSON.parse(await page.locator('meta[name="fc:miniapp"]').getAttribute('content'));assert.equal(new URL(embed.button.action.url).searchParams.get('compare'),'2');
  const sharp=require(process.cwd()+'/packages/nextjs/node_modules/sharp');
