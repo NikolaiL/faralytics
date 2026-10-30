@@ -1,0 +1,7 @@
+{
+    "projectId": "crimson-pine-32366959",
+    "name": "faralytics",
+    "provider": "Neon",
+    "provisioner": "ViniApp NeonService",
+    "region": "aws-us-east-1"
+}

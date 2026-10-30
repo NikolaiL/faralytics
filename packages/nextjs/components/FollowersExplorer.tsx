@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { useLookupLog } from "~~/hooks/useLookupLog";
 import { ChartImages } from "./ChartImages";
 import { AccountSearch } from "./AccountSearch";
 import { AddMiniappButton } from "./AddMiniappButton";
@@ -47,6 +48,7 @@ export function FollowersExplorer({
   const controller = useRef<AbortController | null>(null);
   const selfLoaded = useRef(false);
   const ids = data?.series.map((s) => s.profile.fid) || [];
+  useLookupLog(data && !busy ? { tool: "followers", fids: ids, period: "all", end: data.anchor } : null);
   async function load({ accounts, user }: { accounts?: string[]; user?: string }, interactive = true) {
     controller.current?.abort();
     const abort = new AbortController();

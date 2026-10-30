@@ -225,6 +225,8 @@ __metadata:
     "@coinbase/wallet-sdk": "npm:^4.3.6"
     "@farcaster/miniapp-sdk": "npm:^0.3.0"
     "@farcaster/miniapp-wagmi-connector": "npm:^2.0.0"
+    "@farcaster/quick-auth": "npm:^0.0.8"
+    "@neondatabase/serverless": "npm:^1.2.0"
     "@tanstack/react-query": "npm:^5.90.0"
     "@types/node": "npm:~18.19.130"
     "@types/react": "npm:~19.2.14"
@@ -784,6 +786,18 @@ __metadata:
   peerDependencies:
     typescript: 5.8.3
   checksum: 10c0/b2875c9db16419a74e2ea3f2e919c5c5156bdda4cdf386838625aa6ec7412879b02b3fdd20aa28fe32adbcbfff8cb4e4004e36f5da6b9f9c5269bcc511e9ef4c
+  languageName: node
+  linkType: hard
+
+"@farcaster/quick-auth@npm:^0.0.8":
+  version: 0.0.8
+  resolution: "@farcaster/quick-auth@npm:0.0.8"
+  dependencies:
+    jose: "npm:^5.8.0"
+    zod: "npm:^3.25.1"
+  peerDependencies:
+    typescript: 5.8.3
+  checksum: 10c0/c811d515644454dc710bc11f9e7af8cd5c4802dccf12f68803d37789df0176c66a19895d022d9cc3d7581e06c35513a8636e4d83b6e3a7d533b834d26f9c41cd
   languageName: node
   linkType: hard
 
@@ -1483,6 +1497,13 @@ __metadata:
     "@emnapi/core": ^1.7.1 || 2.0.0-beta.2
     "@emnapi/runtime": ^1.7.1 || 2.0.0-beta.2
   checksum: 10c0/8fd47200ba18df97149dceb194d405cf1110c785f00c774746b8e6413c892c1cc3c3af41ebc6efee33b235e9f67b18ccc8c0fc35dfcd9c2f0567e5e782dac47e
+  languageName: node
+  linkType: hard
+
+"@neondatabase/serverless@npm:^1.2.0":
+  version: 1.2.0
+  resolution: "@neondatabase/serverless@npm:1.2.0"
+  checksum: 10c0/c220dbd926c64686df47590333cd5e3f39b8d78331021c66ad3c60157396f03ee1ea60db18c2a3e63c71310cc64e04fb4f4a56d30976ca1dc0e6ae6ad3bad419
   languageName: node
   linkType: hard
 
@@ -7344,7 +7365,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jose@npm:^5.2.3":
+"jose@npm:^5.2.3, jose@npm:^5.8.0":
   version: 5.10.0
   resolution: "jose@npm:5.10.0"
   checksum: 10c0/e20d9fc58d7e402f2e5f04e824b8897d5579aae60e64cb88ebdea1395311c24537bf4892f7de413fab1acf11e922797fb1b42269bc8fc65089a3749265ccb7b0

@@ -21,6 +21,7 @@ import { BrandChart } from "./BrandChart";
 import { AvatarImage } from "./AvatarImage";
 import { ComparisonChart } from "./ComparisonChart";
 import { Heatmap } from "./Heatmap";
+import { useLookupLog } from "~~/hooks/useLookupLog";
 import { ChartImages } from "./ChartImages";
 import { AccountSearch } from "./AccountSearch";
 import { useMiniapp } from "./MiniappProvider";
@@ -81,6 +82,16 @@ export function ActivityExplorer({
   const controller = useRef<AbortController | null>(null);
   const chart = useRef<HTMLDivElement>(null);
   const selfLoaded = useRef(false);
+  useLookupLog(
+    data && !busy && !compareBusy
+      ? {
+          tool: "activity",
+          fids: [data.profile.fid, ...(comparison ? [comparison.profile.fid] : [])],
+          period: data.period,
+          end: data.anchor,
+        }
+      : null,
+  );
 
   function updateURL(first: Activity, second?: Activity) {
     const params = new URLSearchParams({ user: first.profile.fid, period: first.period, end: first.anchor });

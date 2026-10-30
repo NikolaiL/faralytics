@@ -14,6 +14,8 @@
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "vercel:build": "vercel build --prod --yes",
     "vercel:deploy": "vercel deploy --prebuilt --prod",
-    "deploy": "yarn workspace @faralytics/contracts deploy"
+    "deploy": "yarn workspace @faralytics/contracts deploy",
+    "db:migrate": "node scripts/db-migrate.cjs",
+    "logs:lookups": "node scripts/lookup-logs.cjs"
   }
 }
