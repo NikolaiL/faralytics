@@ -4,6 +4,7 @@ import { sdk } from "@farcaster/miniapp-sdk";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
+import { shareCredit } from "~~/lib/share-credit";
 import type { Activity, Day } from "~~/lib/activity";
 import {
   activityShareText,
@@ -243,7 +244,7 @@ export function ActivityExplorer({
         ? comparisonShareText(data, comparison)
         : activityShareText(data, fid)
       : "Your year. One square at a time. Look up your Farcaster activity with Faralytics.\n\nHow about you?";
-    const credit = "faralytics - created by @nikolaii.eth with @viniapp";
+    const credit = shareCredit(target);
     if (target === "copy") {
       try {
         await navigator.clipboard.writeText(url);

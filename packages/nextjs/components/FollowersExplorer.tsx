@@ -14,6 +14,7 @@ import { AvatarImage } from "./AvatarImage";
 import { BrandChart } from "./BrandChart";
 import { ShareActions } from "./ShareActions";
 import { useMiniapp } from "./MiniappProvider";
+import { shareCredit } from "~~/lib/share-credit";
 import { LOGO_PIXELS } from "~~/lib/brand";
 import { PURPLES } from "~~/lib/activity";
 import {
@@ -114,8 +115,8 @@ export function FollowersExplorer({
     const ts = Date.now().toString();
     const url = new URL(data ? followersPath(data, ts) : `/followers?ts=${ts}`, origin).toString();
     const text = data
-      ? followersShareText(data)
-      : "Compare your Farcaster follower history with Faralytics.\n\nfaralytics - created by @nikolaii.eth with @viniapp";
+      ? followersShareText(data, target)
+      : `Compare your Farcaster follower history with Faralytics.\n\n${shareCredit(target)}`;
     if (target === "copy") {
       try {
         await navigator.clipboard.writeText(url);

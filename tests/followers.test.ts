@@ -21,6 +21,7 @@ test("nearest sampled tooltips disclose actual samples and handle empty series",
 });
 test("follower share URLs freeze both accounts, end date and timestamp",()=>{
  const path=followersPath(data,"1793250000123"),url=new URL(path,"https://faralytics.vercel.app");assert.equal(url.pathname,"/followers");assert.equal(url.searchParams.get("fids"),"366713,10956");assert.equal(url.searchParams.get("end"),"2026-10-30");assert.equal(url.searchParams.get("ts"),"1793250000123");
+ assert.ok(followersShareText(data,"x").endsWith("faralytics - created by @NikolaiLeb with @viniapp_xyz"));
  const text=followersShareText(data);assert.match(text,/@nikolaii.eth vs @1dolinski/);assert.ok(text.endsWith("faralytics - created by @nikolaii.eth with @viniapp"));
 });
 
