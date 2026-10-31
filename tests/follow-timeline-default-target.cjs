@@ -28,6 +28,13 @@ const base=process.env.BASE_URL || 'http://localhost:3100';
   await expect.poll(()=>cold.requests.at(-1)).toBe('');
   await expect(cold.page.getByTestId('follow-gate')).not.toBeVisible();
   const before=cold.requests.length;await cold.page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));await expect.poll(()=>cold.requests.length).toBeGreaterThan(before);assert.equal(cold.requests.at(-1),'','clearing remains unfiltered on refresh');
+  for(const role of ['actor','target']){
+   const other=role==='actor'?'target':'actor';
+   await cold.page.getByRole('form',{name:`Filter by ${role}`}).getByTestId('show-me').click();
+   await expect(cold.page.getByTestId(`timeline-${role}-input`)).toHaveValue('@viewer');
+   await expect(cold.page.getByTestId(`timeline-${other}-input`)).toHaveValue('');
+   await expect.poll(()=>cold.requests.at(-1)).toBe(role+'=10956');
+  }
   await cold.page.close();
   for(const query of ['target=37','actor=3','actor=3&target=37']){
    const explicit=await setup('/follow-timeline?'+query);
@@ -37,7 +44,7 @@ const base=process.env.BASE_URL || 'http://localhost:3100';
    assert.ok(explicit.requests.length>0);for(const request of explicit.requests)assert.equal(new URLSearchParams(request).toString(),new URLSearchParams(query).toString(),'explicit filters preserved');
    await explicit.page.close();
   }
-  const web=await setup('/follow-timeline',0,false);await expect(web.page.getByText('No captured events yet')).toBeVisible();assert.equal(web.requests[0],'');await expect(web.page.getByTestId('timeline-target-input')).toHaveValue('');await expect(web.page.getByTestId('follow-gate')).toHaveCount(0);await web.page.close();
-  console.log('PASS timeline default target: cold Farcaster self-target only, no automatic follow/add prompt, explicit filters preserved, clear stays global after refresh, browser default global. No native social action sent.');
+  const web=await setup('/follow-timeline',0,false);await expect(web.page.getByText('No captured events yet')).toBeVisible();assert.equal(web.requests[0],'');await expect(web.page.getByTestId('show-me')).toHaveCount(0);await expect(web.page.getByTestId('timeline-target-input')).toHaveValue('');await expect(web.page.getByTestId('follow-gate')).toHaveCount(0);await web.page.close();
+  console.log('PASS timeline default target: cold Farcaster self-target only, no automatic follow/add prompt, explicit filters preserved, clear stays global after refresh, browser default global, Show me uses viewer in either field and clears duplicate opposite selection, no Show me outside Farcaster. No native social action sent.');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exit(1)});

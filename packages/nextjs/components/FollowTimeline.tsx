@@ -337,6 +337,7 @@ export function FollowTimeline({
                 value={value}
                 onChange={role === "actor" ? setActorInput : setTargetInput}
                 onSelect={(fid) => apply(role, fid)}
+                onShowMe={isMiniApp && fid ? () => apply(role, fid) : undefined}
                 busy={loading && !profile}
                 resolved={!!profile && (value === accountName(profile) || value === profile.fid)}
                 onReset={() => {
