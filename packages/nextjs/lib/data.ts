@@ -11,16 +11,13 @@ import {
 } from "./activity";
 import type { Activity, Profile, SearchProfile } from "./activity";
 import { query } from "./clickhouse";
+import { loadProfiles } from "./profile-data";
 
 const profileByFid = unstable_cache(
   async (fid: string): Promise<Profile> => {
-    const rows = await query<Profile>(
-      "SELECT toString(p.fid) AS fid, username, display_name, avatar_url AS pfp_url FROM farcaster.profiles AS p WHERE p.fid = {fid:UInt64} LIMIT 1",
-      { fid },
-    );
-    return rows[0] || { fid, username: null, display_name: null };
+    return (await loadProfiles([fid]))[0];
   },
-  ["profile-v2"],
+  ["profile-v3"],
   { revalidate: 300 },
 );
 const resolveUsername = unstable_cache(

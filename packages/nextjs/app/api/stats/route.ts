@@ -1,17 +1,14 @@
 import { unstable_cache } from "next/cache";
 import { getDb } from "~~/utils/db";
-import { query } from "~~/lib/clickhouse";
+import { loadProfiles } from "~~/lib/profile-data";
 import type { LookupStats } from "~~/lib/lookup-stats";
 import { reportServerError, withErrorReporting } from "~~/utils/reportServerError";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 const profileNames = unstable_cache(
   async (fids: string[]) =>
-    query<LookupStats["profiles"][number]>(
-      "SELECT toString(fid) AS fid, username, display_name FROM farcaster.profiles WHERE fid IN {fids:Array(UInt64)}",
-      { fids: `[${fids.join(",")}]` },
-    ),
-  ["stats-profile-names"],
+    (await loadProfiles(fids)).map(({ fid, username, display_name }) => ({ fid, username, display_name })),
+  ["stats-profile-names-v2"],
   { revalidate: 300 },
 );
 export const GET = withErrorReporting("/api/stats", async () => {

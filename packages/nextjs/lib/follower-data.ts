@@ -1,8 +1,9 @@
 import "server-only";
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
-import { dateKey, getRange, InputError, parseFollowerIds, type Profile } from "./activity";
+import { dateKey, getRange, InputError, parseFollowerIds } from "./activity";
 import { query } from "./clickhouse";
+import { loadProfiles } from "./profile-data";
 import { resolveAccount } from "./data";
 import type { FollowerChartData } from "./followers";
 
@@ -27,10 +28,7 @@ const chartData = cache(
       const until =
         anchor === dateKey(new Date()) ? new Date().toISOString().slice(0, 19).replace("T", " ") : `${anchor} 23:59:59`;
       const [profiles, counts, starts] = await Promise.all([
-        query<Profile>(
-          "SELECT toString(fid) AS fid, username, display_name, avatar_url AS pfp_url FROM farcaster.profiles WHERE fid IN {fids:Array(UInt64)}",
-          params,
-        ),
+        loadProfiles(fids),
         query<{ fid: string; followers: string | number; refreshed_at: string }>(
           "SELECT toString(fid) AS fid, followers, refreshed_at FROM farcaster.follower_counts WHERE fid IN {fids:Array(UInt64)}",
           params,
@@ -69,7 +67,7 @@ const chartData = cache(
         }),
       };
     },
-    ["follower-chart-v1"],
+    ["follower-chart-v2"],
     { revalidate: 300 },
   ),
 );

@@ -2,6 +2,19 @@ export const PURPLES = ["#211b2e", "#3f2a61", "#624090", "#855dcd", "#b596f2"];
 const DAY = 86_400_000;
 export type Day = { date: string; actions: number; future: boolean };
 export type Profile = { fid: string; username: string | null; display_name: string | null; pfp_url?: string | null };
+export function withUsernameProofs(profiles: Profile[], proofs: { fid: string; username: string }[]): Profile[] {
+  const names = new Map<string, Set<string>>();
+  for (const proof of proofs) {
+    if (!proof.username) continue;
+    if (!names.has(proof.fid)) names.set(proof.fid, new Set());
+    names.get(proof.fid)!.add(proof.username);
+  }
+  return profiles.map((profile) => {
+    const candidates = names.get(profile.fid);
+    // Registered names can include aliases; only an unambiguous proof can replace missing user data.
+    return profile.username || candidates?.size !== 1 ? profile : { ...profile, username: [...candidates][0] };
+  });
+}
 export type Activity = {
   profile: Profile;
   period: string;

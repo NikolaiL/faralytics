@@ -1,6 +1,7 @@
 import "server-only";
 import { unstable_cache } from "next/cache";
 import { query } from "./clickhouse";
+import { loadProfiles } from "./profile-data";
 import { resolveAccount } from "./data";
 import type { Profile } from "./activity";
 import { timelineQuery, TIMELINE_PAGE_SIZE, type TimelinePage } from "./follow-timeline";
@@ -30,11 +31,7 @@ const readTimeline = unstable_cache(
     let profiles: Profile[] = [];
     if (ids.length) {
       try {
-        profiles = await query<Profile>(
-          "SELECT toString(fid) AS fid, username, display_name, avatar_url AS pfp_url FROM farcaster.profiles WHERE fid IN {fids:Array(UInt64)}",
-          { fids: `[${ids.join(",")}]` },
-          { timeoutMs: 4000 },
-        );
+        profiles = await loadProfiles(ids, 4000);
       } catch {
         /* Events remain usable when profile enrichment is unavailable. */
       }
@@ -61,7 +58,7 @@ const readTimeline = unstable_cache(
       updatedAt: new Date().toISOString(),
     };
   },
-  ["follow-timeline-v1"],
+  ["follow-timeline-v2"],
   { revalidate: 5 },
 );
 
