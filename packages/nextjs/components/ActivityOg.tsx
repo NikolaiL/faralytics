@@ -126,11 +126,11 @@ export function ActivityOg({
           />
         ))}
       </svg>
-      <OgStats first={data} top={statsTop} height={compact ? 82 : 110} compact={compact} />
+      <OgStats first={data} top={statsTop} height={compact ? 72 : 110} compact={compact} />
       {data.overall && (
         <div style={{ display: "flex", position: "absolute", left: 0, top: 0, width: 1200, height }}>
           <OverallOgHeading first={data} top={compact ? 464 : 552} compact={compact} />
-          <OgStats first={data.overall} top={compact ? 508 : 606} height={compact ? 61 : 120} compact={compact} />
+          <OgStats first={data.overall} top={compact ? 499 : 606} height={compact ? 72 : 120} compact={compact} />
         </div>
       )}
       <div

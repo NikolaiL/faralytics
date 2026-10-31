@@ -192,7 +192,7 @@ export function ComparisonOg({
           </div>
         );
       })}
-      <OgStats first={first} second={second} top={compact ? 454 : 530} height={compact ? 43 : 78} compact={compact} />
+      <OgStats first={first} second={second} top={compact ? 454 : 530} height={compact ? 44 : 78} compact={compact} />
       {first.overall && second.overall && (
         <div style={{ display: "flex", position: "absolute", left: 0, top: 0, width: 1200, height }}>
           <OverallOgHeading first={first} second={second} top={compact ? 502 : 623} compact={compact} />
