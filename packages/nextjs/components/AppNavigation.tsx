@@ -4,7 +4,7 @@ export function AppNavigation({
   fids = [],
   end,
 }: {
-  active: "activity" | "followers";
+  active: "activity" | "followers" | "follow-timeline";
   fids?: string[];
   end?: string;
 }) {
@@ -39,6 +39,18 @@ export function AppNavigation({
           <path d="M3 3v18h18M5 17l5-6 4 2 7-9" />
         </svg>
         Followers
+      </Link>
+      <Link
+        href={fids[0] ? `/follow-timeline?target=${fids[0]}` : "/follow-timeline"}
+        aria-current={active === "follow-timeline" ? "page" : undefined}
+        data-testid="tab-follow-timeline"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+          <path d="M7 3v18M11 6h10M11 12h7M11 18h10" />
+          <circle cx="7" cy="6" r="2" />
+          <circle cx="7" cy="18" r="2" />
+        </svg>
+        Follow timeline
       </Link>
     </nav>
   );

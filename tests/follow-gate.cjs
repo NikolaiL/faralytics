@@ -91,6 +91,8 @@ const { chromium, expect } = require('@playwright/test');
     await expect(gate).not.toBeVisible();
     await page.getByTestId('tab-followers').click();
     await expect(gate).not.toBeVisible();
+    await page.route('**/api/follow-timeline?*',r=>r.fulfill({json:{events:[],filters:{actor:null,target:null},headCursor:null,nextCursor:null,hasMore:false,updatedAt:new Date().toISOString()}}));
+    await page.getByTestId('tab-follow-timeline').click();await expect(page.getByTestId('timeline-feed')).toBeVisible();await expect(gate).not.toBeVisible();
     assert.equal(state.checks,before+2,'verification survives tab changes');
     await page.close();
 

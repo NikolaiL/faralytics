@@ -23,3 +23,7 @@ Subsequent creator requests supersede the initial read-only/local-only scope: pu
 ## Followers section
 
 Add interactive follower-action curves, up to ten selected accounts and a Top 10 shortcut, using the existing read-only ClickHouse follow-action chart and first-follow timestamp. Keep the current captured count separate from the net-action curve. Expose responsive desktop tabs and mobile bottom navigation for Activity / Followers. Support shareable follower selection URLs and matching 3:2/2:1 OG cards with a top-left logo and right-side legend. Preserve the existing activity, comparison, NFT and payment behavior. Samples: captured Top 10 and FIDs 366713 vs 10956.
+
+## Follow timeline section
+
+Add `/follow-timeline` as the third desktop tab/mobile bottom-navigation item. Display captured follow/unfollow events (not current relationships), with optional actor and target filters using shared username/FID search. Support an unfiltered global feed, 20 initial events, cursor-based lazy loading, five-second live refresh, per-second relative times, PFPs, different action colors and short insertion animations. Preserve reading position for visitors browsing older events, provide Pause/Resume and reduced-motion support, and reuse existing actor/target/time-indexed action tables without a schema migration. Include filtered lookups in the existing logging system.

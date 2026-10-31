@@ -68,7 +68,16 @@ export function StatsDashboard() {
     const account = data?.profiles.find((profile) => profile.fid === fid);
     const label = account?.username ? `@${account.username}` : account?.display_name || `FID ${fid}`;
     return (
-      <Link className="stats-account" href={tool === "followers" ? `/followers?fids=${fid}` : `/?user=${fid}`}>
+      <Link
+        className="stats-account"
+        href={
+          tool === "followers"
+            ? `/followers?fids=${fid}`
+            : tool === "follow-timeline"
+              ? `/follow-timeline?target=${fid}`
+              : `/?user=${fid}`
+        }
+      >
         <span>{account?.username || account?.display_name ? label : <NumberText>{label}</NumberText>}</span>
         {account?.username || account?.display_name ? (
           <small>
@@ -91,7 +100,7 @@ export function StatsDashboard() {
       </header>
       <h1>Lookup activity</h1>
       <p className="stats-description">
-        Each FID counts once per chart session. Clearing a chart starts a new session.
+        Each FID counts once per lookup session. Clearing all selected accounts starts a new session.
       </p>
       {error && (
         <p className="error-box" role="alert">

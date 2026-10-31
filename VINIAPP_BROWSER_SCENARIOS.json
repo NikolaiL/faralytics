@@ -75,6 +75,38 @@
           "test_id": "activity-graph"
         }
       ]
+    },
+    {
+      "name": "follow-timeline-filter",
+      "path": "/follow-timeline",
+      "viewport": "mobile",
+      "steps": [
+        {
+          "probe": "/api/follow-timeline?target=366713",
+          "expect": 200
+        },
+        {
+          "assert": "visible",
+          "test_id": "timeline-list"
+        },
+        {
+          "action": "fill",
+          "test_id": "timeline-actor-input",
+          "value": "3318053"
+        },
+        {
+          "action": "click",
+          "test_id": "timeline-actor-submit"
+        },
+        {
+          "assert": "visible",
+          "test_id": "timeline-event"
+        },
+        {
+          "assert": "fits",
+          "test_id": "tab-follow-timeline"
+        }
+      ]
     }
   ]
 }

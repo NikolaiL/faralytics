@@ -1,6 +1,6 @@
 import { validFid } from "./activity.ts";
 
-export const LOOKUP_TOOLS = { activity: 2, followers: 10 } as const;
+export const LOOKUP_TOOLS = { activity: 2, followers: 10, "follow-timeline": 2 } as const;
 export type LookupTool = keyof typeof LOOKUP_TOOLS;
 export const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export function parseLookup(value: unknown) {
@@ -19,7 +19,7 @@ export function parseLookup(value: unknown) {
     throw new Error("Invalid viewed FIDs.");
   if (
     typeof body.period !== "string" ||
-    (tool === "followers" ? body.period !== "all" : !/^(365|20\d{2})$/.test(body.period))
+    (tool !== "activity" ? body.period !== "all" : !/^(365|20\d{2})$/.test(body.period))
   )
     throw new Error("Invalid period.");
   if (

@@ -13,6 +13,7 @@ export function AccountSearch({
   onReset,
   onShowMe,
   searchId = "lookup",
+  label = "Username or FID",
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -22,6 +23,7 @@ export function AccountSearch({
   onReset: () => void;
   onShowMe?: () => void;
   searchId?: string;
+  label?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [results, setResults] = useState<SearchProfile[]>([]);
@@ -90,7 +92,7 @@ export function AccountSearch({
           {busy ? <span className="search-spinner" data-testid={`${searchId}-spinner`} /> : "⌕"}
         </span>
         <label className="sr-only" htmlFor={searchId === "lookup" ? "username" : `${searchId}-input`}>
-          Username or FID
+          {label}
         </label>
         <input
           ref={input}
@@ -151,7 +153,7 @@ export function AccountSearch({
             type="button"
             className="search-clear"
             data-testid={`${searchId}-clear`}
-            aria-label="Clear lookup and chart"
+            aria-label={label === "Username or FID" ? "Clear lookup and chart" : `Clear ${label.toLowerCase()}`}
             title="Clear"
             onClick={(event) => {
               event.preventDefault();
@@ -250,8 +252,7 @@ export function AccountSearch({
           <div className="search-feedback" role="status" aria-live="polite">
             {searching
               ? "Searching accounts…"
-              : message ||
-                `${results.length} matching account${results.length === 1 ? "" : "s"}. Select one to view activity.`}
+              : message || `${results.length} matching account${results.length === 1 ? "" : "s"}. Select an account.`}
           </div>
         </div>
       )}
