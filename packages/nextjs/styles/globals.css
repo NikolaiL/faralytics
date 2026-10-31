@@ -58,4 +58,4 @@
 
 .identity .numeric-value{font-family:FaralyticsNumbers,Arial,sans-serif}
 
-.overall-intro{display:flex;align-items:baseline;gap:12px;margin:0 24px;white-space:nowrap;overflow-x:auto;scrollbar-width:thin}.overall-intro h3{margin:0;flex-shrink:0}.overall-intro p{margin:0;color:var(--muted);font-size:12px;line-height:1.7;flex-shrink:0}@media(max-width:600px){.overall-intro{margin-inline:16px}.overall-intro h3{margin:0}}
+.overall-intro{margin:0 24px;white-space:normal;line-height:1.7}.overall-intro h3{display:inline;margin:0 12px 0 0;white-space:nowrap}.overall-intro p{display:inline;margin:0 12px 0 0;color:var(--muted);font-size:12px;line-height:1.7}@media(max-width:600px){.overall-intro{margin-inline:16px}.overall-intro h3{margin:0 12px 0 0}}
