@@ -13,7 +13,7 @@ test("calendar year zero-fills leap day, masks future days and preserves every c
   const range = getRange("2024", "2024-03-01");
   const days = fillDays([{ day: "2024-02-28", actions: 3 }, { day: "2024-02-29", actions: 7 }, { day: "2024-03-01", actions: 2 }, { day: "2024-03-02", actions: 99 }], range.start, range.end, range.anchor);
   assert.equal(days.length, 366);
-  assert.deepEqual(summarize(days), { total: 12, activeDays: 3, longestStreak: 3, peak: 7, peakDate: "2024-02-29", longestStreakStart: "2024-02-28", longestStreakEnd: "2024-03-01" });
+  assert.deepEqual(summarize(days), { total: 12, activeDays: 3, elapsedDays: 61, longestStreak: 3, peak: 7, peakDate: "2024-02-29", longestStreakStart: "2024-02-28", longestStreakEnd: "2024-03-01" });
   assert.equal(days.find(day => day.date === "2024-03-02")?.future, true);
 });
 test("calendar alignment supports Sunday start and 54-week leap years", () => {
@@ -141,4 +141,13 @@ test("overall history ignores the selected year, spans gaps and preserves the ea
   assert.equal(stats.firstDate,"2023-12-31");assert.equal(stats.daysSinceFirst,4);assert.equal(stats.peakDate,"2024-01-03");
   assert.equal(streakRange(stats),"Dec 31, 2023 – Jan 1, 2024");
   const empty=overallActivity([],"2024-01-04");assert.equal(empty.firstDate,null);assert.equal(empty.daysSinceFirst,null);assert.equal(empty.longestStreakStart,null);
+});
+
+
+test("active-day percentages use elapsed inclusive days, exclude future dates and handle empty history", async () => {
+  const { activeDaysPercent, overallActivity } = await import("../packages/nextjs/lib/activity.ts");
+  const summary=summarize(fillDays([{day:"2024-01-01",actions:1},{day:"2024-01-03",actions:1}],"2024-01-01","2024-12-31","2024-01-03"));
+  assert.equal(summary.elapsedDays,3);assert.equal(activeDaysPercent(summary),"66.7% of days");
+  assert.equal(activeDaysPercent(overallActivity([{day:"2024-01-03",actions:1}],"2024-01-03")),"100% of days");
+  assert.equal(activeDaysPercent(overallActivity([],"2024-01-03")),"0% of days");
 });

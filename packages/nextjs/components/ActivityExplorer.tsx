@@ -12,6 +12,7 @@ import {
   comparisonShareText,
   accountName,
   activityDate,
+  activeDaysPercent,
   streakRange,
   dateKey,
   periodLabel,
@@ -489,6 +490,11 @@ export function ActivityExplorer({
                         {data?.activeDays.toLocaleString() || "—"}
                         <small>days</small>
                       </strong>
+                      {data && (
+                        <small className="active-percentage">
+                          <NumberText>{activeDaysPercent(data)}</NumberText>
+                        </small>
+                      )}
                       <span>Active days</span>
                     </div>
                     <div>

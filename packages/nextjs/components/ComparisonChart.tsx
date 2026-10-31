@@ -3,6 +3,7 @@ import { useState } from "react";
 import {
   accountName,
   activityDate,
+  activeDaysPercent,
   streakRange,
   BLUES,
   comparisonPeak,
@@ -121,6 +122,11 @@ export function ComparisonChart({
                       </span>
                     )}
                   </strong>
+                  {stat.key === "activeDays" && (
+                    <small className="active-percentage">
+                      <NumberText>{activeDaysPercent(data)}</NumberText>
+                    </small>
+                  )}
                   {stat.key === "longestStreak" && (
                     <small className="streak-range">
                       <NumberText>{streakRange(data)}</NumberText>

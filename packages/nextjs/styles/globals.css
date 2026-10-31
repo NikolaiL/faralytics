@@ -59,3 +59,4 @@
 .identity .numeric-value{font-family:FaralyticsNumbers,Arial,sans-serif}
 
 .overall-intro{margin:0 24px;white-space:normal;line-height:1.7}.overall-intro h3{display:inline;margin:0 12px 0 0;white-space:nowrap}.overall-intro p{display:inline;margin:0 12px 0 0;color:var(--muted);font-size:12px;line-height:1.7}@media(max-width:600px){.overall-intro{margin-inline:16px}.overall-intro h3{margin:0 12px 0 0}}
+.stats .active-percentage{display:block;margin:0;font-size:11px;line-height:1.5;color:inherit}.comparison-stat-value:has(.active-percentage){flex-wrap:wrap}.comparison-stat-value .active-percentage{flex-basis:100%}

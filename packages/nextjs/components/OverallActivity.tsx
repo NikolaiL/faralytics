@@ -1,5 +1,6 @@
 import {
   activityDate,
+  activeDaysPercent,
   accountName,
   firstActivityLabel,
   streakRange,
@@ -44,6 +45,11 @@ export function OverallActivity({ first, second }: { first: Activity; second?: A
                       </span>
                     )}
                   </strong>
+                  {key === "activeDays" && (
+                    <small className="active-percentage">
+                      <NumberText>{activeDaysPercent(summary)}</NumberText>
+                    </small>
+                  )}
                   {key !== "activeDays" && (
                     <small className="overall-stat-date">
                       <NumberText>{key === "peak" ? activityDate(summary.peakDate) : streakRange(summary)}</NumberText>

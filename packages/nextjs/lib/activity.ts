@@ -12,6 +12,7 @@ export type Activity = {
   years: number[];
   total: number;
   activeDays: number;
+  elapsedDays: number;
   longestStreak: number;
   peak: number;
   peakDate: string | null;
@@ -73,6 +74,7 @@ export function fillDays(rows: { day: string; actions: number }[], start: string
 export function summarize(days: Day[]) {
   let total = 0,
     activeDays = 0,
+    elapsedDays = 0,
     longestStreak = 0,
     streak = 0,
     peak = 0;
@@ -82,6 +84,7 @@ export function summarize(days: Day[]) {
     longestStreakEnd: string | null = null;
   for (const day of days) {
     if (day.future) continue;
+    elapsedDays++;
     total += day.actions;
     if (day.actions > peak) {
       peak = day.actions;
@@ -98,7 +101,7 @@ export function summarize(days: Day[]) {
       }
     } else streak = 0;
   }
-  return { total, activeDays, longestStreak, peak, peakDate, longestStreakStart, longestStreakEnd };
+  return { total, activeDays, elapsedDays, longestStreak, peak, peakDate, longestStreakStart, longestStreakEnd };
 }
 export function overallActivity(rows: { day: string; actions: number }[], asOf: string): OverallActivity {
   const available = rows.filter((row) => row.day <= asOf && row.actions > 0).sort((a, b) => a.day.localeCompare(b.day));
@@ -115,6 +118,10 @@ export function streakRange(summary: Pick<ActivitySummary, "longestStreakStart" 
   return summary.longestStreakStart && summary.longestStreakEnd
     ? `${activityDate(summary.longestStreakStart)} – ${activityDate(summary.longestStreakEnd)}`
     : "—";
+}
+export function activeDaysPercent(summary: Pick<ActivitySummary, "activeDays" | "elapsedDays">) {
+  const percentage = summary.elapsedDays ? (summary.activeDays / summary.elapsedDays) * 100 : 0;
+  return `${percentage.toLocaleString("en-US", { maximumFractionDigits: 1 })}% of days`;
 }
 export function firstActivityLabel(overall: OverallActivity) {
   return overall.firstDate

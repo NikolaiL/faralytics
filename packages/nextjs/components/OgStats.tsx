@@ -1,5 +1,6 @@
 import {
   activityDate,
+  activeDaysPercent,
   firstActivityLabel,
   accountName,
   streakRange,
@@ -86,19 +87,21 @@ export function OgStats({
                     </svg>
                   )}
                 </div>
-                {key !== "activeDays" && (
-                  <div
-                    style={{
-                      display: "flex",
-                      fontSize: compact ? (second ? 8 : 10) : second ? 10 : 13,
-                      lineHeight: 1.2,
-                    }}
-                  >
-                    <NumberText preserveSpaces>
-                      {key === "peak" ? activityDate(summary.peakDate) : streakRange(summary)}
-                    </NumberText>
-                  </div>
-                )}
+                <div
+                  style={{
+                    display: "flex",
+                    fontSize: compact ? (second ? 8 : 10) : second ? 10 : 13,
+                    lineHeight: 1.2,
+                  }}
+                >
+                  <NumberText preserveSpaces>
+                    {key === "activeDays"
+                      ? activeDaysPercent(summary)
+                      : key === "peak"
+                        ? activityDate(summary.peakDate)
+                        : streakRange(summary)}
+                  </NumberText>
+                </div>
               </div>
             ))}
           </div>
