@@ -1,5 +1,6 @@
 import {
   activityDate,
+  activityStreakText,
   activeDaysPercent,
   accountName,
   firstActivityLabel,
@@ -8,8 +9,10 @@ import {
   BLUES,
   type Activity,
 } from "~~/lib/activity";
+import { useMiniapp } from "./MiniappProvider";
 import { NumberText } from "./NumberText";
 export function OverallActivity({ first, second }: { first: Activity; second?: Activity }) {
+  const { fid } = useMiniapp();
   if (!first.overall) return null;
   const accounts = [first, ...(second?.overall ? [second] : [])];
   return (
@@ -67,6 +70,27 @@ export function OverallActivity({ first, second }: { first: Activity; second?: A
             </span>
           </div>
         ))}
+      </div>
+      <div className="current-streak-note" data-testid="current-streak-summary">
+        {accounts.map((data, index) => {
+          const text = activityStreakText(data, fid);
+          return (
+            <div
+              key={data.profile.fid}
+              className="current-streak-account"
+              style={second ? { color: index ? BLUES[4] : PURPLES[4] } : undefined}
+            >
+              <p>
+                <strong>
+                  <NumberText>{text.headline}</NumberText>
+                </strong>
+              </p>
+              <p>
+                <NumberText>{text.description}</NumberText>
+              </p>
+            </div>
+          );
+        })}
       </div>
     </section>
   );

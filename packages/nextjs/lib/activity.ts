@@ -28,6 +28,13 @@ export type OverallActivity = ActivitySummary & {
   firstDate: string | null;
   daysSinceFirst: number | null;
   asOf: string;
+  currentStreak: {
+    days: number;
+    start: string | null;
+    end: string | null;
+    previousInactiveDate: string | null;
+    lastActiveDate: string | null;
+  };
 };
 export class InputError extends Error {
   status: number;
@@ -109,9 +116,44 @@ export function overallActivity(rows: { day: string; actions: number }[], asOf: 
   const days = firstDate ? fillDays(available, firstDate, asOf, asOf) : [];
   return {
     ...summarize(days),
+    currentStreak: currentActivityStreak(days, asOf),
     firstDate,
     daysSinceFirst: firstDate ? Math.floor((utcDate(asOf).getTime() - utcDate(firstDate).getTime()) / DAY) : null,
     asOf,
+  };
+}
+export function currentActivityStreak(days: Day[], asOf: string): OverallActivity["currentStreak"] {
+  const captured = days.filter((day) => !day.future && day.date <= asOf);
+  let last = captured.length - 1;
+  while (last >= 0 && captured[last].actions === 0) last--;
+  const lastActiveDate = captured[last]?.date || null;
+  const empty = { days: 0, start: null, end: null, previousInactiveDate: null, lastActiveDate };
+  const yesterday = dateKey(new Date(utcDate(asOf).getTime() - DAY));
+  if (!lastActiveDate || lastActiveDate < yesterday) return empty;
+  let first = last;
+  while (first > 0 && captured[first - 1].actions > 0) first--;
+  return {
+    days: last - first + 1,
+    start: captured[first].date,
+    end: lastActiveDate,
+    previousInactiveDate: first > 0 ? captured[first - 1].date : null,
+    lastActiveDate,
+  };
+}
+export function activityStreakText(activity: Pick<Activity, "profile" | "overall">, viewerFid?: string) {
+  const streak = activity.overall?.currentStreak;
+  const own = viewerFid === activity.profile.fid;
+  const name = accountName(activity);
+  if (!streak?.days)
+    return {
+      headline: `${own ? "You have" : `${name} has`} no current activity streak.`,
+      description: streak?.lastActiveDate
+        ? `Last captured activity: ${activityDate(streak.lastActiveDate)} (UTC).`
+        : "No captured activity has been reported yet.",
+    };
+  return {
+    headline: `${own ? "You've" : `${name} has`} been active for ${streak.days.toLocaleString("en-US")} ${streak.days === 1 ? "day" : "days"} in a row.`,
+    description: `Current activity streak: ${activityDate(streak.start)} → ${activityDate(streak.end)} in UTC dates. ${streak.previousInactiveDate ? `No actions were captured on ${activityDate(streak.previousInactiveDate)}, immediately before this streak.` : "This streak starts on the first reported activity day."}`,
   };
 }
 export function streakRange(summary: Pick<ActivitySummary, "longestStreakStart" | "longestStreakEnd">) {
