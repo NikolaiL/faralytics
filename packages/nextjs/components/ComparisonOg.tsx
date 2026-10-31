@@ -125,14 +125,14 @@ export function ComparisonOg({
           top: compact ? 98 : 151,
           left: 69,
           right: 69,
-          alignItems: "baseline",
+          alignItems: "center",
           justifyContent: "space-between",
         }}
       >
         <strong style={{ color: colors[0], fontSize: compact ? 32 : 40, fontWeight: 900, lineHeight: 1 }}>
           {first.total.toLocaleString("en-US")}
         </strong>
-        <span style={{ color: "#a99aba", fontSize: 20 }}>
+        <span style={{ color: "#a99aba", fontSize: 20, lineHeight: 1 }}>
           <NumberText preserveSpaces>{`Actions in ${periodLabel(first.period)}`}</NumberText>
         </span>
         <strong style={{ color: colors[1], fontSize: compact ? 32 : 40, fontWeight: 900, lineHeight: 1 }}>

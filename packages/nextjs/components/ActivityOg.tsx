@@ -78,14 +78,14 @@ export function ActivityOg({
           position: "absolute",
           top: compact ? 136 : 164,
           left: 64,
-          alignItems: "baseline",
+          alignItems: "center",
           gap: 14,
         }}
       >
         <strong style={{ fontSize: compact ? 47 : 60, fontWeight: 900, lineHeight: 1 }}>
           {data.total.toLocaleString("en-US")}
         </strong>
-        <div style={{ display: "flex", fontSize: 23, color: "#a99aba" }}>
+        <div style={{ display: "flex", fontSize: 23, lineHeight: 1, color: "#a99aba" }}>
           <NumberText preserveSpaces>{`actions in ${periodLabel(data.period)}`}</NumberText>
         </div>
       </div>
