@@ -1,6 +1,10 @@
 import { request } from "node:https";
 
-export async function query<T>(sql: string, parameters: Record<string, string> = {}): Promise<T[]> {
+export async function query<T>(
+  sql: string,
+  parameters: Record<string, string> = {},
+  options: { timeoutMs?: number } = {},
+): Promise<T[]> {
   const { CLICKHOUSE_URL, CLICKHOUSE_USER, CLICKHOUSE_PASSWORD, CLICKHOUSE_CA_CERT } = process.env;
   if (!CLICKHOUSE_URL || !CLICKHOUSE_USER || !CLICKHOUSE_PASSWORD || !CLICKHOUSE_CA_CERT)
     throw new Error("The activity database is not configured.");
@@ -16,7 +20,7 @@ export async function query<T>(sql: string, parameters: Record<string, string> =
         ca: CLICKHOUSE_CA_CERT.replace(/\\n/g, "\n"),
         auth: `${CLICKHOUSE_USER}:${CLICKHOUSE_PASSWORD}`,
         headers: { "Content-Type": "text/plain" },
-        signal: AbortSignal.timeout(35_000),
+        signal: AbortSignal.timeout(options.timeoutMs ?? 35_000),
       },
       (response) => {
         let body = "";

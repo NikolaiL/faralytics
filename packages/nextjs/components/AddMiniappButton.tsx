@@ -1,9 +1,11 @@
 "use client";
+import { useFollowGate } from "./FollowGateProvider";
 import { sdk } from "@farcaster/miniapp-sdk";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useMiniapp } from "./MiniappProvider";
 export function AddMiniappButton({ meaningfulInteraction = false }: { meaningfulInteraction?: boolean }) {
   const { isMiniApp, fid } = useMiniapp();
+  const { canPromptAdd } = useFollowGate();
   const [added, setAdded] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -44,7 +46,7 @@ export function AddMiniappButton({ meaningfulInteraction = false }: { meaningful
     };
   }, [isMiniApp, promptKey]);
   const add = useCallback(async () => {
-    if (pending.current || added) return;
+    if (pending.current || added || !canPromptAdd) return;
     if (!isMiniApp) return;
     if (window.location.hostname !== "faralytics.vercel.app") {
       setMessage("Adding is available on faralytics.vercel.app inside Farcaster.");
@@ -74,12 +76,13 @@ export function AddMiniappButton({ meaningfulInteraction = false }: { meaningful
       pending.current = false;
       setBusy(false);
     }
-  }, [added, isMiniApp, promptKey]);
+  }, [added, isMiniApp, promptKey, canPromptAdd]);
   useEffect(() => {
     if (
       !isMiniApp ||
       !ready ||
       !meaningfulInteraction ||
+      !canPromptAdd ||
       added ||
       autoAttempted.current ||
       window.location.hostname !== "faralytics.vercel.app"
@@ -92,7 +95,7 @@ export function AddMiniappButton({ meaningfulInteraction = false }: { meaningful
       /* Storage can be unavailable in a host. */
     }
     void add();
-  }, [isMiniApp, ready, meaningfulInteraction, added, promptKey, add]);
+  }, [isMiniApp, ready, meaningfulInteraction, added, promptKey, add, canPromptAdd]);
   if (!isMiniApp || !ready || added) return null;
   return (
     <div className="add-miniapp">

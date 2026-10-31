@@ -1,4 +1,5 @@
 "use client";
+import { FollowGateProvider } from "./FollowGateProvider";
 import { sdk } from "@farcaster/miniapp-sdk";
 import { createContext, useContext, useEffect, useState } from "react";
 type Host = { fid?: string; isMiniApp: boolean; ready: boolean };
@@ -49,5 +50,9 @@ export function MiniappProvider({ children }: { children: React.ReactNode }) {
       active = false;
     };
   }, []);
-  return <HostContext.Provider value={host}>{children}</HostContext.Provider>;
+  return (
+    <HostContext.Provider value={host}>
+      <FollowGateProvider host={host}>{children}</FollowGateProvider>
+    </HostContext.Provider>
+  );
 }
