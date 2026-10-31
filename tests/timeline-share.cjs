@@ -60,10 +60,10 @@ const base=process.env.BASE_URL||'http://localhost:3100';
   for(const width of [320,390,760,1280]){await page.setViewportSize({width,height:850});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'no overflow '+width);}
   await page.getByTestId('copy-link').click();await expect(page.getByText('link copied',{exact:true})).toBeVisible();
   const copied=new URL(await page.evaluate(()=>window.__copied));assert.equal(copied.pathname,'/follow-timeline');assert.equal(copied.searchParams.get('target'),'366713');assert.match(copied.searchParams.get('ts'),/^\d{13}$/);
-  for(const [button,credit]of [['share-farcaster','@nikolaii.eth with @viniapp'],['share-x-bottom','NikolaiLeb with viniapp_xyz']]){
+  for(const [button,credit]of [['share-farcaster','@nikolaii.eth with @viniapp'],['share-x-bottom','@NikolaiLeb with @viniapp_xyz']]){
    await page.getByTestId(button).click();await expect.poll(()=>page.evaluate(()=>window.__popups.at(-1)?.location.href)).toContain('text=');
    const url=new URL(await page.evaluate(()=>window.__popups.at(-1).location.href));const text=url.searchParams.get('text');
-   assert.ok(text.startsWith(button==='share-x-bottom'?'Latest followers of nikolaii.eth':'Latest followers of @nikolaii.eth'));if(button==='share-x-bottom')assert.ok(!text.includes('@'));assert.ok(text.includes('\n\nCheck Yours\n\n'));assert.ok(text.endsWith(credit));
+   assert.ok(text.startsWith(button==='share-x-bottom'?'Latest followers of nikolaii.eth':'Latest followers of @nikolaii.eth'));if(button==='share-x-bottom')assert.ok(!text.split('\n\n').slice(0,-1).join('\n\n').includes('@'));assert.ok(text.includes('\n\nCheck Yours\n\n'));assert.ok(text.endsWith(credit));
    for(const event of data.events)if(event.actor.username)assert.ok(!text.split('\n\n')[0].includes('@'+event.actor.username));
    assert.ok(url.searchParams.get('url')||url.searchParams.get('embeds[]'));
   }

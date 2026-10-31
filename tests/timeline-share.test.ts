@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { formatShareText, shareCredit } from "../packages/nextjs/lib/share-credit.ts";
 import { timelineQuery } from "../packages/nextjs/lib/follow-timeline.ts";
 import { timelineSharePath, timelineShareText, type TimelineShareData } from "../packages/nextjs/lib/timeline-share.ts";
 const ts = Date.now().toString();
@@ -29,14 +30,14 @@ test("thank-you copy mentions available usernames once and uses platform credits
   const event={id:"a",cursor:"",timestamp:new Date().toISOString(),action:"follow" as const,actor,target:profile};
   const data:TimelineShareData={filters:{actor:null,target:profile},events:[event,{...event,id:"b"},{...event,id:"c",actor:{...actor,username:null}}],generatedAt:new Date().toISOString()};
   assert.equal(timelineShareText(data,"farcaster","366713"),"Thanks to my latest followers: @alice\n\nCheck Yours\n\nfaralytics - created by @nikolaii.eth with @viniapp");
-  assert.match(timelineShareText(data,"x"),/NikolaiLeb with viniapp_xyz$/);
+  assert.match(timelineShareText(data,"x"),/@NikolaiLeb with @viniapp_xyz$/);
   for(const viewer of [undefined,"37"]){
     const text=timelineShareText(data,"farcaster",viewer);
     assert.equal(text,"Latest followers of @nikolaii.eth\n\nCheck Yours\n\nfaralytics - created by @nikolaii.eth with @viniapp");
     assert.ok(!text.includes('@alice'));
   }
   assert.match(timelineShareText(data,"x","366713"),/^Thanks to my latest Farcaster followers\./);
-  assert.ok(!timelineShareText(data,"x","366713").includes("@"));
+  assert.ok(!timelineShareText(data,"x","366713").split("\n\n").slice(0,-1).join("\n\n").includes("@"));
   assert.match(timelineShareText({...data,filters:{actor:null,target:{...profile,username:null}}},"farcaster"),/^Latest followers of FID 366713/);
 
   assert.match(timelineShareText({...data,filters:{actor:null,target:null}},"farcaster"),/^Explore the latest/);
@@ -54,13 +55,20 @@ test("thank-you copy mentions available usernames once and uses platform credits
   assert.equal(new URL(timelineSharePath({},ts),url).searchParams.get("all"),"1");
 });
 
-test("Farcaster thanks tag only the first five followers; X never tags accounts or credits",()=>{
+test("Farcaster thanks tag only the first five followers; X tags only the approved credits",()=>{
  const profile={fid:"366713",username:"nikolaii.eth",display_name:null};
  const events=Array.from({length:10},(_,i)=>({id:String(i),cursor:"",timestamp:new Date().toISOString(),action:"follow" as const,actor:{fid:String(i+1),username:"follower"+i,display_name:null},target:profile}));
  const data:TimelineShareData={filters:{actor:null,target:profile},events,generatedAt:new Date().toISOString()};
  const text=timelineShareText(data,"farcaster","366713");
  assert.equal(text.split("\n\n")[0],"Thanks to my latest followers: @follower0 @follower1 @follower2 @follower3 @follower4");
  assert.equal(data.events.length,10);
- for(const viewer of [undefined,"37","366713"])assert.ok(!timelineShareText(data,"x",viewer).includes("@"));
+ for(const viewer of [undefined,"37","366713"])assert.ok(!timelineShareText(data,"x",viewer).split("\n\n").slice(0,-1).join("\n\n").includes("@"));
  assert.ok(!timelineShareText({...data,events:events.map((e,i)=>i===0?{...e,actor:{...e.actor,username:null}}:e)},"farcaster","366713").includes('@follower5'));
+});
+
+test("X strips all body mentions even when names match credit handles, preserving only its final credit line",()=>{
+ const body="@NikolaiLeb @viniapp_xyz @another.eth";
+ assert.equal(formatShareText(body+"\n\n"+shareCredit("x"),"x"),"NikolaiLeb viniapp_xyz another.eth\n\nfaralytics - created by @NikolaiLeb with @viniapp_xyz");
+ assert.equal(formatShareText(body,"x"),"NikolaiLeb viniapp_xyz another.eth");
+ assert.equal(formatShareText(body,"farcaster"),body);
 });
