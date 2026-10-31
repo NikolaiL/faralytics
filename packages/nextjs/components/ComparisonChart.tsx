@@ -110,14 +110,17 @@ export function ComparisonChart({
             {[first, second].map((data, index) => {
               const winner = stat.winner === (index ? "second" : "first");
               return (
-                <div key={index} className={`comparison-stat-value account-${index + 1}`}>
+                <div
+                  key={index}
+                  className={`${stat.key === "peak" ? "overall-stat-value" : "comparison-stat-value"} account-${index + 1}`}
+                >
                   <strong
                     aria-label={`${accountName(data)}: ${index ? stat.second : stat.first} ${stat.unit}${winner ? ", higher value" : ""}`}
                   >
                     {(index ? stat.second : stat.first).toLocaleString("en-US")}
-                    {stat.key !== "peak" && <small>{stat.unit}</small>}
+                    <small>{stat.unit}</small>
                     {winner && (
-                      <span className="winner" aria-label="Higher value">
+                      <span className="winner" aria-label="Higher value" style={{ color: "inherit" }}>
                         ✓
                       </span>
                     )}
@@ -133,14 +136,19 @@ export function ComparisonChart({
                     </small>
                   )}
                   {stat.key === "peak" && (
-                    <time dateTime={(index ? stat.secondDate : stat.firstDate) || undefined}>
+                    <small className="overall-stat-date">
                       <NumberText>{activityDate((index ? stat.secondDate : stat.firstDate) || null)}</NumberText>
-                    </time>
+                    </small>
                   )}
                 </div>
               );
             })}
-            <span className="comparison-stat-label">{stat.key === "peak" ? "actions on busiest day" : stat.label}</span>
+            <span
+              className={stat.key === "peak" ? undefined : "comparison-stat-label"}
+              data-testid={stat.key === "peak" ? "comparison-peak-label" : undefined}
+            >
+              {stat.key === "peak" ? "Actions on busiest day" : stat.label}
+            </span>
             {stat.winner === "tie" && <span className="comparison-tie">Tie</span>}
           </div>
         ))}

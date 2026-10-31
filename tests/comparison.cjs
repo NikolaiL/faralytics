@@ -36,7 +36,7 @@ function fixture(fid, period, anchor) {
  assert.equal(await page.getByTestId('compare-input').getAttribute('aria-activedescendant'),'compare-result-0');
  await page.getByTestId('compare-input').press('Enter');await page.getByTestId('comparison-chart').waitFor();
  assert.equal(new URL(page.url()).searchParams.get('compare'),'2');
- assert.ok(await page.getByTestId('comparison-stat-peak').evaluate(el=>{const label=el.querySelector('.comparison-stat-label');return label.textContent==='actions on busiest day'&&[...el.querySelectorAll('.comparison-stat-value')].every(value=>value.getBoundingClientRect().bottom<=label.getBoundingClientRect().top);}), 'busiest-day label is below both account values');
+ assert.ok(await page.getByTestId('comparison-stat-peak').evaluate(el=>{const label=el.querySelector('[data-testid="comparison-peak-label"]'),values=[...el.querySelectorAll('.overall-stat-value')];return values.length===2&&label.textContent==='Actions on busiest day'&&values.every(value=>value.getBoundingClientRect().bottom<=label.getBoundingClientRect().top);}), 'busiest-day label is below both account values');
  for(const year of [2026,2025,2024,2023,2022,2021]) await expect(page.getByTestId(`year-${year}`)).toBeVisible();
  await expect(page.getByTestId('compare-clear')).toBeVisible();
  assert.equal(await page.getByTestId('comparison-grid-1').locator('rect[aria-label$="10 captured actions"]').first().getAttribute('fill'),'#855dcd');

@@ -66,7 +66,7 @@ export function OverallActivity({ first, second }: { first: Activity; second?: A
                 ? "Active days"
                 : key === "longestStreak"
                   ? "Longest streak"
-                  : "actions on busiest day"}
+                  : "Actions on busiest day"}
             </span>
           </div>
         ))}

@@ -112,7 +112,7 @@ export function OgStats({
               ? "Active days"
               : key === "longestStreak"
                 ? "Longest streak"
-                : "actions on busiest day"}
+                : "Actions on busiest day"}
             {second && first[key] === second[key] ? " · Tie" : ""}
           </div>
         </div>

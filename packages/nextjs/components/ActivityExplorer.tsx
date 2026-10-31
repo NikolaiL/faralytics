@@ -510,16 +510,16 @@ export function ActivityExplorer({
                       <span>Longest streak</span>
                     </div>
                     <div>
-                      <strong className="busiest-total" data-testid="busiest-actions">
-                        {data?.peak.toLocaleString() || "—"}
-                        <small>actions</small>
-                      </strong>
-                      <span className="busiest-caption">
-                        on busiest day:{" "}
-                        <time dateTime={data?.peakDate ?? undefined}>
+                      <div className="overall-stat-value">
+                        <strong className="busiest-total" data-testid="busiest-actions">
+                          {data?.peak.toLocaleString() || "—"}
+                          <small>actions</small>
+                        </strong>
+                        <small className="overall-stat-date">
                           <NumberText>{activityDate(data?.peakDate ?? null)}</NumberText>
-                        </time>
-                      </span>
+                        </small>
+                      </div>
+                      <span>Actions on busiest day</span>
                     </div>
                   </div>
                 </>
