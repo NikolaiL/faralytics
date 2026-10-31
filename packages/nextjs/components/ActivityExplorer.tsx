@@ -4,7 +4,7 @@ import { sdk } from "@farcaster/miniapp-sdk";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
-import { shareCredit } from "~~/lib/share-credit";
+import { formatShareText, shareCredit } from "~~/lib/share-credit";
 import type { Activity, Day } from "~~/lib/activity";
 import {
   activityShareText,
@@ -269,7 +269,7 @@ export function ActivityExplorer({
       }
     }
     const compose = new URL(target === "x" ? "https://x.com/intent/post" : "https://farcaster.xyz/~/compose");
-    compose.searchParams.set("text", `${text}\n\n${credit}`);
+    compose.searchParams.set("text", formatShareText(`${text}\n\n${credit}`, target));
     compose.searchParams.set(target === "x" ? "url" : "embeds[]", url);
     window.open(compose.toString(), "_blank", "noopener,noreferrer");
   }

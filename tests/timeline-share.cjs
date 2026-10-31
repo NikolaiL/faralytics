@@ -60,10 +60,10 @@ const base=process.env.BASE_URL||'http://localhost:3100';
   for(const width of [320,390,760,1280]){await page.setViewportSize({width,height:850});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'no overflow '+width);}
   await page.getByTestId('copy-link').click();await expect(page.getByText('link copied',{exact:true})).toBeVisible();
   const copied=new URL(await page.evaluate(()=>window.__copied));assert.equal(copied.pathname,'/follow-timeline');assert.equal(copied.searchParams.get('target'),'366713');assert.match(copied.searchParams.get('ts'),/^\d{13}$/);
-  for(const [button,credit]of [['share-farcaster','@nikolaii.eth with @viniapp'],['share-x-bottom','@NikolaiLeb with @viniapp_xyz']]){
+  for(const [button,credit]of [['share-farcaster','@nikolaii.eth with @viniapp'],['share-x-bottom','NikolaiLeb with viniapp_xyz']]){
    await page.getByTestId(button).click();await expect.poll(()=>page.evaluate(()=>window.__popups.at(-1)?.location.href)).toContain('text=');
    const url=new URL(await page.evaluate(()=>window.__popups.at(-1).location.href));const text=url.searchParams.get('text');
-   assert.ok(text.startsWith('Latest followers of @nikolaii.eth'));assert.ok(text.includes('\n\nCheck Yours\n\n'));assert.ok(text.endsWith(credit));
+   assert.ok(text.startsWith(button==='share-x-bottom'?'Latest followers of nikolaii.eth':'Latest followers of @nikolaii.eth'));if(button==='share-x-bottom')assert.ok(!text.includes('@'));assert.ok(text.includes('\n\nCheck Yours\n\n'));assert.ok(text.endsWith(credit));
    for(const event of data.events)if(event.actor.username)assert.ok(!text.split('\n\n')[0].includes('@'+event.actor.username));
    assert.ok(url.searchParams.get('url')||url.searchParams.get('embeds[]'));
   }
@@ -93,7 +93,7 @@ const base=process.env.BASE_URL||'http://localhost:3100';
   await expect(host.getByTestId('timeline-target-input')).toHaveValue('@nikolaii.eth');
   await host.getByRole('button',{name:'Farcaster · 3:2',exact:true}).click();await expect.poll(()=>host.locator('.chart-image-preview img').evaluate(el=>el.naturalHeight),{timeout:30000}).toBe(800);await host.getByRole('button',{name:'Close preview ×'}).click();assert.equal(await host.locator('.image-links a[download]').count(),0);
   await host.getByTestId('share-farcaster').click();await expect.poll(()=>host.evaluate(()=>window.__casts.length)).toBe(1);
-  const cast=await host.evaluate(()=>window.__casts[0]);assert.ok(cast.text.startsWith('Thanks to my latest followers: '));assert.equal(new URL(cast.embeds[0]).searchParams.get('target'),'366713');assert.ok(cast.text.includes('\n\nCheck Yours\n\n'));for(const event of data.events)if(event.actor.username)assert.ok(cast.text.includes('@'+event.actor.username));
+  const cast=await host.evaluate(()=>window.__casts[0]);assert.ok(cast.text.startsWith('Thanks to my latest followers: '));assert.equal(new URL(cast.embeds[0]).searchParams.get('target'),'366713');assert.ok(cast.text.includes('\n\nCheck Yours\n\n'));assert.equal(cast.text.split('\n\n')[0], 'Thanks to my latest followers: '+[...new Set(data.events.slice(0,5).flatMap(e=>e.actor.username?['@'+e.actor.username]:[]))].join(' '));
   const other={...data,filters:{actor:null,target:{...data.filters.target,fid:'37',username:'someone'}}};
   await host.route('**/api/follow-timeline?*',r=>r.fulfill({json:{events:[],filters:other.filters,headCursor:null,nextCursor:null,hasMore:false,updatedAt:other.generatedAt}}));
   await host.route('**/api/follow-timeline/share?*',r=>r.fulfill({json:other}));

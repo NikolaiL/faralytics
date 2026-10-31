@@ -1,4 +1,4 @@
-import { shareCredit, type ShareTarget } from "./share-credit.ts";
+import { formatShareText, shareCredit, type ShareTarget } from "./share-credit.ts";
 import type { Profile } from "./activity";
 
 export const FOLLOWER_COLORS = [
@@ -89,7 +89,10 @@ export function followersPath(data: FollowerChartData, timestamp?: string) {
   return `/followers?${params}`;
 }
 export function followersShareText(data: FollowerChartData, target: ShareTarget = "farcaster") {
-  return `Follower history: ${data.series.map(followerName).join(data.series.length === 2 ? " vs " : ", ")}. Captured follows minus unfollows, from ${data.from ? followerDate(followerTimestamp(data.from)) : "the available history"}.\n\nHow about you?\n\n${shareCredit(target)}`;
+  return formatShareText(
+    `Follower history: ${data.series.map(followerName).join(data.series.length === 2 ? " vs " : ", ")}. Captured follows minus unfollows, from ${data.from ? followerDate(followerTimestamp(data.from)) : "the available history"}.\n\nHow about you?\n\n${shareCredit(target)}`,
+    target,
+  );
 }
 
 export function followerTick(ts: number, start: number, end: number) {

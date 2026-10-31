@@ -1,6 +1,6 @@
 import type { Profile } from "./activity.ts";
 import type { TimelineEvent } from "./follow-timeline.ts";
-import { shareCredit, type ShareTarget } from "./share-credit.ts";
+import { formatShareText, shareCredit, type ShareTarget } from "./share-credit.ts";
 
 export type TimelineShareData = {
   filters: { actor: Profile | null; target: Profile | null };
@@ -16,15 +16,17 @@ export function timelineSharePath(selection: { actor?: string; target?: string }
 }
 export function timelineShareText(data: TimelineShareData, target: ShareTarget, viewerFid?: string) {
   const names = [
-    ...new Set(data.events.flatMap((event) => (event.actor.username ? [`@${event.actor.username}`] : []))),
+    ...new Set(data.events.slice(0, 5).flatMap((event) => (event.actor.username ? [`@${event.actor.username}`] : []))),
   ];
   const profile = !data.filters.actor ? data.filters.target : null;
   const text = profile
     ? profile.fid === viewerFid && names.length
-      ? `Thanks to my latest followers: ${names.join(" ")}`
+      ? target === "x"
+        ? "Thanks to my latest Farcaster followers."
+        : `Thanks to my latest followers: ${names.join(" ")}`
       : `Latest followers of ${profile.username ? `@${profile.username}` : `FID ${profile.fid}`}`
     : data.filters.actor
       ? "Explore the latest Farcaster followings with Faralytics."
       : "Explore the latest Farcaster follows and unfollows with Faralytics.";
-  return `${text}\n\nCheck Yours\n\n${shareCredit(target)}`;
+  return formatShareText(`${text}\n\nCheck Yours\n\n${shareCredit(target)}`, target);
 }
