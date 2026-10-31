@@ -1,5 +1,14 @@
 import { unstable_cache } from "next/cache";
-import { dateKey, fillDays, getRange, InputError, rankSearchUsers, summarize, validFid } from "./activity";
+import {
+  dateKey,
+  fillDays,
+  getRange,
+  overallActivity,
+  InputError,
+  rankSearchUsers,
+  summarize,
+  validFid,
+} from "./activity";
 import type { Activity, Profile, SearchProfile } from "./activity";
 import { query } from "./clickhouse";
 
@@ -81,6 +90,7 @@ export async function loadActivity(input: string, period = "365", anchor?: strin
     days,
     years: Array.from({ length: currentYear - firstYear + 1 }, (_, index) => currentYear - index),
     ...summarize(days),
+    overall: overallActivity(history.rows, today),
     updatedAt: history.updatedAt,
     catchingUp: status.current_state_is_ready !== 1,
     coverage: status.coverage,

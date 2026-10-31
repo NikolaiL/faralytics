@@ -3,6 +3,7 @@ import { useState } from "react";
 import {
   accountName,
   activityDate,
+  streakRange,
   BLUES,
   comparisonPeak,
   comparisonStats,
@@ -120,6 +121,11 @@ export function ComparisonChart({
                       </span>
                     )}
                   </strong>
+                  {stat.key === "longestStreak" && (
+                    <small className="streak-range">
+                      <NumberText>{streakRange(data)}</NumberText>
+                    </small>
+                  )}
                   {stat.key === "peak" && (
                     <time dateTime={(index ? stat.secondDate : stat.firstDate) || undefined}>
                       <NumberText>{activityDate((index ? stat.secondDate : stat.firstDate) || null)}</NumberText>

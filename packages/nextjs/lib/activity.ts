@@ -15,9 +15,18 @@ export type Activity = {
   longestStreak: number;
   peak: number;
   peakDate: string | null;
+  longestStreakStart: string | null;
+  longestStreakEnd: string | null;
+  overall?: OverallActivity;
   updatedAt: string;
   catchingUp: boolean;
   coverage: string;
+};
+export type ActivitySummary = ReturnType<typeof summarize>;
+export type OverallActivity = ActivitySummary & {
+  firstDate: string | null;
+  daysSinceFirst: number | null;
+  asOf: string;
 };
 export class InputError extends Error {
   status: number;
@@ -68,6 +77,9 @@ export function summarize(days: Day[]) {
     streak = 0,
     peak = 0;
   let peakDate: string | null = null;
+  let streakStart: string | null = null,
+    longestStreakStart: string | null = null,
+    longestStreakEnd: string | null = null;
   for (const day of days) {
     if (day.future) continue;
     total += day.actions;
@@ -77,11 +89,37 @@ export function summarize(days: Day[]) {
     }
     if (day.actions > 0) {
       activeDays++;
+      if (!streak) streakStart = day.date;
       streak++;
-      longestStreak = Math.max(longestStreak, streak);
+      if (streak > longestStreak) {
+        longestStreak = streak;
+        longestStreakStart = streakStart;
+        longestStreakEnd = day.date;
+      }
     } else streak = 0;
   }
-  return { total, activeDays, longestStreak, peak, peakDate };
+  return { total, activeDays, longestStreak, peak, peakDate, longestStreakStart, longestStreakEnd };
+}
+export function overallActivity(rows: { day: string; actions: number }[], asOf: string): OverallActivity {
+  const available = rows.filter((row) => row.day <= asOf && row.actions > 0).sort((a, b) => a.day.localeCompare(b.day));
+  const firstDate = available[0]?.day || null;
+  const days = firstDate ? fillDays(available, firstDate, asOf, asOf) : [];
+  return {
+    ...summarize(days),
+    firstDate,
+    daysSinceFirst: firstDate ? Math.floor((utcDate(asOf).getTime() - utcDate(firstDate).getTime()) / DAY) : null,
+    asOf,
+  };
+}
+export function streakRange(summary: Pick<ActivitySummary, "longestStreakStart" | "longestStreakEnd">) {
+  return summary.longestStreakStart && summary.longestStreakEnd
+    ? `${activityDate(summary.longestStreakStart)} – ${activityDate(summary.longestStreakEnd)}`
+    : "—";
+}
+export function firstActivityLabel(overall: OverallActivity) {
+  return overall.firstDate
+    ? `First activity reported on ${activityDate(overall.firstDate)} - ${overall.daysSinceFirst?.toLocaleString("en-US")} days ago.`
+    : "No captured activity reported yet.";
 }
 export function colorLevel(actions: number, peak: number) {
   if (!actions || !peak) return 0;

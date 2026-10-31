@@ -13,7 +13,7 @@ test("calendar year zero-fills leap day, masks future days and preserves every c
   const range = getRange("2024", "2024-03-01");
   const days = fillDays([{ day: "2024-02-28", actions: 3 }, { day: "2024-02-29", actions: 7 }, { day: "2024-03-01", actions: 2 }, { day: "2024-03-02", actions: 99 }], range.start, range.end, range.anchor);
   assert.equal(days.length, 366);
-  assert.deepEqual(summarize(days), { total: 12, activeDays: 3, longestStreak: 3, peak: 7, peakDate: "2024-02-29" });
+  assert.deepEqual(summarize(days), { total: 12, activeDays: 3, longestStreak: 3, peak: 7, peakDate: "2024-02-29", longestStreakStart: "2024-02-28", longestStreakEnd: "2024-03-01" });
   assert.equal(days.find(day => day.date === "2024-03-02")?.future, true);
 });
 test("calendar alignment supports Sunday start and 54-week leap years", () => {
@@ -130,4 +130,15 @@ test("OG grids fill the entire width between equal 69px margins with square cell
     assert.equal(g.step-g.cellSize,2);
     assert.equal(1200-g.left-g.width,69);
   }
+});
+
+test("overall history ignores the selected year, spans gaps and preserves the earliest tied streak dates", async () => {
+  const { overallActivity, streakRange } = await import("../packages/nextjs/lib/activity.ts");
+  const rows = [{day:"2023-12-31",actions:2},{day:"2024-01-01",actions:4},{day:"2024-01-03",actions:6},{day:"2024-01-04",actions:1},{day:"2025-01-01",actions:999}];
+  const stats = overallActivity(rows,"2024-01-04");
+  assert.equal(stats.activeDays,4);assert.equal(stats.total,13);assert.equal(stats.longestStreak,2);
+  assert.equal(stats.longestStreakStart,"2023-12-31");assert.equal(stats.longestStreakEnd,"2024-01-01");
+  assert.equal(stats.firstDate,"2023-12-31");assert.equal(stats.daysSinceFirst,4);assert.equal(stats.peakDate,"2024-01-03");
+  assert.equal(streakRange(stats),"Dec 31, 2023 – Jan 1, 2024");
+  const empty=overallActivity([],"2024-01-04");assert.equal(empty.firstDate,null);assert.equal(empty.daysSinceFirst,null);assert.equal(empty.longestStreakStart,null);
 });

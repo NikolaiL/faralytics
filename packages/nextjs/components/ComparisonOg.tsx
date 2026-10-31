@@ -1,11 +1,10 @@
+import { OgStats, OverallOgHeading } from "./OgStats";
 import { NumberText } from "./NumberText";
 import {
   accountName,
-  activityDate,
   BLUES,
   colorLevel,
   comparisonPeak,
-  comparisonStats,
   grid,
   periodLabel,
   PURPLES,
@@ -31,7 +30,7 @@ export function ComparisonOg({
   const compact = height === 600;
   const peak = comparisonPeak(first, second);
   const layout = ogChartLayout(grid(first.days).columns);
-  const tops = compact ? [180, 345] : [255, 440];
+  const tops = compact ? [160, 312] : [215, 375];
   const colors = [PURPLES[4], BLUES[4]];
   return (
     <div
@@ -56,7 +55,7 @@ export function ComparisonOg({
           position: "absolute",
           left: 64,
           right: 64,
-          top: compact ? 68 : 112,
+          top: compact ? 54 : 96,
           alignItems: "center",
           justifyContent: "space-between",
         }}
@@ -78,8 +77,8 @@ export function ComparisonOg({
             <div
               style={{
                 display: "flex",
-                width: 42,
-                height: 42,
+                width: compact ? 34 : 42,
+                height: compact ? 34 : 42,
                 flexShrink: 0,
                 borderRadius: "50%",
                 background: index ? BLUES[1] : PURPLES[1],
@@ -91,7 +90,13 @@ export function ComparisonOg({
             >
               {avatars[index] ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={avatars[index]!} width={42} height={42} alt="" style={{ borderRadius: "50%" }} />
+                <img
+                  src={avatars[index]!}
+                  width={compact ? 34 : 42}
+                  height={compact ? 34 : 42}
+                  alt=""
+                  style={{ borderRadius: "50%" }}
+                />
               ) : (
                 (data.profile.username || "fc").slice(0, 2)
               )}
@@ -117,20 +122,20 @@ export function ComparisonOg({
         style={{
           display: "flex",
           position: "absolute",
-          top: compact ? 119 : 174,
+          top: compact ? 98 : 151,
           left: 69,
           right: 69,
-          alignItems: "center",
+          alignItems: "baseline",
           justifyContent: "space-between",
         }}
       >
-        <strong style={{ color: colors[0], fontSize: compact ? 36 : 46, fontWeight: 900 }}>
+        <strong style={{ color: colors[0], fontSize: compact ? 32 : 40, fontWeight: 900, lineHeight: 1 }}>
           {first.total.toLocaleString("en-US")}
         </strong>
         <span style={{ color: "#a99aba", fontSize: 20 }}>
           <NumberText preserveSpaces>{`Actions in ${periodLabel(first.period)}`}</NumberText>
         </span>
-        <strong style={{ color: colors[1], fontSize: compact ? 36 : 46, fontWeight: 900 }}>
+        <strong style={{ color: colors[1], fontSize: compact ? 32 : 40, fontWeight: 900, lineHeight: 1 }}>
           {second.total.toLocaleString("en-US")}
         </strong>
       </div>
@@ -187,107 +192,28 @@ export function ComparisonOg({
           </div>
         );
       })}
-      <div
-        style={{
-          display: "flex",
-          position: "absolute",
-          top: compact ? 498 : 610,
-          left: 64,
-          right: 64,
-          height: compact ? 74 : 119,
-          gap: 16,
-        }}
-      >
-        {comparisonStats(first, second).map((stat) => (
-          <div
-            key={stat.key}
-            style={{
-              display: "flex",
-              flex: 1,
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "center",
-              gap: stat.key === "peak" ? 3 : compact ? 5 : 12,
-              border: "1px solid #352a43",
-              background: "#18131f",
-              borderRadius: 12,
-              padding: compact ? "5px 10px" : "14px 20px",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                flexDirection: stat.key === "peak" ? "column" : "row",
-                alignItems: "center",
-                gap: stat.key === "peak" ? 3 : 0,
-                width: "100%",
-                justifyContent: "space-around",
-              }}
-            >
-              {[stat.first, stat.second].map((value, index) => (
-                <div
-                  key={`value-${index}`}
-                  style={{
-                    display: "flex",
-                    flexDirection: stat.key === "peak" ? "row" : "column",
-                    alignItems: "center",
-                    color: colors[index],
-                    gap: 4,
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      fontSize: compact ? (stat.key === "peak" ? 18 : 20) : 27,
-                      fontWeight: 900,
-                      gap: 5,
-                    }}
-                  >
-                    {value.toLocaleString("en-US")}
-                    {stat.winner === (index ? "second" : "first") && (
-                      <svg
-                        width={compact ? 15 : 20}
-                        height={compact ? 15 : 20}
-                        viewBox="0 0 24 24"
-                        style={{ marginTop: compact ? 3 : 5 }}
-                      >
-                        <path
-                          d="m5 12 4 4L19 6"
-                          fill="none"
-                          stroke={colors[index]}
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    )}
-                  </div>
-                  {stat.key === "peak" && (
-                    <div style={{ display: "flex", fontSize: compact ? 9 : 12 }}>
-                      <NumberText preserveSpaces>
-                        {activityDate((index ? stat.secondDate : stat.firstDate) || null)}
-                      </NumberText>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-            <div style={{ display: "flex", fontSize: compact ? 11 : 15, color: "#a99aba" }}>
-              {stat.key === "peak" ? "actions on busiest day" : stat.label}
-              {stat.winner === "tie" ? " · Tie" : ""}
-            </div>
-          </div>
-        ))}
-      </div>
+      <OgStats first={first} second={second} top={compact ? 454 : 530} height={compact ? 43 : 78} compact={compact} />
+      {first.overall && second.overall && (
+        <div style={{ display: "flex", position: "absolute", left: 0, top: 0, width: 1200, height }}>
+          <OverallOgHeading first={first} second={second} top={compact ? 502 : 623} compact={compact} />
+          <OgStats
+            first={first.overall}
+            second={second.overall}
+            top={compact ? 540 : 682}
+            height={compact ? 44 : 73}
+            compact={compact}
+          />
+        </div>
+      )}
       <div
         style={{
           display: "flex",
           position: "absolute",
           left: 64,
           right: 64,
-          bottom: compact ? 13 : 30,
+          bottom: compact ? 3 : 17,
           justifyContent: "space-between",
-          fontSize: 12,
+          fontSize: compact ? 10 : 12,
           color: "#857594",
         }}
       >

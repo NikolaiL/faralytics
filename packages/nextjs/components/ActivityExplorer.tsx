@@ -12,6 +12,7 @@ import {
   comparisonShareText,
   accountName,
   activityDate,
+  streakRange,
   dateKey,
   periodLabel,
   PURPLES,
@@ -22,6 +23,7 @@ import { LOGO_PIXELS } from "~~/lib/brand";
 import { BrandChart } from "./BrandChart";
 import { AvatarImage } from "./AvatarImage";
 import { ComparisonChart } from "./ComparisonChart";
+import { OverallActivity } from "./OverallActivity";
 import { Heatmap } from "./Heatmap";
 import { useLookupLog } from "~~/hooks/useLookupLog";
 import { CopyToast } from "./CopyToast";
@@ -495,6 +497,11 @@ export function ActivityExplorer({
                         <small>days</small>
                       </strong>
                       <span>Longest streak</span>
+                      {data && (
+                        <small className="streak-range">
+                          <NumberText>{streakRange(data)}</NumberText>
+                        </small>
+                      )}
                     </div>
                     <div>
                       <strong className="busiest-total" data-testid="busiest-actions">
@@ -511,6 +518,7 @@ export function ActivityExplorer({
                   </div>
                 </>
               )}
+              {data && <OverallActivity first={data} second={comparison} />}
             </div>
             <nav className="year-picker" aria-label="Activity year">
               <button
