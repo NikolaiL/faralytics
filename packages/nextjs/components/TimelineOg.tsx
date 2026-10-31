@@ -125,18 +125,64 @@ export function TimelineOg({
                     display: "flex",
                     width: "100%",
                     alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: 6,
                     fontSize: compact ? 18 : 21,
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: 7, color: "#b594ee" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      width: "44%",
+                      flexShrink: 0,
+                      alignItems: "center",
+                      gap: 7,
+                      color: "#b594ee",
+                    }}
+                  >
                     {avatar(event.actor, index, compact ? 32 : 42)}
-                    <span>{shorten(name(event.actor), 15)}</span>
+                    <span
+                      style={{
+                        maxWidth: compact ? 174 : 164,
+                        overflow: "hidden",
+                        whiteSpace: "nowrap",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {shorten(name(event.actor), 15)}
+                    </span>
                   </div>
-                  <span style={{ color: "#48d9ac", fontSize: 12 }}>followed</span>
-                  <div style={{ display: "flex", alignItems: "center", gap: 7, color: "#82b7ff" }}>
-                    <span>{shorten(name(event.target), 15)}</span>
+                  <div
+                    style={{
+                      display: "flex",
+                      width: "12%",
+                      flexShrink: 0,
+                      justifyContent: "center",
+                      color: "#48d9ac",
+                      fontSize: 12,
+                    }}
+                  >
+                    followed
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      width: "44%",
+                      flexShrink: 0,
+                      justifyContent: "flex-end",
+                      alignItems: "center",
+                      gap: 7,
+                      color: "#82b7ff",
+                    }}
+                  >
+                    <span
+                      style={{
+                        maxWidth: compact ? 174 : 164,
+                        overflow: "hidden",
+                        whiteSpace: "nowrap",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {shorten(name(event.target), 15)}
+                    </span>
                     {avatar(event.target, index + 10, compact ? 32 : 42)}
                   </div>
                 </div>
