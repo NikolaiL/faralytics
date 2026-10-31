@@ -502,12 +502,12 @@ export function ActivityExplorer({
                         {data?.longestStreak.toLocaleString() || "—"}
                         <small>days</small>
                       </strong>
-                      <span>Longest streak</span>
                       {data && (
                         <small className="streak-range">
                           <NumberText>{streakRange(data)}</NumberText>
                         </small>
                       )}
+                      <span>Longest streak</span>
                     </div>
                     <div>
                       <strong className="busiest-total" data-testid="busiest-actions">
