@@ -151,9 +151,6 @@ export function TimelineOg({
               </div>
             ) : (
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{ display: "flex", width: 24, color: "#b594ee", fontSize: 17, fontWeight: 900 }}>
-                  {index + 1}
-                </div>
                 {avatar(profile, outgoing ? index + 10 : index, compact ? 40 : 52)}
                 <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                   <span style={{ color: "#b594ee", fontSize: compact ? 20 : 23, fontWeight: 700 }}>
