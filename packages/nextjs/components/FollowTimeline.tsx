@@ -21,8 +21,13 @@ export function FollowTimeline({
   initialActor?: string;
   initialTarget?: string;
 }) {
-  const { isMiniApp } = useMiniapp();
-  const [selection, setSelection] = useState({ actor: initialActor, target: initialTarget });
+  const { isMiniApp, fid, ready } = useMiniapp();
+  const [chosenSelection, setSelection] = useState<{ actor: string; target: string } | null>(null);
+  const selection = chosenSelection ?? {
+    actor: initialActor,
+    target: initialTarget || (!initialActor && isMiniApp && fid ? fid : ""),
+  };
+  const selectionReady = ready || !!initialActor || !!initialTarget || chosenSelection !== null;
   const [actorInput, setActorInput] = useState(initialActor);
   const [targetInput, setTargetInput] = useState(initialTarget);
   const [filters, setFilters] = useState<TimelinePage["filters"]>({ actor: null, target: null });
@@ -44,7 +49,7 @@ export function FollowTimeline({
   const animateFrom = useRef<Map<string, number> | null>(null);
   const key = JSON.stringify(selection);
   useEffect(() => {
-    setSelection({ actor: initialActor, target: initialTarget });
+    setSelection(null);
   }, [initialActor, initialTarget]);
   const ids = [...new Set([filters.actor?.fid, filters.target?.fid].filter((fid): fid is string => !!fid))];
   const resetLog = useLookupLog(
@@ -54,6 +59,7 @@ export function FollowTimeline({
   );
 
   useEffect(() => {
+    if (!selectionReady) return;
     let active = true,
       inFlight = false,
       initialized = false;
@@ -186,7 +192,7 @@ export function FollowTimeline({
       clearTimeout(drain);
       document.removeEventListener("visibilitychange", visible);
     };
-  }, [key]);
+  }, [key, selectionReady]);
   useEffect(() => {
     liveRef.current = live;
     if (live) actions.current.poll();
@@ -229,7 +235,7 @@ export function FollowTimeline({
   function apply(role: "actor" | "target", value: string) {
     setMeaningful(true);
     if (!value && !selection[role === "actor" ? "target" : "actor"]) resetLog();
-    setSelection((previous) => ({ ...previous, [role]: value.trim() }));
+    setSelection((previous) => ({ ...(previous ?? selection), [role]: value.trim() }));
   }
   function account(profile: Profile, avatar = false) {
     const href = `https://farcaster.xyz/${profile.username || `~/profiles/${profile.fid}`}`;
