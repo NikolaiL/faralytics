@@ -155,7 +155,7 @@ export function FollowersExplorer({
           </span>
           faralytics<span className="wordmark-dot">.</span>
         </Link>
-        <ShareActions disabled={busy} onShare={share} placement="header" />
+        <ShareActions heading="a chart worth of sharing:" disabled={busy} onShare={share} placement="header" />
       </header>
       <AppNavigation active="followers" fids={ids} end={data?.anchor} />
       <section className="intro">
@@ -281,7 +281,7 @@ export function FollowersExplorer({
       )}
       {data && (
         <>
-          <ShareActions disabled={busy} onShare={share} placement="below" />
+          <ShareActions heading="a chart worth of sharing:" disabled={busy} onShare={share} placement="below" />
           <ChartImages
             basePath="/api/og/followers"
             params={imageParams.toString()}

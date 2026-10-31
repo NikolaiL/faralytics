@@ -3,10 +3,12 @@ export function ShareActions({
   disabled,
   onShare,
   placement,
+  heading = "a year worth of sharing:",
 }: {
   disabled: boolean;
   onShare: (target: "farcaster" | "x" | "copy") => void;
   placement: "header" | "below";
+  heading?: string;
 }) {
   return (
     <div
@@ -14,7 +16,7 @@ export function ShareActions({
       role="group"
       aria-labelledby={`share-heading-${placement}`}
     >
-      <p id={`share-heading-${placement}`}>a year worth sharing:</p>
+      <p id={`share-heading-${placement}`}>{heading}</p>
       <div className="share-buttons">
         <button
           data-testid={placement === "header" ? "share-farcaster" : "share-farcaster-bottom"}

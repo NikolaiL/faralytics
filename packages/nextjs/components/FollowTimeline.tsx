@@ -380,7 +380,12 @@ export function FollowTimeline({
           </span>
           faralytics<span className="wordmark-dot">.</span>
         </Link>
-        <ShareActions disabled={loading || sharing} onShare={share} placement="header" />
+        <ShareActions
+          heading="a list worth of sharing:"
+          disabled={loading || sharing}
+          onShare={share}
+          placement="header"
+        />
       </header>
       <AppNavigation
         active="follow-timeline"
@@ -562,7 +567,12 @@ export function FollowTimeline({
         )}
       </section>
       {shareNote && <p role="status">{shareNote}</p>}
-      <ShareActions disabled={loading || sharing} onShare={share} placement="below" />
+      <ShareActions
+        heading="a list worth of sharing:"
+        disabled={loading || sharing}
+        onShare={share}
+        placement="below"
+      />
       {!loading && !error && (
         <ChartImages
           basePath="/api/og/follow-timeline"
