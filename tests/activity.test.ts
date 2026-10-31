@@ -153,20 +153,19 @@ test("active-day percentages use elapsed inclusive days, exclude future dates an
 });
 
 test("current activity streak uses today or yesterday, tracks the preceding gap and never substitutes the longest streak", async () => {
-  const { overallActivity, activityStreakText } = await import("../packages/nextjs/lib/activity.ts");
+  const { overallActivity, activityStatItems } = await import("../packages/nextjs/lib/activity.ts");
   const rows=[{day:"2024-01-01",actions:1},{day:"2024-01-02",actions:1},{day:"2024-01-04",actions:2},{day:"2024-01-05",actions:1}];
   const overall=overallActivity(rows,"2024-01-05");
   assert.deepEqual(overall.currentStreak,{days:2,start:"2024-01-04",end:"2024-01-05",previousInactiveDate:"2024-01-03",lastActiveDate:"2024-01-05"});
   assert.equal(overall.longestStreakStart,"2024-01-01");
   assert.equal(overallActivity(rows,"2024-01-06").currentStreak.days,2);
   assert.equal(overallActivity(rows,"2024-01-07").currentStreak.days,0);
-  const account={profile:{fid:"1",username:"test",display_name:null},overall};
-  assert.match(activityStreakText(account,"1").headline,/You've been active for 2 days in a row/);
-  assert.match(activityStreakText(account).headline,/@test has been active/);
-  assert.match(activityStreakText(account).description,/No actions were captured on Jan 3, 2024/);
+  const items=activityStatItems(overall);
+  assert.deepEqual(items.map(item=>item.key),["activeDays","longestStreak","currentStreak","peak"]);
+  assert.deepEqual(items[2],{key:"currentStreak",label:"Current streak",value:2,unit:"days",detail:"Jan 4, 2024 → Jan 5, 2024"});
   const first=overallActivity([{day:"2024-01-05",actions:1}],"2024-01-05");
-  assert.equal(first.currentStreak.previousInactiveDate,null);
-  assert.match(activityStreakText({...account,overall:first}).description,/first reported activity day/);
-  assert.match(activityStreakText({...account,overall:overallActivity(rows,"2024-01-07")}).headline,/no current activity streak/);
-  assert.match(activityStreakText({...account,overall:overallActivity([],"2024-01-07")}).description,/No captured activity/);
+  assert.equal(first.currentStreak.days,1);assert.equal(first.currentStreak.previousInactiveDate,null);
+  assert.equal(activityStatItems(overallActivity(rows,"2024-01-07"))[2].detail,"—");
+  assert.equal(activityStatItems(overallActivity([],"2024-01-07"))[2].value,0);
+  assert.equal(activityStatItems(summarize([])).length,3);
 });

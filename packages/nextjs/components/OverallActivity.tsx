@@ -1,20 +1,9 @@
-import {
-  activityDate,
-  activityStreakText,
-  activeDaysPercent,
-  accountName,
-  firstActivityLabel,
-  streakRange,
-  PURPLES,
-  BLUES,
-  type Activity,
-} from "~~/lib/activity";
-import { useMiniapp } from "./MiniappProvider";
+import { activityStatItems, accountName, firstActivityLabel, PURPLES, BLUES, type Activity } from "~~/lib/activity";
 import { NumberText } from "./NumberText";
 export function OverallActivity({ first, second }: { first: Activity; second?: Activity }) {
-  const { fid } = useMiniapp();
   if (!first.overall) return null;
   const accounts = [first, ...(second?.overall ? [second] : [])];
+  const items = accounts.map((data) => activityStatItems(data.overall!));
   return (
     <section className="overall-activity" data-testid="overall-activity">
       <div className="overall-intro">
@@ -27,11 +16,11 @@ export function OverallActivity({ first, second }: { first: Activity; second?: A
         ))}
       </div>
       <div className="stats overall-stats">
-        {(["activeDays", "longestStreak", "peak"] as const).map((key) => (
-          <div key={key} data-testid={`overall-${key}`}>
+        {items[0].map((stat) => (
+          <div key={stat.key} data-testid={`overall-${stat.key}`}>
             {accounts.map((data, index) => {
-              const summary = data.overall!;
-              const other = accounts[1 - index]?.overall;
+              const value = items[index].find((item) => item.key === stat.key)!;
+              const other = items[1 - index]?.find((item) => item.key === stat.key);
               return (
                 <div
                   className="overall-stat-value"
@@ -39,58 +28,24 @@ export function OverallActivity({ first, second }: { first: Activity; second?: A
                   style={second ? { color: index ? BLUES[4] : PURPLES[4] } : undefined}
                 >
                   <strong>
-                    {summary[key].toLocaleString("en-US")}
-                    <small>{key === "peak" ? "actions" : "days"}</small>
-                    {other && summary[key] > other[key] && (
+                    {value.value.toLocaleString("en-US")}
+                    <small>{value.unit}</small>
+                    {other && value.value > other.value && (
                       <span aria-label="Higher value" style={{ color: "inherit" }}>
                         {" "}
                         ✓
                       </span>
                     )}
                   </strong>
-                  {key === "activeDays" && (
-                    <small className="active-percentage">
-                      <NumberText>{activeDaysPercent(summary)}</NumberText>
-                    </small>
-                  )}
-                  {key !== "activeDays" && (
-                    <small className="overall-stat-date">
-                      <NumberText>{key === "peak" ? activityDate(summary.peakDate) : streakRange(summary)}</NumberText>
-                    </small>
-                  )}
+                  <small className={stat.key === "activeDays" ? "active-percentage" : "overall-stat-date"}>
+                    <NumberText>{value.detail}</NumberText>
+                  </small>
                 </div>
               );
             })}
-            <span>
-              {key === "activeDays"
-                ? "Active days"
-                : key === "longestStreak"
-                  ? "Longest streak"
-                  : "Actions on busiest day"}
-            </span>
+            <span>{stat.label}</span>
           </div>
         ))}
-      </div>
-      <div className="current-streak-note" data-testid="current-streak-summary">
-        {accounts.map((data, index) => {
-          const text = activityStreakText(data, fid);
-          return (
-            <div
-              key={data.profile.fid}
-              className="current-streak-account"
-              style={second ? { color: index ? BLUES[4] : PURPLES[4] } : undefined}
-            >
-              <p>
-                <strong>
-                  <NumberText>{text.headline}</NumberText>
-                </strong>
-              </p>
-              <p>
-                <NumberText>{text.description}</NumberText>
-              </p>
-            </div>
-          );
-        })}
       </div>
     </section>
   );

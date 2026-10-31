@@ -140,22 +140,6 @@ export function currentActivityStreak(days: Day[], asOf: string): OverallActivit
     lastActiveDate,
   };
 }
-export function activityStreakText(activity: Pick<Activity, "profile" | "overall">, viewerFid?: string) {
-  const streak = activity.overall?.currentStreak;
-  const own = viewerFid === activity.profile.fid;
-  const name = accountName(activity);
-  if (!streak?.days)
-    return {
-      headline: `${own ? "You have" : `${name} has`} no current activity streak.`,
-      description: streak?.lastActiveDate
-        ? `Last captured activity: ${activityDate(streak.lastActiveDate)} (UTC).`
-        : "No captured activity has been reported yet.",
-    };
-  return {
-    headline: `${own ? "You've" : `${name} has`} been active for ${streak.days.toLocaleString("en-US")} ${streak.days === 1 ? "day" : "days"} in a row.`,
-    description: `Current activity streak: ${activityDate(streak.start)} → ${activityDate(streak.end)} in UTC dates. ${streak.previousInactiveDate ? `No actions were captured on ${activityDate(streak.previousInactiveDate)}, immediately before this streak.` : "This streak starts on the first reported activity day."}`,
-  };
-}
 export function streakRange(summary: Pick<ActivitySummary, "longestStreakStart" | "longestStreakEnd">) {
   return summary.longestStreakStart && summary.longestStreakEnd
     ? `${activityDate(summary.longestStreakStart)} – ${activityDate(summary.longestStreakEnd)}`
@@ -164,6 +148,45 @@ export function streakRange(summary: Pick<ActivitySummary, "longestStreakStart" 
 export function activeDaysPercent(summary: Pick<ActivitySummary, "activeDays" | "elapsedDays">) {
   const percentage = summary.elapsedDays ? (summary.activeDays / summary.elapsedDays) * 100 : 0;
   return `${percentage.toLocaleString("en-US", { maximumFractionDigits: 1 })}% of days`;
+}
+export function activityStatItems(summary: ActivitySummary & { currentStreak?: OverallActivity["currentStreak"] }) {
+  return [
+    {
+      key: "activeDays",
+      label: "Active days",
+      value: summary.activeDays,
+      unit: "days",
+      detail: activeDaysPercent(summary),
+    },
+    {
+      key: "longestStreak",
+      label: "Longest streak",
+      value: summary.longestStreak,
+      unit: "days",
+      detail: streakRange(summary),
+    },
+    ...(summary.currentStreak
+      ? [
+          {
+            key: "currentStreak",
+            label: "Current streak",
+            value: summary.currentStreak.days,
+            unit: "days",
+            detail:
+              summary.currentStreak.start && summary.currentStreak.end
+                ? `${activityDate(summary.currentStreak.start)} → ${activityDate(summary.currentStreak.end)}`
+                : "—",
+          },
+        ]
+      : []),
+    {
+      key: "peak",
+      label: "Actions on busiest day",
+      value: summary.peak,
+      unit: "actions",
+      detail: activityDate(summary.peakDate),
+    },
+  ];
 }
 export function firstActivityLabel(overall: OverallActivity) {
   return overall.firstDate

@@ -1,11 +1,10 @@
 import {
-  activityDate,
-  activeDaysPercent,
   firstActivityLabel,
   accountName,
-  streakRange,
   PURPLES,
   BLUES,
+  activityStatItems,
+  type OverallActivity,
   type ActivitySummary,
   type Activity,
 } from "~~/lib/activity";
@@ -17,18 +16,21 @@ export function OgStats({
   height,
   compact = false,
 }: {
-  first: ActivitySummary;
-  second?: ActivitySummary;
+  first: ActivitySummary & { currentStreak?: OverallActivity["currentStreak"] };
+  second?: ActivitySummary & { currentStreak?: OverallActivity["currentStreak"] };
   top: number;
   height: number;
   compact?: boolean;
 }) {
-  const summaries = [first, ...(second ? [second] : [])];
+  const items = [first, ...(second ? [second] : [])].map(activityStatItems);
+  const stacked = !!second && items[0].length === 4;
+  const boxWidth = (1072 - (items[0].length - 1) * 16) / items[0].length;
+  const detailWidth = second ? (boxWidth - 16) / 2 - 6 : boxWidth - 16;
   return (
     <div style={{ display: "flex", position: "absolute", top, left: 64, right: 64, height, gap: 16 }}>
-      {(["activeDays", "longestStreak", "peak"] as const).map((key) => (
+      {items[0].map((stat) => (
         <div
-          key={key}
+          key={stat.key}
           style={{
             display: "flex",
             flex: 1,
@@ -36,11 +38,11 @@ export function OgStats({
             alignItems: "center",
             justifyContent: "center",
             textAlign: "center",
-            gap: compact ? 2 : 6,
+            gap: stacked ? (compact ? 1 : 3) : compact ? 2 : 6,
             border: "1px solid #352a43",
             background: "#18131f",
             borderRadius: 10,
-            padding: second && compact ? "2px 8px" : "4px 8px",
+            padding: stacked ? (compact ? "1px 8px" : "2px 8px") : second && compact ? "2px 8px" : "4px 8px",
           }}
         >
           <div
@@ -48,72 +50,76 @@ export function OgStats({
               display: "flex",
               width: "100%",
               justifyContent: "space-around",
-              flexDirection: second ? "row" : "column",
+              flexDirection: second && !stacked ? "row" : "column",
               alignItems: "center",
-              gap: compact ? 2 : 5,
+              gap: stacked ? (compact ? 1 : 3) : compact ? 2 : 5,
             }}
           >
-            {summaries.map((summary, index) => (
-              <div
-                key={index}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: compact ? 2 : 5,
-                  color: second ? (index ? BLUES[4] : PURPLES[4]) : "#f3eff9",
-                }}
-              >
-                <div style={{ display: "flex", fontSize: compact ? (second ? 15 : 22) : 29, lineHeight: 1.1 }}>
-                  <NumberText
-                    preserveSpaces
-                  >{`${summary[key].toLocaleString("en-US")}${second ? "" : key === "peak" ? " actions" : " days"}`}</NumberText>
-                  {second && summary[key] > (index ? first[key] : second[key]) && (
-                    <svg
-                      width={compact ? 10 : 16}
-                      height={compact ? 10 : 16}
-                      viewBox="0 0 24 24"
-                      style={{ marginLeft: 4 }}
-                    >
-                      <path
-                        d="m5 12 4 4L19 6"
-                        fill="none"
-                        stroke={index ? BLUES[4] : PURPLES[4]}
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  )}
-                </div>
+            {items.map((values, index) => {
+              const value = values.find((item) => item.key === stat.key)!;
+              const other = items[1 - index]?.find((item) => item.key === stat.key);
+              const valueText = `${value.value.toLocaleString("en-US")}${second ? "" : " " + value.unit}`;
+              const markerWidth = other && value.value > other.value ? (compact ? 14 : 20) : 0;
+              const valueSize = Math.min(
+                stacked ? (compact ? 13 : 20) : compact ? (second ? 15 : 22) : 29,
+                ((stacked ? (boxWidth - 16) * 0.4 : detailWidth) - markerWidth) / Math.max(1, valueText.length * 0.68),
+              );
+              const availableDetailWidth = stacked
+                ? boxWidth - 20 - markerWidth - valueSize * valueText.length * 0.68
+                : detailWidth;
+              return (
                 <div
+                  key={index}
                   style={{
                     display: "flex",
-                    fontSize: compact ? (second ? 8 : 10) : second ? 10 : 13,
-                    lineHeight: 1.2,
+                    flexDirection: stacked ? "row" : "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: stacked ? 4 : compact ? 2 : 5,
+                    color: second ? (index ? BLUES[4] : PURPLES[4]) : "#f3eff9",
                   }}
                 >
-                  <NumberText preserveSpaces>
-                    {key === "activeDays"
-                      ? activeDaysPercent(summary)
-                      : key === "peak"
-                        ? activityDate(summary.peakDate)
-                        : streakRange(summary)}
-                  </NumberText>
+                  <div style={{ display: "flex", fontSize: valueSize, lineHeight: 1.1 }}>
+                    <NumberText preserveSpaces>{valueText}</NumberText>
+                    {other && value.value > other.value && (
+                      <svg
+                        width={compact ? 10 : 16}
+                        height={compact ? 10 : 16}
+                        viewBox="0 0 24 24"
+                        style={{ marginLeft: 4 }}
+                      >
+                        <path
+                          d="m5 12 4 4L19 6"
+                          fill="none"
+                          stroke={index ? BLUES[4] : PURPLES[4]}
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    )}
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      fontSize: Math.min(
+                        compact ? (second ? 8 : 10) : second ? 10 : 13,
+                        availableDetailWidth / Math.max(1, value.detail.length * 0.58),
+                      ),
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    <NumberText preserveSpaces>{value.detail}</NumberText>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           <div
             style={{ display: "flex", color: "#a99aba", fontSize: compact ? (second ? 9 : 10) : 13, lineHeight: 1.2 }}
           >
-            {key === "activeDays"
-              ? "Active days"
-              : key === "longestStreak"
-                ? "Longest streak"
-                : "Actions on busiest day"}
-            {second && first[key] === second[key] ? " · Tie" : ""}
+            {stat.label}
+            {items[1]?.find((item) => item.key === stat.key)?.value === stat.value ? " · Tie" : ""}
           </div>
         </div>
       ))}
