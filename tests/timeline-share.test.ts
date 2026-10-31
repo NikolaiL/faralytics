@@ -23,10 +23,18 @@ test("thank-you copy mentions available usernames once and uses platform credits
   const actor={fid:"3",username:"alice",display_name:null};
   const event={id:"a",cursor:"",timestamp:new Date().toISOString(),action:"follow" as const,actor,target:profile};
   const data:TimelineShareData={filters:{actor:null,target:profile},events:[event,{...event,id:"b"},{...event,id:"c",actor:{...actor,username:null}}],generatedAt:new Date().toISOString()};
-  assert.equal(timelineShareText(data,"farcaster"),"Thanks to my latest followers: @alice\n\nHow about you?\n\nfaralytics - created by @nikolaii.eth with @viniapp");
+  assert.equal(timelineShareText(data,"farcaster","366713"),"Thanks to my latest followers: @alice\n\nCheck Yours\n\nfaralytics - created by @nikolaii.eth with @viniapp");
   assert.match(timelineShareText(data,"x"),/@NikolaiLeb with @viniapp_xyz$/);
+  for(const viewer of [undefined,"37"]){
+    const text=timelineShareText(data,"farcaster",viewer);
+    assert.equal(text,"Latest followers of @nikolaii.eth\n\nCheck Yours\n\nfaralytics - created by @nikolaii.eth with @viniapp");
+    assert.ok(!text.includes('@alice'));
+  }
+  assert.match(timelineShareText(data,"x","366713"),/^Thanks to my latest followers: @alice/);
+  assert.match(timelineShareText({...data,filters:{actor:null,target:{...profile,username:null}}},"farcaster"),/^Latest followers of FID 366713/);
+
   assert.match(timelineShareText({...data,filters:{actor:null,target:null}},"farcaster"),/^Explore the latest/);
-  assert.match(timelineShareText({...data,events:[]},"farcaster"),/^Explore the latest/);
+  assert.match(timelineShareText({...data,events:[]},"farcaster","366713"),/^Latest followers of @nikolaii.eth/);
   for(const filters of [{actor,target:null},{actor,target:profile},{actor:null,target:null}]){
     const text=timelineShareText({...data,filters},"farcaster");
     assert.ok(!text.includes('@alice'),'non-target-only shares do not tag event users');

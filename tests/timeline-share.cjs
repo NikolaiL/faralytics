@@ -63,8 +63,8 @@ const base=process.env.BASE_URL||'http://localhost:3100';
   for(const [button,credit]of [['share-farcaster','@nikolaii.eth with @viniapp'],['share-x-bottom','@NikolaiLeb with @viniapp_xyz']]){
    await page.getByTestId(button).click();await expect.poll(()=>page.evaluate(()=>window.__popups.at(-1)?.location.href)).toContain('text=');
    const url=new URL(await page.evaluate(()=>window.__popups.at(-1).location.href));const text=url.searchParams.get('text');
-   assert.ok(text.startsWith('Thanks to my latest followers: '));assert.ok(text.endsWith(credit));
-   for(const event of data.events)if(event.actor.username)assert.ok(text.includes('@'+event.actor.username));
+   assert.ok(text.startsWith('Latest followers of @nikolaii.eth'));assert.ok(text.includes('\n\nCheck Yours\n\n'));assert.ok(text.endsWith(credit));
+   for(const event of data.events)if(event.actor.username)assert.ok(!text.split('\n\n')[0].includes('@'+event.actor.username));
    assert.ok(url.searchParams.get('url')||url.searchParams.get('embeds[]'));
   }
   for(const filters of [{actor:data.filters.target,target:null},{actor:data.filters.target,target:{...data.filters.target,fid:'37'}},{actor:null,target:null}]){
@@ -93,7 +93,13 @@ const base=process.env.BASE_URL||'http://localhost:3100';
   await expect(host.getByTestId('timeline-target-input')).toHaveValue('@nikolaii.eth');
   await host.getByRole('button',{name:'Farcaster · 3:2',exact:true}).click();await expect.poll(()=>host.locator('.chart-image-preview img').evaluate(el=>el.naturalHeight)).toBe(800);await host.getByRole('button',{name:'Close preview ×'}).click();assert.equal(await host.locator('.image-links a[download]').count(),0);
   await host.getByTestId('share-farcaster').click();await expect.poll(()=>host.evaluate(()=>window.__casts.length)).toBe(1);
-  const cast=await host.evaluate(()=>window.__casts[0]);assert.ok(cast.text.startsWith('Thanks to my latest followers: '));assert.equal(new URL(cast.embeds[0]).searchParams.get('target'),'366713');await host.close();
+  const cast=await host.evaluate(()=>window.__casts[0]);assert.ok(cast.text.startsWith('Thanks to my latest followers: '));assert.equal(new URL(cast.embeds[0]).searchParams.get('target'),'366713');assert.ok(cast.text.includes('\n\nCheck Yours\n\n'));for(const event of data.events)if(event.actor.username)assert.ok(cast.text.includes('@'+event.actor.username));
+  const other={...data,filters:{actor:null,target:{...data.filters.target,fid:'37',username:'someone'}}};
+  await host.route('**/api/follow-timeline?*',r=>r.fulfill({json:{events:[],filters:other.filters,headCursor:null,nextCursor:null,hasMore:false,updatedAt:other.generatedAt}}));
+  await host.route('**/api/follow-timeline/share?*',r=>r.fulfill({json:other}));
+  await host.goto('https://faralytics.vercel.app/follow-timeline?target=37');await expect(host.getByTestId('timeline-target-input')).toHaveValue('@someone');
+  await host.getByTestId('share-farcaster').click();await expect.poll(()=>host.evaluate(()=>window.__casts.length)).toBe(1);
+  const otherCast=await host.evaluate(()=>window.__casts[0]);assert.ok(otherCast.text.startsWith('Latest followers of @someone\n\nCheck Yours'));for(const event of data.events)if(event.actor.username)assert.ok(!otherCast.text.split('\n\n')[0].includes('@'+event.actor.username));await host.close();
   console.log('PASS timeline sharing: real 10 distinct follow events, cutoff/validation, all four filter modes plus empty results in both PNG sizes, native composer, crawler metadata, both platform texts, inline FC/X previews on web and host with retry/stable timestamps, timestamped links, copy toast, error recovery and 320–1280 layout. No posts sent.');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exit(1)});

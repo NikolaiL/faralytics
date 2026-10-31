@@ -22,7 +22,7 @@ export function TimelineOg({
   const name = (profile: Profile) => (profile.username ? `@${profile.username}` : `FID ${profile.fid}`);
   const shorten = (text: string, length: number) => (text.length > length ? text.slice(0, length - 1) + "…" : text);
   const heading = incoming
-    ? "Thanks to my latest followers."
+    ? `Latest followers of ${name(target!)}`
     : actor
       ? `Latest followings by ${name(actor)}`
       : "Latest global followings.";

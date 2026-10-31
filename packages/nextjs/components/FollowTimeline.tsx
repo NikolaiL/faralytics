@@ -345,7 +345,7 @@ export function FollowTimeline({
       });
       const data = (await response.json()) as TimelineShareData & { error?: string };
       if (!response.ok) throw new Error(data.error || "Could not prepare the share.");
-      const text = timelineShareText(data, target);
+      const text = timelineShareText(data, target, isMiniApp && fid ? fid : undefined);
       if (native) {
         try {
           const result = await sdk.actions.composeCast({ text, embeds: [url] });
