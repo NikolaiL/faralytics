@@ -17,7 +17,8 @@ export function ActivityOg({
   const compact = height === 600;
   const { cells, columns } = grid(data.days);
   const layout = ogChartLayout(columns);
-  const chartTop = compact ? 215 : 260;
+  const chartTop = compact ? 170 : 208;
+  const profileLabel = data.profile.username ? `@${data.profile.username}` : `FID ${data.profile.fid}`;
   const statsTop = chartTop + layout.height + 18;
   return (
     <div
@@ -37,13 +38,14 @@ export function ActivityOg({
         style={{
           display: "flex",
           position: "absolute",
-          top: compact ? 80 : 102,
-          left: 64,
+          top: compact ? 20 : 34,
+          left: 360,
           right: 64,
           alignItems: "center",
-          gap: 16,
+          justifyContent: "flex-end",
+          gap: 12,
           color: "#d6ff3f",
-          fontSize: 35,
+          fontSize: Math.min(32, 650 / Math.max(1, profileLabel.length * 0.6)),
           fontWeight: 700,
           overflow: "hidden",
           whiteSpace: "nowrap",
@@ -70,13 +72,13 @@ export function ActivityOg({
             (data.profile.username || "fc").slice(0, 2)
           )}
         </div>
-        <span>{data.profile.username ? `@${data.profile.username}` : `FID ${data.profile.fid}`}</span>
+        <span>{profileLabel}</span>
       </div>
       <div
         style={{
           display: "flex",
           position: "absolute",
-          top: compact ? 136 : 164,
+          top: compact ? 90 : 112,
           left: 64,
           alignItems: "center",
           gap: 14,
@@ -126,11 +128,11 @@ export function ActivityOg({
           />
         ))}
       </svg>
-      <OgStats first={data} top={statsTop} height={compact ? 72 : 110} compact={compact} />
+      <OgStats first={data} top={statsTop} height={compact ? 90 : 150} compact={compact} />
       {data.overall && (
         <div style={{ display: "flex", position: "absolute", left: 0, top: 0, width: 1200, height }}>
-          <OverallOgHeading first={data} top={compact ? 464 : 552} compact={compact} />
-          <OgStats first={data.overall} top={compact ? 499 : 606} height={compact ? 72 : 120} compact={compact} />
+          <OverallOgHeading first={data} top={compact ? 442 : 540} compact={compact} />
+          <OgStats first={data.overall} top={compact ? 477 : 590} height={compact ? 90 : 150} compact={compact} />
         </div>
       )}
       <div
