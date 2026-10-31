@@ -23,6 +23,8 @@ export function timelineShareText(data: TimelineShareData, target: ShareTarget, 
     ? profile.fid === viewerFid && names.length
       ? `Thanks to my latest followers: ${names.join(" ")}`
       : `Latest followers of ${profile.username ? `@${profile.username}` : `FID ${profile.fid}`}`
-    : "Explore the latest Farcaster followings with Faralytics.";
+    : data.filters.actor
+      ? "Explore the latest Farcaster followings with Faralytics."
+      : "Explore the latest Farcaster follows and unfollows with Faralytics.";
   return `${text}\n\nCheck Yours\n\n${shareCredit(target)}`;
 }

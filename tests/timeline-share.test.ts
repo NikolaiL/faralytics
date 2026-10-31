@@ -15,7 +15,12 @@ test("latest follower shares filter follows before limiting and deduplicate acco
   assert.throws(()=>timelineQuery({shareAt:(Date.now()+120000).toString()}));
   assert.match(timelineQuery({actor:"3",shareAt:ts}).sql,/LIMIT 1 BY target_fid/);
   assert.match(timelineQuery({actor:"3",target:"366713",shareAt:ts}).sql,/LIMIT 1 BY timestamp, hash, fid, action_type/);
-  assert.match(timelineQuery({shareAt:ts}).sql,/FROM snapchain.action_messages /);
+  const global=timelineQuery({shareAt:ts});
+  assert.match(global.sql,/FROM snapchain.action_messages /);
+  assert.match(global.sql,/action_type IN \('follow', 'unfollow'\)/);
+  assert.doesNotMatch(global.sql,/action_type = 'follow'/);
+  assert.match(timelineQuery({actor:"3",shareAt:ts}).sql,/action_type = 'follow'/);
+  assert.match(timelineQuery({actor:"3",target:"366713",shareAt:ts}).sql,/action_type = 'follow'/);
   assert.match(timelineQuery({target:"366713"}).sql,/LIMIT 1 BY timestamp, hash, fid, action_type/);
 });
 test("thank-you copy mentions available usernames once and uses platform credits and cache-busting links",()=>{

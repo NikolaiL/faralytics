@@ -63,7 +63,8 @@ export function timelineQuery(selection: {
   const filters = ["action_type IN ('follow', 'unfollow')"];
   if (shareAt) {
     validateTimelineShareTime(shareAt);
-    filters.push("action_type = 'follow'", "timestamp <= toDateTime({asOf:UInt32}, 'UTC')");
+    if (actor || target) filters.push("action_type = 'follow'");
+    filters.push("timestamp <= toDateTime({asOf:UInt32}, 'UTC')");
     params.asOf = Math.floor(Number(shareAt) / 1000).toString();
   }
   let prewhere = "";

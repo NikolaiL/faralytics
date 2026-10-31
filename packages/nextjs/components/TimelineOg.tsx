@@ -28,7 +28,7 @@ export function TimelineOg({
     ? `Latest followers of ${name(target!)}`
     : actor
       ? `Latest followings by ${name(actor)}`
-      : "Latest global followings.";
+      : "Latest global follows & unfollows.";
   const header = target || actor;
   function avatar(profile: Profile, index: number, size: number) {
     return (
@@ -196,13 +196,13 @@ export function TimelineOg({
                   <div
                     style={{
                       display: "flex",
-                      color: "#48d9ac",
+                      color: event.action === "follow" ? "#48d9ac" : "#ff8970",
                       fontSize: compact ? 12 : 14,
                       fontWeight: 700,
                       lineHeight: 1,
                     }}
                   >
-                    followed
+                    {event.action === "follow" ? "followed" : "unfollowed"}
                   </div>
                   <div style={{ display: "flex", color: "#a99aba", fontSize: compact ? 11 : 12, lineHeight: 1 }}>
                     <NumberText preserveSpaces>
@@ -307,7 +307,7 @@ export function TimelineOg({
       })}
       {!data.events.length && (
         <div style={{ display: "flex", position: "absolute", left: 64, top: 250, fontSize: 26, color: "#a99aba" }}>
-          No captured follows yet.
+          {global ? "No captured follow activity yet." : "No captured follows yet."}
         </div>
       )}
       <div
@@ -322,7 +322,7 @@ export function TimelineOg({
           color: "#857594",
         }}
       >
-        <span>Latest captured follows · UTC</span>
+        <span>{global ? "Latest captured follows & unfollows · UTC" : "Latest captured follows · UTC"}</span>
         <NumberText
           preserveSpaces
         >{`created with viniapp · ${data.generatedAt.slice(0, 19).replace("T", " ")} UTC`}</NumberText>
