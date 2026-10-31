@@ -113,7 +113,6 @@ export function TimelineOg({
               width: 524,
               height: rowHeight,
               background: "#17121f",
-              border: "1px solid #30263d",
               borderRadius: 14,
               padding: "0 16px",
               gap: compact ? 4 : 9,
@@ -128,17 +127,17 @@ export function TimelineOg({
                     alignItems: "center",
                     justifyContent: "space-between",
                     gap: 6,
-                    fontSize: compact ? 16 : 18,
+                    fontSize: compact ? 18 : 21,
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: 7, color: "#b594ee" }}>
-                    {avatar(event.actor, index, compact ? 26 : 34)}
-                    <span>{shorten(name(event.actor), 17)}</span>
+                    {avatar(event.actor, index, compact ? 32 : 42)}
+                    <span>{shorten(name(event.actor), 15)}</span>
                   </div>
                   <span style={{ color: "#48d9ac", fontSize: 12 }}>followed</span>
                   <div style={{ display: "flex", alignItems: "center", gap: 7, color: "#82b7ff" }}>
-                    <span>{shorten(name(event.target), 17)}</span>
-                    {avatar(event.target, index + 10, compact ? 26 : 34)}
+                    <span>{shorten(name(event.target), 15)}</span>
+                    {avatar(event.target, index + 10, compact ? 32 : 42)}
                   </div>
                 </div>
                 <div
@@ -151,10 +150,10 @@ export function TimelineOg({
               </div>
             ) : (
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                {avatar(profile, outgoing ? index + 10 : index, compact ? 40 : 52)}
+                {avatar(profile, outgoing ? index + 10 : index, compact ? 52 : 68)}
                 <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                  <span style={{ color: "#b594ee", fontSize: compact ? 20 : 23, fontWeight: 700 }}>
-                    {shorten(name(profile), 29)}
+                  <span style={{ color: "#b594ee", fontSize: compact ? 26 : 30, fontWeight: 700 }}>
+                    {shorten(name(profile), 26)}
                   </span>
                   <div style={{ display: "flex", color: "#a99aba", fontSize: compact ? 14 : 17 }}>
                     <NumberText preserveSpaces>
