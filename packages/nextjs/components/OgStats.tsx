@@ -128,6 +128,14 @@ export function OverallOgHeading({
   top: number;
   compact: boolean;
 }) {
+  const details = [first, ...(second ? [second] : [])]
+    .filter((data) => data.overall)
+    .map((data) => `${second ? accountName(data) + " · " : ""}${firstActivityLabel(data.overall!)}`);
+  const titleSize = compact ? (second ? 12 : 14) : 19;
+  const detailSize = Math.min(
+    compact ? (second ? 8 : 12) : second ? 10 : 13,
+    (1072 - titleSize * 8 - 36) / (details.join(" · ").length * 0.57),
+  );
   return (
     <div
       style={{
@@ -136,31 +144,26 @@ export function OverallOgHeading({
         top,
         left: 64,
         right: 64,
-        flexDirection: "column",
-        gap: compact ? 2 : 5,
+        alignItems: "baseline",
+        gap: 12,
         lineHeight: 1,
+        whiteSpace: "nowrap",
       }}
     >
-      <div style={{ display: "flex", fontSize: compact ? (second ? 12 : 14) : 19, fontWeight: 700 }}>
-        Overall activity
-      </div>
-      {[first, ...(second ? [second] : [])].map(
-        (data, index) =>
-          data.overall && (
-            <div
-              key={index}
-              style={{
-                display: "flex",
-                fontSize: compact ? (second ? 8 : 12) : 13,
-                color: second ? (index ? BLUES[4] : PURPLES[4]) : "#a99aba",
-              }}
-            >
-              <NumberText
-                preserveSpaces
-              >{`${second ? accountName(data) + " · " : ""}${firstActivityLabel(data.overall)}`}</NumberText>
-            </div>
-          ),
-      )}
+      <div style={{ display: "flex", fontSize: titleSize, fontWeight: 700, flexShrink: 0 }}>Overall activity</div>
+      {details.map((text, index) => (
+        <div
+          key={index}
+          style={{
+            display: "flex",
+            fontSize: detailSize,
+            color: second ? (index ? BLUES[4] : PURPLES[4]) : "#a99aba",
+            whiteSpace: "nowrap",
+          }}
+        >
+          <NumberText preserveSpaces>{text}</NumberText>
+        </div>
+      ))}
     </div>
   );
 }
