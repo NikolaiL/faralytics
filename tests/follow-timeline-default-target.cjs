@@ -44,6 +44,11 @@ const base=process.env.BASE_URL || 'http://localhost:3100';
    assert.ok(explicit.requests.length>0);for(const request of explicit.requests)assert.equal(new URLSearchParams(request).toString(),new URLSearchParams(query).toString(),'explicit filters preserved');
    await explicit.page.close();
   }
+  const global=await setup('/follow-timeline?all=1');
+  await expect(global.page.getByText('No captured events yet')).toBeVisible();
+  assert.ok(global.requests.every(q=>q===''),'explicit global share remains global inside Farcaster');
+  await expect.poll(()=>new URL(global.page.url()).searchParams.get('all')).toBe('1');
+  await global.page.reload();await expect(global.page.getByText('No captured events yet')).toBeVisible();assert.ok(global.requests.every(q=>q===''));await global.page.close();
   const web=await setup('/follow-timeline',0,false);await expect(web.page.getByText('No captured events yet')).toBeVisible();assert.equal(web.requests[0],'');await expect(web.page.getByTestId('show-me')).toHaveCount(0);await expect(web.page.getByTestId('timeline-target-input')).toHaveValue('');await expect(web.page.getByTestId('follow-gate')).toHaveCount(0);await web.page.close();
   console.log('PASS timeline default target: cold Farcaster self-target only, no automatic follow/add prompt, explicit filters preserved, clear stays global after refresh, browser default global, Show me uses viewer in either field and clears duplicate opposite selection, no Show me outside Farcaster. No native social action sent.');
  }finally{await browser.close();}

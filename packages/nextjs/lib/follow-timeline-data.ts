@@ -6,7 +6,7 @@ import { resolveAccount } from "./data";
 import type { Profile } from "./activity";
 import { timelineQuery, TIMELINE_PAGE_SIZE, type TimelinePage } from "./follow-timeline";
 
-type Selection = { actor?: string; target?: string; before?: string; after?: string };
+type Selection = { actor?: string; target?: string; before?: string; after?: string; shareAt?: string };
 const readTimeline = unstable_cache(
   async (key: string): Promise<TimelinePage> => {
     const selection = JSON.parse(key) as Selection;
@@ -58,7 +58,7 @@ const readTimeline = unstable_cache(
       updatedAt: new Date().toISOString(),
     };
   },
-  ["follow-timeline-v2"],
+  ["follow-timeline-v3"],
   { revalidate: 5 },
 );
 
@@ -68,4 +68,13 @@ export async function loadTimeline(selection: Selection) {
     selection.target ? resolveAccount(selection.target) : undefined,
   ]);
   return readTimeline(JSON.stringify({ ...selection, actor, target }));
+}
+
+export async function loadTimelineShare(selection: { actor?: string; target?: string }, ts: string) {
+  const data = await loadTimeline({ ...selection, shareAt: ts });
+  return {
+    filters: data.filters,
+    events: data.events.slice(0, 10),
+    generatedAt: new Date(Number(ts)).toISOString(),
+  };
 }

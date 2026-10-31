@@ -41,14 +41,29 @@ export function timelineSelection(params: URLSearchParams) {
   if (after) parseTimelineCursor(after);
   return { actor: account("actor"), target: account("target"), before, after };
 }
-export function timelineQuery(selection: { actor?: string; target?: string; before?: string; after?: string }) {
-  const { actor, target, before, after } = selection;
+export function validateTimelineShareTime(value: string) {
+  if (!/^\d{13}$/.test(value) || Number(value) < 1609459200000 || Number(value) > Date.now() + 60000)
+    throw new InputError("Invalid share timestamp.");
+}
+export function timelineQuery(selection: {
+  actor?: string;
+  target?: string;
+  before?: string;
+  after?: string;
+  shareAt?: string;
+}) {
+  const { actor, target, before, after, shareAt } = selection;
   if ((actor && !validFid(actor)) || (target && !validFid(target))) throw new InputError("Invalid FID.");
   if (before && after) throw new InputError("Invalid cursor direction.");
   const table = target ? "received_actions" : actor ? "action_messages_by_fid" : "action_messages";
   const targetColumn = target ? "recipient_fid" : "target_fid";
   const params: Record<string, string> = {};
   const filters = ["action_type IN ('follow', 'unfollow')"];
+  if (shareAt) {
+    validateTimelineShareTime(shareAt);
+    filters.push("action_type = 'follow'", "timestamp <= toDateTime({asOf:UInt32}, 'UTC')");
+    params.asOf = Math.floor(Number(shareAt) / 1000).toString();
+  }
   let prewhere = "";
   if (target) {
     prewhere = "PREWHERE recipient_fid = {target:UInt64}";
@@ -70,7 +85,7 @@ export function timelineQuery(selection: { actor?: string; target?: string; befo
       FROM snapchain.${table} ${prewhere}
       WHERE ${filters.join(" AND ")}
       ORDER BY timestamp ${direction}, hash ${direction}
-      LIMIT 1 BY timestamp, hash, fid, action_type
+      LIMIT 1 BY ${shareAt && target && !actor ? "fid" : shareAt && actor && !target ? targetColumn : "timestamp, hash, fid, action_type"}
       LIMIT ${TIMELINE_PAGE_SIZE + 1}`,
     params,
   };

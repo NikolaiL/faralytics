@@ -7,22 +7,29 @@ import { AddMiniappButton } from "./AddMiniappButton";
 import { AppNavigation } from "./AppNavigation";
 import { AvatarImage } from "./AvatarImage";
 import { NumberText } from "./NumberText";
+import { ShareActions } from "./ShareActions";
+import { CopyToast } from "./CopyToast";
 import { useMiniapp } from "./MiniappProvider";
 import { useLookupLog } from "~~/hooks/useLookupLog";
 import { PURPLES, type Profile } from "~~/lib/activity";
 import { LOGO_PIXELS } from "~~/lib/brand";
 import { mergeTimeline, relativeEventTime, type TimelineEvent, type TimelinePage } from "~~/lib/follow-timeline";
+import { timelineSharePath, timelineShareText, type TimelineShareData } from "~~/lib/timeline-share";
 
 const accountName = (profile: Profile) => (profile.username ? `@${profile.username}` : `FID ${profile.fid}`);
 export function FollowTimeline({
   initialActor = "",
   initialTarget = "",
+  initialGlobal = false,
 }: {
   initialActor?: string;
   initialTarget?: string;
+  initialGlobal?: boolean;
 }) {
   const { isMiniApp, fid, ready } = useMiniapp();
-  const [chosenSelection, setSelection] = useState<{ actor: string; target: string } | null>(null);
+  const [chosenSelection, setSelection] = useState<{ actor: string; target: string } | null>(
+    initialGlobal ? { actor: "", target: "" } : null,
+  );
   const selection = chosenSelection ?? {
     actor: initialActor,
     target: initialTarget || (!initialActor && isMiniApp && fid ? fid : ""),
@@ -42,6 +49,9 @@ export function FollowTimeline({
   const [now, setNow] = useState(() => Date.now());
   const [announcement, setAnnouncement] = useState("");
   const [meaningful, setMeaningful] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [shareNote, setShareNote] = useState("");
+  const [copyCount, setCopyCount] = useState(0);
   const list = useRef<HTMLOListElement>(null);
   const sentinel = useRef<HTMLDivElement>(null);
   const actions = useRef({ older: () => {}, refresh: () => {}, poll: () => {} });
@@ -50,8 +60,8 @@ export function FollowTimeline({
   const animateFrom = useRef<Map<string, number> | null>(null);
   const key = JSON.stringify(selection);
   useEffect(() => {
-    setSelection(null);
-  }, [initialActor, initialTarget]);
+    setSelection(initialGlobal ? { actor: "", target: "" } : null);
+  }, [initialActor, initialTarget, initialGlobal]);
   const ids = [...new Set([filters.actor?.fid, filters.target?.fid].filter((fid): fid is string => !!fid))];
   const resetLog = useLookupLog(
     !loading && !error && ids.length
@@ -132,6 +142,7 @@ export function FollowTimeline({
           const url = new URLSearchParams();
           if (data.filters.actor) url.set("actor", data.filters.actor.fid);
           if (data.filters.target) url.set("target", data.filters.target.fid);
+          if (initialGlobal && !url.size) url.set("all", "1");
           window.history.replaceState(null, "", `/follow-timeline${url.size ? `?${url}` : ""}`);
           setEvents(rows);
         } else if (mode === "older") {
@@ -202,7 +213,7 @@ export function FollowTimeline({
       clearTimeout(drain);
       document.removeEventListener("visibilitychange", visible);
     };
-  }, [key, selectionReady]);
+  }, [key, selectionReady, initialGlobal]);
   useEffect(() => {
     liveRef.current = live;
     if (live) actions.current.poll();
@@ -289,8 +300,63 @@ export function FollowTimeline({
       </a>
     );
   }
+  async function share(target: "farcaster" | "x" | "copy") {
+    const selection = {
+      ...(filters.actor ? { actor: filters.actor.fid } : {}),
+      ...(filters.target ? { target: filters.target.fid } : {}),
+    };
+    const ts = Date.now().toString();
+    const url = new URL(
+      timelineSharePath(selection, ts),
+      process.env.NEXT_PUBLIC_URL || window.location.origin,
+    ).toString();
+    setShareNote("");
+    if (target === "copy") {
+      try {
+        await navigator.clipboard.writeText(url);
+        setCopyCount((count) => count + 1);
+        setMeaningful(true);
+      } catch {
+        setShareNote(`Copy this link: ${url}`);
+      }
+      return;
+    }
+    const native = target === "farcaster" && isMiniApp;
+    const popup = native ? null : window.open("about:blank", "_blank");
+    if (popup) popup.opener = null;
+    setSharing(true);
+    try {
+      const response = await fetch(`/api/follow-timeline/share?${new URLSearchParams({ ts, ...selection })}`, {
+        signal: AbortSignal.timeout(25000),
+      });
+      const data = (await response.json()) as TimelineShareData & { error?: string };
+      if (!response.ok) throw new Error(data.error || "Could not prepare the share.");
+      const text = timelineShareText(data, target);
+      if (native) {
+        try {
+          const result = await sdk.actions.composeCast({ text, embeds: [url] });
+          if (result.cast) setMeaningful(true);
+          return;
+        } catch {
+          /* Fall back to the web composer if the host bridge fails. */
+        }
+      }
+      const compose = new URL(target === "x" ? "https://x.com/intent/post" : "https://farcaster.xyz/~/compose");
+      compose.searchParams.set("text", text);
+      compose.searchParams.set(target === "x" ? "url" : "embeds[]", url);
+      if (popup) popup.location.href = compose.toString();
+      else window.open(compose.toString(), "_blank", "noopener,noreferrer");
+      setMeaningful(true);
+    } catch (error) {
+      popup?.close();
+      setShareNote(error instanceof Error ? error.message : "Could not prepare the share. Please try again.");
+    } finally {
+      setSharing(false);
+    }
+  }
   return (
     <main className="timeline-page">
+      <CopyToast count={copyCount} />
       <header className="topbar">
         <Link className="wordmark" href="/">
           <span className="mark" aria-hidden="true">
@@ -300,7 +366,7 @@ export function FollowTimeline({
           </span>
           faralytics<span className="wordmark-dot">.</span>
         </Link>
-        <span className="timeline-kicker">The social graph, in motion.</span>
+        <ShareActions disabled={loading || sharing} onShare={share} placement="header" />
       </header>
       <AppNavigation
         active="follow-timeline"
@@ -481,6 +547,8 @@ export function FollowTimeline({
           </div>
         )}
       </section>
+      {shareNote && <p role="status">{shareNote}</p>}
+      <ShareActions disabled={loading || sharing} onShare={share} placement="below" />
       <p className="timeline-note">
         Captured follow and unfollow actions · UTC. Updates every <NumberText>5</NumberText> seconds while visible.
         Historical coverage may be incomplete.
