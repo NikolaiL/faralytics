@@ -8,24 +8,30 @@ export function ChartImages({
   params,
   filename,
   label,
+  previewOnly = false,
 }: {
   basePath: string;
   params: string;
   filename: string;
   label: string;
+  previewOnly?: boolean;
 }) {
   const { isMiniApp } = useMiniapp();
   const [preview, setPreview] = useState<"farcaster" | "x" | null>(null);
   const [loaded, setLoaded] = useState("");
   const [failed, setFailed] = useState("");
+  const [previewAt, setPreviewAt] = useState("");
   const id = useId();
-  const source = preview ? `${basePath}/${preview}.png?${params}` : "";
+  const inlinePreview = isMiniApp || previewOnly;
+  const imageParams = new URLSearchParams(params);
+  if (previewOnly && previewAt) imageParams.set("ts", previewAt);
+  const source = preview ? `${basePath}/${preview}.png?${imageParams}` : "";
   return (
     <>
       <div className="image-links">
-        <span>{isMiniApp ? "Preview chart" : label}</span>
+        <span>{isMiniApp && !previewOnly ? "Preview chart" : label}</span>
         {(["farcaster", "x"] as const).map((format) =>
-          isMiniApp ? (
+          inlinePreview ? (
             <button
               key={format}
               type="button"
@@ -34,6 +40,7 @@ export function ChartImages({
               aria-controls={id}
               onClick={() => {
                 setFailed("");
+                if (previewOnly) setPreviewAt(Date.now().toString());
                 setPreview(preview === format ? null : format);
               }}
             >
@@ -52,7 +59,7 @@ export function ChartImages({
           ),
         )}
       </div>
-      {isMiniApp && preview && (
+      {inlinePreview && preview && (
         <div id={id} className="chart-image-preview">
           <button type="button" className="text-button" onClick={() => setPreview(null)}>
             Close preview ×

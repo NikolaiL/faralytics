@@ -9,6 +9,7 @@ import { AvatarImage } from "./AvatarImage";
 import { NumberText } from "./NumberText";
 import { ShareActions } from "./ShareActions";
 import { CopyToast } from "./CopyToast";
+import { ChartImages } from "./ChartImages";
 import { useMiniapp } from "./MiniappProvider";
 import { useLookupLog } from "~~/hooks/useLookupLog";
 import { PURPLES, type Profile } from "~~/lib/activity";
@@ -562,6 +563,18 @@ export function FollowTimeline({
       </section>
       {shareNote && <p role="status">{shareNote}</p>}
       <ShareActions disabled={loading || sharing} onShare={share} placement="below" />
+      {!loading && !error && (
+        <ChartImages
+          basePath="/api/og/follow-timeline"
+          params={new URLSearchParams({
+            ...(filters.actor ? { actor: filters.actor.fid } : {}),
+            ...(filters.target ? { target: filters.target.fid } : {}),
+          }).toString()}
+          filename="faralytics-follow-timeline"
+          label="Preview share image"
+          previewOnly
+        />
+      )}
       <p className="timeline-note">
         Captured follow and unfollow actions · UTC. Updates every <NumberText>5</NumberText> seconds while visible.
         Historical coverage may be incomplete.

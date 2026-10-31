@@ -45,6 +45,18 @@ const base=process.env.BASE_URL||'http://localhost:3100';
   await page.route('**/api/lookup-log',r=>r.fulfill({json:{}}));
   await page.goto(base+'/follow-timeline?target=366713');
   await expect(page.getByTestId('share-farcaster')).toBeEnabled();
+  for(const [name,format,height]of [['Farcaster · 3:2','farcaster',800],['X · 2:1','x',600]]){
+   await page.getByRole('button',{name,exact:true}).click();const image=page.locator('.chart-image-preview img');
+   await expect.poll(()=>image.evaluate(el=>el.naturalHeight)).toBe(height);
+   const source=new URL(await image.getAttribute('src'),base);assert.equal(source.pathname,`/api/og/follow-timeline/${format}.png`);assert.equal(source.searchParams.get('target'),'366713');assert.match(source.searchParams.get('ts'),/^\d{13}$/);
+   const before=await image.getAttribute('src');await page.waitForTimeout(1100);assert.equal(await image.getAttribute('src'),before,'clock updates do not reload previews');
+   await page.getByRole('button',{name:'Close preview ×'}).click();await expect(page.locator('.chart-image-preview')).toHaveCount(0);
+  }
+  assert.equal(await page.locator('.image-links a[download]').count(),0,'timeline previews inline in web mode');
+  await page.route('**/api/og/follow-timeline/*.png?*',r=>r.fulfill({status:502,body:'image unavailable'}));
+  await page.getByRole('button',{name:'Farcaster · 3:2',exact:true}).click();await expect(page.locator('.chart-image-preview [role=alert]')).toContainText('Could not load');await page.getByRole('button',{name:'Close preview ×'}).click();
+  await page.unroute('**/api/og/follow-timeline/*.png?*');
+  await page.getByRole('button',{name:'Farcaster · 3:2',exact:true}).click();await expect.poll(()=>page.locator('.chart-image-preview img').evaluate(el=>el.naturalHeight)).toBe(800);await page.getByRole('button',{name:'Close preview ×'}).click();
   for(const width of [320,390,760,1280]){await page.setViewportSize({width,height:850});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'no overflow '+width);}
   await page.getByTestId('copy-link').click();await expect(page.getByText('link copied',{exact:true})).toBeVisible();
   const copied=new URL(await page.evaluate(()=>window.__copied));assert.equal(copied.pathname,'/follow-timeline');assert.equal(copied.searchParams.get('target'),'366713');assert.match(copied.searchParams.get('ts'),/^\d{13}$/);
@@ -59,7 +71,11 @@ const base=process.env.BASE_URL||'http://localhost:3100';
    await page.route('**/api/follow-timeline?*',r=>r.fulfill({json:{events:[],filters,headCursor:null,nextCursor:null,hasMore:false,updatedAt:data.generatedAt}}));
    await page.route('**/api/follow-timeline/share?*',r=>r.fulfill({json:{...data,filters}}));
    const p=new URLSearchParams();if(filters.actor)p.set('actor',filters.actor.fid);if(filters.target)p.set('target',filters.target.fid);
-   await page.goto(base+'/follow-timeline?'+p);await page.getByTestId('share-farcaster').click();
+   await page.goto(base+'/follow-timeline?'+p);await expect(page.getByTestId('share-farcaster')).toBeEnabled();
+   await page.getByRole('button',{name:'Farcaster · 3:2',exact:true}).click();
+   const image=page.locator('.chart-image-preview img');await expect.poll(()=>image.evaluate(el=>el.naturalHeight)).toBe(800);
+   const imageUrl=new URL(await image.getAttribute('src'),base);assert.equal(imageUrl.searchParams.get('actor'),filters.actor?.fid||null);assert.equal(imageUrl.searchParams.get('target'),filters.target?.fid||null);await page.getByRole('button',{name:'Close preview ×'}).click();
+   await page.getByTestId('share-farcaster').click();
    await expect.poll(()=>page.evaluate(()=>window.__popups.at(-1)?.location.href)).toContain('text=');
    const compose=new URL(await page.evaluate(()=>window.__popups.at(-1).location.href));
    const text=compose.searchParams.get('text');assert.ok(text.startsWith('Explore the latest'));assert.ok(!text.split('\n\n')[0].includes('@'),'generic share paragraph has no user tags');
@@ -75,8 +91,9 @@ const base=process.env.BASE_URL||'http://localhost:3100';
   await host.addInitScript(()=>{window.__casts=[];window.ReactNativeWebView={postMessage:raw=>{const req=JSON.parse(raw);let value;if(req.path?.[0]==='context')value={user:{fid:366713},client:{clientFid:9152,added:true,safeAreaInsets:{top:0,bottom:0,left:0,right:0}}};else if(req.path?.[0]==='getCapabilities')value=['actions.composeCast'];else if(req.path?.[0]==='composeCast'){window.__casts.push(req.argumentList[0].value);value={cast:{hash:'0x123',fid:366713}};}setTimeout(()=>document.dispatchEvent(new MessageEvent('FarcasterFrameCallback',{data:{id:req.id,type:'RAW',value}})),20);}};});
   await host.goto('https://faralytics.vercel.app/follow-timeline?target=366713');
   await expect(host.getByTestId('timeline-target-input')).toHaveValue('@nikolaii.eth');
+  await host.getByRole('button',{name:'Farcaster · 3:2',exact:true}).click();await expect.poll(()=>host.locator('.chart-image-preview img').evaluate(el=>el.naturalHeight)).toBe(800);await host.getByRole('button',{name:'Close preview ×'}).click();assert.equal(await host.locator('.image-links a[download]').count(),0);
   await host.getByTestId('share-farcaster').click();await expect.poll(()=>host.evaluate(()=>window.__casts.length)).toBe(1);
   const cast=await host.evaluate(()=>window.__casts[0]);assert.ok(cast.text.startsWith('Thanks to my latest followers: '));assert.equal(new URL(cast.embeds[0]).searchParams.get('target'),'366713');await host.close();
-  console.log('PASS timeline sharing: real 10 distinct follow events, cutoff/validation, all four filter modes plus empty results in both PNG sizes, native composer, crawler metadata, both platform texts, timestamped links, copy toast, error recovery and 320–1280 layout. No posts sent.');
+  console.log('PASS timeline sharing: real 10 distinct follow events, cutoff/validation, all four filter modes plus empty results in both PNG sizes, native composer, crawler metadata, both platform texts, inline FC/X previews on web and host with retry/stable timestamps, timestamped links, copy toast, error recovery and 320–1280 layout. No posts sent.');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exit(1)});
