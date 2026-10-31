@@ -15,8 +15,11 @@ export function TimelineOg({
   avatars?: (string | null)[];
 }) {
   const compact = height === 600;
-  const rowHeight = compact ? 64 : 100;
   const { actor, target } = data.filters;
+  const global = !actor && !target;
+  const rowHeight = compact ? (global ? 70 : 64) : 100;
+  const rowGap = compact && global ? 4 : 8;
+  const rowTop = compact && global ? 180 : 190;
   const incoming = !!target && !actor,
     outgoing = !!actor && !target;
   const name = (profile: Profile) => (profile.username ? `@${profile.username}` : `FID ${profile.fid}`);
@@ -109,16 +112,106 @@ export function TimelineOg({
               justifyContent: "center",
               position: "absolute",
               left: 64 + (index >= 5 ? 548 : 0),
-              top: 190 + (index % 5) * (rowHeight + 8),
+              top: rowTop + (index % 5) * (rowHeight + rowGap),
               width: 524,
               height: rowHeight,
               background: "#17121f",
               borderRadius: 14,
-              padding: "0 16px",
+              padding: global ? 0 : "0 16px",
               gap: compact ? 4 : 9,
             }}
           >
-            {pairs ? (
+            {global ? (
+              <div style={{ display: "flex", position: "relative", width: 524, height: rowHeight }}>
+                <div
+                  style={{
+                    display: "flex",
+                    position: "absolute",
+                    left: 16,
+                    top: (rowHeight - (compact ? 52 : 72)) / 2,
+                  }}
+                >
+                  {avatar(event.actor, index, compact ? 52 : 72)}
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    position: "absolute",
+                    right: 16,
+                    top: (rowHeight - (compact ? 52 : 72)) / 2,
+                  }}
+                >
+                  {avatar(event.target, index + 10, compact ? 52 : 72)}
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    position: "absolute",
+                    left: compact ? 78 : 98,
+                    top: compact ? 4 : 8,
+                    maxWidth: compact ? 368 : 328,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    color: "#b594ee",
+                    fontSize: compact ? 18 : 22,
+                    fontWeight: 700,
+                    lineHeight: 1,
+                  }}
+                >
+                  {shorten(name(event.actor), 26)}
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    position: "absolute",
+                    right: compact ? 78 : 98,
+                    bottom: compact ? 4 : 8,
+                    maxWidth: compact ? 368 : 328,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    color: "#82b7ff",
+                    fontSize: compact ? 18 : 22,
+                    fontWeight: 700,
+                    lineHeight: 1,
+                  }}
+                >
+                  {shorten(name(event.target), 26)}
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    position: "absolute",
+                    left: 0,
+                    top: 0,
+                    width: 524,
+                    height: rowHeight,
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: compact ? 2 : 3,
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      color: "#48d9ac",
+                      fontSize: compact ? 12 : 14,
+                      fontWeight: 700,
+                      lineHeight: 1,
+                    }}
+                  >
+                    followed
+                  </div>
+                  <div style={{ display: "flex", color: "#a99aba", fontSize: compact ? 11 : 12, lineHeight: 1 }}>
+                    <NumberText preserveSpaces>
+                      {relativeEventTime(event.timestamp, Date.parse(data.generatedAt))}
+                    </NumberText>
+                  </div>
+                </div>
+              </div>
+            ) : pairs ? (
               <div style={{ display: "flex", flexDirection: "column", width: "100%", gap: compact ? 4 : 9 }}>
                 <div
                   style={{
