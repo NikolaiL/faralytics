@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { activityShareText, activityDate, colorLevel, fillDays, getRange, grid, sharePath, summarize, validFid } from "../packages/nextjs/lib/activity.ts";
+import { activityShareText, activityDate, colorLevel, fillDays, getRange, grid, sharePath, summarize, validFid, overallActivity } from "../packages/nextjs/lib/activity.ts";
 
 test("365-day range includes anchor exactly once and crosses leap day correctly", () => {
   const range = getRange("365", "2024-03-01");
@@ -100,13 +100,18 @@ test("busiest date uses the first tied active day, ignores future days and forma
   assert.equal(activityDate(null), "—");
 });
 
-test("share text uses first person only when the viewer FID matches the selected profile", () => {
-  const activity = { profile: {fid:"366713", username:"nikolaii.eth", display_name:"Nikolai"}, total:4637, period:"365" };
-  assert.equal(activityShareText(activity, "366713"), "I have 4,637 captured Farcaster actions in the past 365 days. A year, one square at a time.\n\nHow about you?");
-  assert.match(activityShareText(activity, "2"), /^@nikolaii\.eth has 4,637/);
-  assert.match(activityShareText(activity), /^@nikolaii\.eth has 4,637/);
+test("share text includes current and overall longest streaks, with first person only for the viewer", () => {
+  const rows=[...Array.from({length:218},(_,i)=>({day:new Date(Date.UTC(2024,0,1+i)).toISOString().slice(0,10),actions:1})),...Array.from({length:17},(_,i)=>({day:`2026-10-${15+i}`,actions:1}))];
+  const activity = { profile: {fid:"366713", username:"nikolaii.eth", display_name:"Nikolai"}, total:4660, period:"365", longestStreak:96, overall:overallActivity(rows,"2026-10-31") };
+  assert.equal(activityShareText(activity, "366713"), "I have 4,660 captured Farcaster actions in the past 365 days. A year, one square at a time.\n\nMy current activity streak is 17 days and my longest streak was 218 days.\n\nHow about you?");
+  assert.match(activityShareText(activity, "2"), /@nikolaii\.eth's current activity streak is 17 days and their longest streak was 218 days/);
+  assert.match(activityShareText(activity), /^@nikolaii\.eth has 4,660/);
   assert.match(activityShareText({...activity, period:"2024"}, "366713"), /actions in 2024\./);
-  assert.match(activityShareText({...activity,profile:{...activity.profile,username:null}}), /^FID 366713 has/);
+  assert.match(activityShareText({...activity,profile:{...activity.profile,username:null}}), /FID 366713's current activity streak/);
+  const one={...activity,overall:overallActivity([{day:"2026-10-31",actions:1}],"2026-10-31")};
+  assert.match(activityShareText(one,"366713"),/My current activity streak is 1 day\.\n\nHow about you\?/);
+  const zero={...activity,overall:overallActivity([],"2026-10-31")};assert.match(activityShareText(zero,"366713"),/My current activity streak is 0 days\.\n\nHow about you\?/);
+  assert.ok(!activityShareText({...activity,overall:undefined},"366713").includes("current activity streak"));
 });
 
 test("logo uses exactly 25 activity cells with a bright northeast arrow", async () => {

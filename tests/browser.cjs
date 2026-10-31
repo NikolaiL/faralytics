@@ -76,7 +76,7 @@ const { chromium } = require("@playwright/test");
   assert.match(share.searchParams.get('ts'), /^\d{13}$/);
   await page.getByTestId("share-x").click();
   const x = new URL(await page.evaluate(() => window.__lastShare));
-  assert.match(x.searchParams.get('text'), /^@.+ has [\d,]+ captured Farcaster actions/);
+  assert.match(x.searchParams.get('text'), /^@.+ has [\d,]+ captured Farcaster actions/);assert.match(x.searchParams.get('text'), /current activity streak is [\d,]+ days?(?: and their longest streak was [\d,]+ days?)?\.\n\nHow about you\?/);
   assert.ok(x.searchParams.get('text').endsWith('\n\nHow about you?\n\nfaralytics - created by @NikolaiLeb with @viniapp_xyz'));
   assert.equal(x.hostname, 'x.com'); const xShare = new URL(x.searchParams.get('url'));
   assert.equal(xShare.pathname, share.pathname);

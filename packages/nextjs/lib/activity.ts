@@ -252,10 +252,24 @@ export function activityDate(date: string | null) {
     : "—";
 }
 
-export function activityShareText(activity: Pick<Activity, "profile" | "total" | "period">, viewerFid?: string) {
-  const name = activity.profile.username ? `@${activity.profile.username}` : `FID ${activity.profile.fid}`;
-  const subject = viewerFid === activity.profile.fid ? "I have" : `${name} has`;
-  return `${subject} ${activity.total.toLocaleString("en-US")} captured Farcaster actions in ${periodLabel(activity.period)}. A year, one square at a time.\n\nHow about you?`;
+function streakShareText(activity: Pick<Activity, "profile" | "overall">, own = false) {
+  if (!activity.overall) return "";
+  const days = (value: number) => `${value.toLocaleString("en-US")} ${value === 1 ? "day" : "days"}`;
+  const longest =
+    activity.overall.currentStreak.days === activity.overall.longestStreak
+      ? ""
+      : ` and ${own ? "my" : "their"} longest streak was ${days(activity.overall.longestStreak)}`;
+  return `${own ? "My" : `${accountName(activity)}'s`} current activity streak is ${days(activity.overall.currentStreak.days)}${longest}.`;
+}
+export function activityShareText(
+  activity: Pick<Activity, "profile" | "total" | "period" | "overall">,
+  viewerFid?: string,
+) {
+  const name = accountName(activity);
+  const own = viewerFid === activity.profile.fid;
+  const subject = own ? "I have" : `${name} has`;
+  const streak = streakShareText(activity, own);
+  return `${subject} ${activity.total.toLocaleString("en-US")} captured Farcaster actions in ${periodLabel(activity.period)}. A year, one square at a time.${streak ? `\n\n${streak}` : ""}\n\nHow about you?`;
 }
 
 export const BLUES = ["#192231", "#243c5c", "#365f91", "#528bd0", "#8bbdff"];
@@ -290,7 +304,11 @@ export function comparisonStats(first: Activity, second: Activity) {
   }));
 }
 export function comparisonShareText(first: Activity, second: Activity) {
-  return `${accountName(first)} vs ${accountName(second)}: ${first.total.toLocaleString("en-US")} vs ${second.total.toLocaleString("en-US")} captured Farcaster actions in ${periodLabel(first.period)}. A year, one square at a time.\n\nHow about you?`;
+  const streaks = [first, second]
+    .map((activity) => streakShareText(activity))
+    .filter(Boolean)
+    .join("\n");
+  return `${accountName(first)} vs ${accountName(second)}: ${first.total.toLocaleString("en-US")} vs ${second.total.toLocaleString("en-US")} captured Farcaster actions in ${periodLabel(first.period)}. A year, one square at a time.${streaks ? `\n\n${streaks}` : ""}\n\nHow about you?`;
 }
 
 export function activityYears(
