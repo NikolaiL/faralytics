@@ -57,9 +57,11 @@ export function FollowTimeline({
   const actions = useRef({ older: () => {}, refresh: () => {}, poll: () => {} });
   const liveRef = useRef(true);
   const loadedSelection = useRef<{ actor: string; target: string } | null>(null);
+  const editedRole = useRef<"actor" | "target" | null>(null);
   const animateFrom = useRef<Map<string, number> | null>(null);
   const key = JSON.stringify(selection);
   useEffect(() => {
+    editedRole.current = null;
     setSelection(initialGlobal ? { actor: "", target: "" } : null);
   }, [initialActor, initialTarget, initialGlobal]);
   const ids = [...new Set([filters.actor?.fid, filters.target?.fid].filter((fid): fid is string => !!fid))];
@@ -125,6 +127,16 @@ export function FollowTimeline({
         if (mode === "newer" && (!liveRef.current || document.hidden)) return;
         setError("");
         if (mode === "reset") {
+          if (selected.actor && selected.target && data.filters.actor && !data.filters.target) {
+            const role = editedRole.current || "actor";
+            setSelection({
+              actor: role === "actor" ? data.filters.actor.fid : "",
+              target: role === "target" ? data.filters.actor.fid : "",
+            });
+            if (role === "actor") setTargetInput("");
+            else setActorInput("");
+            return;
+          }
           initialized = true;
           rows = data.events;
           head = data.headCursor;
@@ -254,6 +266,7 @@ export function FollowTimeline({
   }, [hasMore, loading, olderError]);
 
   function apply(role: "actor" | "target", value: string) {
+    editedRole.current = role;
     value = value.trim();
     const other = role === "actor" ? "target" : "actor";
     const account = value.replace(/^@/, "").toLowerCase();

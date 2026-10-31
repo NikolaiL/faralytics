@@ -44,12 +44,31 @@ const base=process.env.BASE_URL || 'http://localhost:3100';
    assert.ok(explicit.requests.length>0);for(const request of explicit.requests)assert.equal(new URLSearchParams(request).toString(),new URLSearchParams(query).toString(),'explicit filters preserved');
    await explicit.page.close();
   }
+  for(const miniapp of [true,false]){
+   const duplicate=await setup('/follow-timeline?actor=3&target=3',30,miniapp);
+   await expect(duplicate.page.getByTestId('timeline-actor-input')).toHaveValue('@user3');
+   await expect(duplicate.page.getByTestId('timeline-target-input')).toHaveValue('');
+   await expect.poll(()=>new URL(duplicate.page.url()).search).toBe('?actor=3');
+   assert.ok(duplicate.requests.every(q=>q==='actor=3'),'duplicate URL never queries a self-follow filter');
+   await duplicate.page.close();
+  }
   const global=await setup('/follow-timeline?all=1');
   await expect(global.page.getByText('No captured events yet')).toBeVisible();
   assert.ok(global.requests.every(q=>q===''),'explicit global share remains global inside Farcaster');
   await expect.poll(()=>new URL(global.page.url()).searchParams.get('all')).toBe('1');
   await global.page.reload();await expect(global.page.getByText('No captured events yet')).toBeVisible();assert.ok(global.requests.every(q=>q===''));await global.page.close();
   const web=await setup('/follow-timeline',0,false);await expect(web.page.getByText('No captured events yet')).toBeVisible();assert.equal(web.requests[0],'');await expect(web.page.getByTestId('show-me')).toHaveCount(0);await expect(web.page.getByTestId('timeline-target-input')).toHaveValue('');await expect(web.page.getByTestId('follow-gate')).toHaveCount(0);await web.page.close();
+  const live=await browser.newPage();await live.route('**/api/lookup-log',r=>r.fulfill({json:{}}));
+  for(const query of ['actor=366713&target=366713','actor=366713&target=nikolaii.eth','actor=nikolaii.eth&target=366713']){
+   const api=await live.request.get(base+'/api/follow-timeline?'+query);assert.equal(api.status(),200);const data=await api.json();assert.equal(data.filters.actor.fid,'366713');assert.equal(data.filters.target,null);assert.ok(data.events.every(e=>e.actor.fid==='366713'));
+   await live.goto(base+'/follow-timeline?'+query);
+   await expect(live.getByTestId('timeline-actor-input')).toHaveValue('@nikolaii.eth');
+   await expect(live.getByTestId('timeline-target-input')).toHaveValue('');
+   await expect.poll(()=>new URL(live.url()).search).toBe('?actor=366713');
+   await live.reload();await expect(live.getByTestId('timeline-target-input')).toHaveValue('');await expect(live.getByTestId('timeline-event')).toHaveCount(20);
+  }
+  await live.close();
+  console.log('PASS duplicate timeline URLs: actor retained, target removed, real mixed username/FID resolution, reloads, browser and Farcaster, no self-follow query.');
   console.log('PASS timeline default target: cold Farcaster self-target only, no automatic follow/add prompt, explicit filters preserved, clear stays global after refresh, browser default global, Show me uses viewer in either field and clears duplicate opposite selection, no Show me outside Farcaster. No native social action sent.');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exit(1)});

@@ -6,6 +6,9 @@ const hash = "0x" + "a".repeat(40);
 const cursor = `1793433600:${hash}`;
 test("timeline selections validate actor/target and cursor boundaries without losing UInt64 precision", () => {
   assert.deepEqual(timelineSelection(new URLSearchParams("actor=@v&target=18446744073709551615")), {actor:"v",target:"18446744073709551615",before:undefined,after:undefined});
+  for(const query of ['actor=366713&target=366713','actor=@V&target=v']){
+    const selection=timelineSelection(new URLSearchParams(query));assert.ok(selection.actor);assert.equal(selection.target,undefined);
+  }
   assert.equal(parseTimelineCursor(cursor).hash, hash);
   for (const input of ["actor=0","actor=18446744073709551616","actor=1&actor=2","target=a%27b",`before=${cursor}&after=${cursor}`,"after=123:nope"]) assert.throws(()=>timelineSelection(new URLSearchParams(input)));
 });

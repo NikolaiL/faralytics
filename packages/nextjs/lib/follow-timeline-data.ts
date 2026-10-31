@@ -63,10 +63,11 @@ const readTimeline = unstable_cache(
 );
 
 export async function loadTimeline(selection: Selection) {
-  const [actor, target] = await Promise.all([
+  const [actor, resolvedTarget] = await Promise.all([
     selection.actor ? resolveAccount(selection.actor) : undefined,
     selection.target ? resolveAccount(selection.target) : undefined,
   ]);
+  const target = actor === resolvedTarget ? undefined : resolvedTarget;
   return readTimeline(JSON.stringify({ ...selection, actor, target }));
 }
 

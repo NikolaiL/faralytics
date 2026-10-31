@@ -39,7 +39,9 @@ export function timelineSelection(params: URLSearchParams) {
   if (before && after) throw new InputError("Choose older or newer events, not both.");
   if (before) parseTimelineCursor(before);
   if (after) parseTimelineCursor(after);
-  return { actor: account("actor"), target: account("target"), before, after };
+  const actor = account("actor"),
+    target = account("target");
+  return { actor, target: actor?.toLowerCase() === target?.toLowerCase() ? undefined : target, before, after };
 }
 export function validateTimelineShareTime(value: string) {
   if (!/^\d{13}$/.test(value) || Number(value) < 1609459200000 || Number(value) > Date.now() + 60000)

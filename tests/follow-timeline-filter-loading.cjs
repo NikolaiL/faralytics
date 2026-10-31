@@ -14,6 +14,7 @@ const base=process.env.BASE_URL||'http://localhost:3100';
    const p=new URL(r.request().url()).searchParams;
    requests.push(p);
    if(hold&&p.get('actor')&&p.get('target'))await new Promise(resolve=>{release=resolve;});
+   if(p.get('actor')==='1'&&p.get('target')==='alias') {await r.fulfill({json:{events:[],filters:{actor:profiles[1],target:null},headCursor:null,nextCursor:null,hasMore:false,updatedAt:new Date().toISOString()}});return;}
    await r.fulfill({json:{events:[],filters:{actor:profiles[p.get('actor')]||(p.get('actor')?.toLowerCase()==='@alice'?profiles[1]:null),target:profiles[p.get('target')]||null},headCursor:null,nextCursor:null,hasMore:false,updatedAt:new Date().toISOString()}});
   });
   await page.goto(base+'/follow-timeline?target=2');
@@ -52,6 +53,9 @@ const base=process.env.BASE_URL||'http://localhost:3100';
   await expect(page.getByTestId('timeline-actor-input')).toHaveValue('');
   await expect.poll(()=>new URL(page.url()).search).toBe('?target=1');
   assert.ok(requests.every(p=>!p.get('actor')||p.get('actor')!==p.get('target')),'same account moves fields without requesting a self-follow filter');
+  await page.getByTestId('timeline-actor-input').fill('1');await page.getByTestId('timeline-actor-submit').click();await expect.poll(()=>new URL(page.url()).search).toBe('?actor=1');
+  await page.getByTestId('timeline-target-input').fill('alias');await page.getByTestId('timeline-target-submit').click();
+  await expect(page.getByTestId('timeline-target-input')).toHaveValue('@alice');await expect(page.getByTestId('timeline-actor-input')).toHaveValue('');await expect.poll(()=>new URL(page.url()).search).toBe('?target=1');
   console.log('PASS same account moves to the last edited field via FID, case-insensitive username and autocomplete; previous field and URL filter clear.');
   console.log('PASS independent timeline field loading in both directions: settled field retains value/reset control and stays usable; in-progress drafts survive the other lookup.');
  }finally{await browser.close();}
