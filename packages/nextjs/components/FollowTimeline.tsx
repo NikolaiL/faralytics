@@ -243,9 +243,25 @@ export function FollowTimeline({
   }, [hasMore, loading, olderError]);
 
   function apply(role: "actor" | "target", value: string) {
+    value = value.trim();
+    const other = role === "actor" ? "target" : "actor";
+    const account = value.replace(/^@/, "").toLowerCase();
+    const sameAccount =
+      !!account &&
+      [selection[other], filters[other]?.fid, filters[other]?.username].some(
+        (candidate) => candidate?.replace(/^@/, "").toLowerCase() === account,
+      );
+    if (sameAccount) {
+      if (other === "actor") setActorInput("");
+      else setTargetInput("");
+    }
     setMeaningful(true);
-    if (!value && !selection[role === "actor" ? "target" : "actor"]) resetLog();
-    setSelection((previous) => ({ ...(previous ?? selection), [role]: value.trim() }));
+    if (!value && !selection[other]) resetLog();
+    setSelection((previous) => ({
+      ...(previous ?? selection),
+      ...(sameAccount ? { [other]: "" } : {}),
+      [role]: value,
+    }));
   }
   function account(profile: Profile, trailingAvatar = false) {
     const href = `https://farcaster.xyz/${profile.username || `~/profiles/${profile.fid}`}`;
