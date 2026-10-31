@@ -46,6 +46,7 @@ export function FollowTimeline({
   const sentinel = useRef<HTMLDivElement>(null);
   const actions = useRef({ older: () => {}, refresh: () => {}, poll: () => {} });
   const liveRef = useRef(true);
+  const loadedSelection = useRef<{ actor: string; target: string } | null>(null);
   const animateFrom = useRef<Map<string, number> | null>(null);
   const key = JSON.stringify(selection);
   useEffect(() => {
@@ -68,6 +69,7 @@ export function FollowTimeline({
       tail: string | null = null,
       more = false;
     const selected = JSON.parse(key) as { actor: string; target: string };
+    const previousSelection = loadedSelection.current;
     const controller = new AbortController();
     let drain: ReturnType<typeof setTimeout> | undefined;
     const atTop = () =>
@@ -79,12 +81,17 @@ export function FollowTimeline({
     setHasNew(false);
     setHasMore(false);
     setLoadingMore(false);
-    setFilters({ actor: null, target: null });
+    setFilters((previous) => ({
+      actor: previousSelection?.actor === selected.actor ? previous.actor : null,
+      target: previousSelection?.target === selected.target ? previous.target : null,
+    }));
     animateFrom.current = null;
     async function load(mode: "reset" | "older" | "newer") {
       if (!active || inFlight || (mode === "older" && (!more || !tail))) return;
       if (mode === "newer" && (!liveRef.current || document.hidden)) return;
       if (mode === "newer" && !initialized) mode = "reset";
+      const updateActor = loadedSelection.current?.actor !== selected.actor;
+      const updateTarget = loadedSelection.current?.target !== selected.target;
       inFlight = true;
       if (mode === "reset") setLoading(true);
       if (mode === "older") {
@@ -115,8 +122,11 @@ export function FollowTimeline({
           more = data.hasMore;
           setHasMore(more);
           setFilters(data.filters);
-          setActorInput(data.filters.actor ? accountName(data.filters.actor).replace(/^FID /, "") : "");
-          setTargetInput(data.filters.target ? accountName(data.filters.target).replace(/^FID /, "") : "");
+          loadedSelection.current = selected;
+          if (updateActor)
+            setActorInput(data.filters.actor ? accountName(data.filters.actor).replace(/^FID /, "") : "");
+          if (updateTarget)
+            setTargetInput(data.filters.target ? accountName(data.filters.target).replace(/^FID /, "") : "");
           setHasNew(false);
           setNow(Date.now());
           const url = new URLSearchParams();
@@ -311,7 +321,7 @@ export function FollowTimeline({
                 value={value}
                 onChange={role === "actor" ? setActorInput : setTargetInput}
                 onSelect={(fid) => apply(role, fid)}
-                busy={loading}
+                busy={loading && !profile}
                 resolved={!!profile && (value === accountName(profile) || value === profile.fid)}
                 onReset={() => {
                   if (role === "actor") setActorInput("");
