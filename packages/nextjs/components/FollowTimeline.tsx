@@ -237,14 +237,14 @@ export function FollowTimeline({
     if (!value && !selection[role === "actor" ? "target" : "actor"]) resetLog();
     setSelection((previous) => ({ ...(previous ?? selection), [role]: value.trim() }));
   }
-  function account(profile: Profile, avatar = false) {
+  function account(profile: Profile, trailingAvatar = false) {
     const href = `https://farcaster.xyz/${profile.username || `~/profiles/${profile.fid}`}`;
     return (
       <a
         href={href}
         target="_blank"
         rel="noreferrer"
-        className="timeline-account"
+        className={`timeline-account${trailingAvatar ? " is-target" : ""}`}
         title={`FID ${profile.fid}`}
         onClick={(event) => {
           if (!isMiniApp) return;
@@ -255,12 +255,10 @@ export function FollowTimeline({
             .catch(() => {});
         }}
       >
-        {avatar && (
-          <span className="result-avatar timeline-avatar" aria-hidden="true">
-            {(profile.username || "fc").slice(0, 2)}
-            <AvatarImage source={profile.pfp_url} size={40} />
-          </span>
-        )}
+        <span className="result-avatar timeline-avatar" aria-hidden="true">
+          {(profile.username || "fc").slice(0, 2)}
+          <AvatarImage source={profile.pfp_url} size={40} />
+        </span>
         <span>{profile.username ? accountName(profile) : <NumberText>{accountName(profile)}</NumberText>}</span>
       </a>
     );
@@ -406,12 +404,12 @@ export function FollowTimeline({
               className={`timeline-row is-${event.action}`}
             >
               <div className="timeline-sentence">
-                {account(event.actor, true)}
+                {account(event.actor)}
                 <span className="timeline-verb">
                   <span aria-hidden="true">{event.action === "follow" ? "+" : "−"}</span>
                   {event.action === "follow" ? "followed" : "unfollowed"}
                 </span>
-                {account(event.target)}
+                {account(event.target, true)}
               </div>
               <time
                 dateTime={event.timestamp}
