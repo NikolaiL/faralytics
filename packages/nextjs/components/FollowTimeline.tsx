@@ -213,11 +213,10 @@ export function FollowTimeline({
     }
   }, [events]);
   useEffect(() => {
-    if (!hasMore || loading || loadingMore || olderError || !sentinel.current) return;
+    if (!hasMore || loading || olderError || !sentinel.current) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          observer.disconnect();
           actions.current.older();
         }
       },
@@ -225,7 +224,7 @@ export function FollowTimeline({
     );
     observer.observe(sentinel.current);
     return () => observer.disconnect();
-  }, [hasMore, loading, loadingMore, olderError, events]);
+  }, [hasMore, loading, olderError]);
 
   function apply(role: "actor" | "target", value: string) {
     setMeaningful(true);
