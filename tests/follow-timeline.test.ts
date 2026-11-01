@@ -14,8 +14,8 @@ test("timeline selections validate actor/target and cursor boundaries without lo
 });
 test("timeline SQL selects indexed access paths, deduplicates events, and pages newest/older/newer without offsets", () => {
   const global=timelineQuery({});assert.match(global.sql,/snapchain.action_messages\s/);assert.match(global.sql,/LIMIT 1 BY/);assert.match(global.sql,/LIMIT 21/);assert.match(global.sql,/'follow', 'unfollow'/);assert.doesNotMatch(global.sql,/FINAL|OFFSET/);
-  const actor=timelineQuery({actor:"366713",before:cursor});assert.match(actor.sql,/action_messages_by_fid/);assert.match(actor.sql,/PREWHERE fid/);assert.match(actor.sql,/\(timestamp, hash\) </);assert.equal(actor.params.actor,"366713");
-  const both=timelineQuery({actor:"3318053",target:"366713",after:cursor});assert.match(both.sql,/received_actions/);assert.match(both.sql,/PREWHERE recipient_fid/);assert.match(both.sql,/fid = \{actor/);assert.match(both.sql,/\(timestamp, hash\) >/);assert.match(both.sql,/timestamp ASC, hash ASC/);
+  const actor=timelineQuery({actor:"366713",before:cursor});assert.match(actor.sql,/action_messages_by_fid/);assert.match(actor.sql,/PREWHERE fid/);assert.match(actor.sql,/timestamp <= toDateTime/);assert.match(actor.sql,/\(timestamp, hash\) </);assert.equal(actor.params.actor,"366713");
+  const both=timelineQuery({actor:"3318053",target:"366713",after:cursor});assert.match(both.sql,/received_actions/);assert.match(both.sql,/PREWHERE recipient_fid/);assert.match(both.sql,/fid = \{actor/);assert.match(both.sql,/timestamp >= toDateTime/);assert.match(both.sql,/\(timestamp, hash\) >/);assert.match(both.sql,/timestamp ASC, hash ASC/);
 });
 test("timeline merging keeps both follow and unfollow, deduplicates overlaps and orders same-second events by hash", () => {
   const event=(id:string,timestamp:string,action:"follow"|"unfollow"="follow")=>({id,timestamp,action}) as TimelineEvent;

@@ -78,6 +78,8 @@ export function timelineQuery(selection: {
     const cursor = parseTimelineCursor((before || after)!);
     params.cursorTs = cursor.ts;
     params.cursorHash = cursor.hash;
+    // The tuple comparison alone does not prune timestamp index ranges in ClickHouse.
+    filters.push(`timestamp ${after ? ">=" : "<="} toDateTime({cursorTs:UInt32}, 'UTC')`);
     filters.push(`(timestamp, hash) ${after ? ">" : "<"} (toDateTime({cursorTs:UInt32}, 'UTC'), {cursorHash:String})`);
   }
   const direction = after ? "ASC" : "DESC";
