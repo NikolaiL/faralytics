@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { PURPLES, type Profile } from "~~/lib/activity";
 import { LOGO_PIXELS } from "~~/lib/brand";
-import { friendshipLabels, friendshipPeriods, type FriendshipCounts, type FriendshipPage } from "~~/lib/friendship";
+import { friendshipLabels, friendshipPeriods, type FriendshipPage } from "~~/lib/friendship";
 import { AccountSearch } from "./AccountSearch";
 import { AddMiniappButton } from "./AddMiniappButton";
 import { AppNavigation } from "./AppNavigation";
@@ -37,14 +37,22 @@ function Account({ profile, trailing = false }: { profile: Profile; trailing?: b
   );
 }
 
-function FriendshipResults({ first, second, ts }: { first: string; second: string; ts: string }) {
+function FriendshipResults({
+  first,
+  second,
+  ts,
+  onShare,
+}: {
+  first: string;
+  second: string;
+  ts: string;
+  onShare: (target: ShareTarget) => void;
+}) {
   const { isMiniApp } = useMiniapp();
   const [data, setData] = useState<FriendshipPage | null>(null);
   const [request, setRequest] = useState({ before: "" });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [shareError, setShareError] = useState("");
-  const [copyCount, setCopyCount] = useState(0);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -90,82 +98,16 @@ function FriendshipResults({ first, second, ts }: { first: string; second: strin
     setRequest({ before });
   }
 
-  async function share(target: ShareTarget) {
-    if (!data) return;
-    setShareError("");
-    const params = new URLSearchParams({ first, second, ts: ts || Date.now().toString() });
-    const url = new URL(`/friendship?${params}`, process.env.NEXT_PUBLIC_URL || window.location.origin).toString();
-    if (target === "copy") {
-      try {
-        await navigator.clipboard.writeText(url);
-        setCopyCount((count) => count + 1);
-      } catch {
-        setShareError(`Copy this link: ${url}`);
-      }
-      return;
-    }
-    const text = formatShareText(
-      `Explore the Farcaster friendship between ${data.profiles.map(name).join(" and ")}.\n\nHow about you?\n\n${shareCredit(target)}`,
-      target,
-    );
-    if (target === "farcaster" && isMiniApp) {
-      try {
-        await sdk.actions.composeCast({ text, embeds: [url] });
-        return;
-      } catch {
-        /* Fall back to the web composer if the host bridge fails. */
-      }
-    }
-    const compose = new URL(target === "x" ? "https://x.com/intent/post" : "https://farcaster.xyz/~/compose");
-    compose.searchParams.set("text", text);
-    compose.searchParams.set(target === "x" ? "url" : "embeds[]", url);
-    window.open(compose.toString(), "_blank", "noopener,noreferrer");
-  }
-
   return (
     <>
-      <CopyToast count={copyCount} />
-      {data && (
-        <section className="friendship-summary chart-card" aria-label="Interaction totals">
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">Interaction Stats</th>
-                {data.profiles.map((profile) => (
-                  <th key={profile.fid} scope="col">
-                    {name(profile)}
-                  </th>
-                ))}
-                <th scope="col">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {friendshipPeriods.map(([period, label]) => {
-                const [a, b] = data.profiles.map(
-                  (profile) => data.counts[profile.fid]?.[period as keyof FriendshipCounts] ?? 0,
-                );
-                return (
-                  <tr key={period}>
-                    <th scope="row">
-                      <NumberText>{label}</NumberText>
-                    </th>
-                    {[a, b, a + b].map((count, index) => (
-                      <td key={index}>
-                        <NumberText>{count.toLocaleString("en-US")}</NumberText>
-                      </td>
-                    ))}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </section>
-      )}
       <section className="timeline-feed" aria-label="Friendship timeline" aria-busy={loading}>
-        <div className="timeline-toolbar">
-          <strong>Interaction timeline</strong>
-          <span className="utc-label">UTC</span>
-        </div>
+        {data && (
+          <div className="friendship-timeline-header">
+            <Account profile={data.profiles[0]} />
+            <h2>Friendship</h2>
+            <Account profile={data.profiles[1]} trailing />
+          </div>
+        )}
         {error && (
           <div className="timeline-error" role="alert">
             <span>{error}</span>
@@ -186,10 +128,11 @@ function FriendshipResults({ first, second, ts }: { first: string; second: strin
           </div>
         )}
         {data && (
-          <ol className="timeline-list" data-testid="friendship-events">
+          <ol className="friendship-events" data-testid="friendship-events">
             {data.events.map((event) => {
               const [a, b] = data.profiles;
-              const [actor, target] = event.actor === a.fid ? [a, b] : [b, a];
+              const left = event.actor === a.fid;
+              const [actor, target] = left ? [a, b] : [b, a];
               const date = new Date(event.ts * 1000);
               const castUrl = /^0x[0-9a-f]{40}$/i.test(event.castHash)
                 ? `https://farcaster.xyz/~/conversations/${event.castHash}`
@@ -211,15 +154,18 @@ function FriendshipResults({ first, second, ts }: { first: string; second: strin
                   }
                 : {};
               return (
-                <li className={`timeline-row is-${event.action}`} key={`${event.ts}:${event.hash}`}>
-                  <div className="timeline-sentence">
-                    <Account profile={actor} />
+                <li
+                  className={`friendship-event ${left ? "is-left" : "is-right"} is-${event.action}`}
+                  key={`${event.ts}:${event.hash}`}
+                >
+                  <div className="friendship-bubble">
+                    <span className="sr-only">{name(actor)} </span>
                     <CastLink className="timeline-verb" {...castLinkProps}>
                       {friendshipLabels[event.action]}
                     </CastLink>
-                    <Account profile={target} trailing />
+                    <span className="sr-only"> {name(target)}</span>
+                    <TimelineTime timestamp={date.toISOString()} now={now} />
                   </div>
-                  <TimelineTime timestamp={date.toISOString()} now={now} />
                 </li>
               );
             })}
@@ -235,12 +181,34 @@ function FriendshipResults({ first, second, ts }: { first: string; second: strin
       </section>
       {data && (
         <>
-          <ShareActions placement="below" heading="a friendship worth sharing:" disabled={false} onShare={share} />
-          {shareError && (
-            <p className="notice" role="status">
-              {shareError}
-            </p>
-          )}
+          <section className="friendship-summary" aria-labelledby="friendship-stats">
+            <h2 id="friendship-stats">Interaction Stats</h2>
+            <div className="friendship-stats">
+              {friendshipPeriods.map(([period, label]) => {
+                const [a, b] = data.profiles.map((profile) => data.counts[profile.fid]?.[period] ?? 0);
+                return (
+                  <div className="chart-card" key={period}>
+                    <span>
+                      <NumberText>{label}</NumberText>
+                    </span>
+                    <strong aria-label={`${a + b} total interactions`}>{(a + b).toLocaleString("en-US")}</strong>
+                    <div className="friendship-split">
+                      <b title={name(data.profiles[0])}>
+                        <span className="sr-only">{name(data.profiles[0])} </span>
+                        {a.toLocaleString("en-US")}
+                      </b>
+                      <span aria-hidden="true">+</span>
+                      <b title={name(data.profiles[1])}>
+                        <span className="sr-only">{name(data.profiles[1])} </span>
+                        {b.toLocaleString("en-US")}
+                      </b>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+          <ShareActions placement="below" heading="a friendship worth sharing:" disabled={false} onShare={onShare} />
           <ChartImages
             basePath="/api/og/friendship"
             params={new URLSearchParams({ first, second, ...(ts ? { ts } : {}) }).toString()}
@@ -291,12 +259,50 @@ export function Friendship({
 }) {
   const { isMiniApp, fid } = useMiniapp();
   const [ts, setTs] = useState(initialTs);
+  const [shareError, setShareError] = useState("");
+  const [copyCount, setCopyCount] = useState(0);
   const [meaningful, setMeaningful] = useState(false);
   const [selected, setSelected] = useState({ first: initialFirst, second: initialSecond });
   const [draft, setDraft] = useState(selected);
   const [attempt, setAttempt] = useState({ first: 0, second: 0 });
   const first = useSelectedProfile(selected.first, attempt.first);
   const second = useSelectedProfile(selected.second, attempt.second);
+  async function share(target: ShareTarget) {
+    if (!first?.profile || !second?.profile || first.profile.fid === second.profile.fid) return;
+    setShareError("");
+    const params = new URLSearchParams({
+      first: first.profile.fid,
+      second: second.profile.fid,
+      ts: ts || Date.now().toString(),
+    });
+    const url = new URL(`/friendship?${params}`, process.env.NEXT_PUBLIC_URL || window.location.origin).toString();
+    if (target === "copy") {
+      try {
+        await navigator.clipboard.writeText(url);
+        setCopyCount((count) => count + 1);
+      } catch {
+        setShareError(`Copy this link: ${url}`);
+      }
+      return;
+    }
+    const text = formatShareText(
+      `Explore the Farcaster friendship between ${[first.profile, second.profile].map(name).join(" and ")}.\n\nHow about you?\n\n${shareCredit(target)}`,
+      target,
+    );
+    if (target === "farcaster" && isMiniApp) {
+      try {
+        await sdk.actions.composeCast({ text, embeds: [url] });
+        return;
+      } catch {
+        /* Fall back to the web composer if the host bridge fails. */
+      }
+    }
+    const compose = new URL(target === "x" ? "https://x.com/intent/post" : "https://farcaster.xyz/~/compose");
+    compose.searchParams.set("text", text);
+    compose.searchParams.set(target === "x" ? "url" : "embeds[]", url);
+    window.open(compose.toString(), "_blank", "noopener,noreferrer");
+  }
+
   function apply(field: "first" | "second", value: string) {
     const next = { ...selected, [field]: value.trim() };
     setDraft((previous) => ({ ...previous, [field]: next[field] }));
@@ -313,6 +319,7 @@ export function Friendship({
   }
   return (
     <main className="friendship-page">
+      <CopyToast count={copyCount} />
       <header className="topbar">
         <Link className="wordmark" href="/">
           <span className="mark" aria-hidden="true">
@@ -322,7 +329,18 @@ export function Friendship({
           </span>
           faralytics<span className="wordmark-dot">.</span>
         </Link>
+        <ShareActions
+          placement="header"
+          heading="a friendship worth sharing:"
+          disabled={!first?.profile || !second?.profile || first.profile.fid === second.profile.fid}
+          onShare={share}
+        />
       </header>
+      {shareError && (
+        <p className="notice" role="status">
+          {shareError}
+        </p>
+      )}
       <AppNavigation active="friendship" />
       <section className="timeline-intro">
         <span className="eyebrow">Farcaster analytics</span>
@@ -379,6 +397,7 @@ export function Friendship({
           first={first.profile.fid}
           second={second.profile.fid}
           ts={ts}
+          onShare={share}
         />
       ) : (
         <p className="empty-note">Choose two accounts to see their interactions.</p>
