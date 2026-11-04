@@ -4,7 +4,6 @@ import { sdk } from "@farcaster/miniapp-sdk";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { PURPLES, type Profile } from "~~/lib/activity";
-import { relativeEventTime } from "~~/lib/follow-timeline";
 import { LOGO_PIXELS } from "~~/lib/brand";
 import { friendshipLabels, friendshipPeriods, type FriendshipCounts, type FriendshipPage } from "~~/lib/friendship";
 import { AccountSearch } from "./AccountSearch";
@@ -13,12 +12,12 @@ import { AppNavigation } from "./AppNavigation";
 import { AvatarImage } from "./AvatarImage";
 import { useMiniapp } from "./MiniappProvider";
 import { NumberText } from "./NumberText";
+import { TimelineTime } from "./TimelineTime";
 import { ShareActions } from "./ShareActions";
 import { ChartImages } from "./ChartImages";
 import { CopyToast } from "./CopyToast";
 import { formatShareText, shareCredit, type ShareTarget } from "~~/lib/share-credit";
 
-const dateFormat = new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" });
 const name = (profile: Profile) => (profile.username ? `@${profile.username}` : `FID ${profile.fid}`);
 
 function Account({ profile, trailing = false }: { profile: Profile; trailing?: boolean }) {
@@ -220,11 +219,7 @@ function FriendshipResults({ first, second, ts }: { first: string; second: strin
                     </CastLink>
                     <Account profile={target} trailing />
                   </div>
-                  <CastLink className="friendship-time" {...castLinkProps}>
-                    <time dateTime={date.toISOString()} title={`${dateFormat.format(date)} UTC`}>
-                      <NumberText>{relativeEventTime(date.toISOString(), now)}</NumberText>
-                    </time>
-                  </CastLink>
+                  <TimelineTime timestamp={date.toISOString()} now={now} />
                 </li>
               );
             })}

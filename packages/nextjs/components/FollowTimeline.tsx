@@ -7,6 +7,7 @@ import { AddMiniappButton } from "./AddMiniappButton";
 import { AppNavigation } from "./AppNavigation";
 import { AvatarImage } from "./AvatarImage";
 import { NumberText } from "./NumberText";
+import { TimelineTime } from "./TimelineTime";
 import { ShareActions } from "./ShareActions";
 import { CopyToast } from "./CopyToast";
 import { ChartImages } from "./ChartImages";
@@ -14,7 +15,7 @@ import { useMiniapp } from "./MiniappProvider";
 import { useLookupLog } from "~~/hooks/useLookupLog";
 import { PURPLES, type Profile } from "~~/lib/activity";
 import { LOGO_PIXELS } from "~~/lib/brand";
-import { mergeTimeline, relativeEventTime, type TimelineEvent, type TimelinePage } from "~~/lib/follow-timeline";
+import { mergeTimeline, type TimelineEvent, type TimelinePage } from "~~/lib/follow-timeline";
 import { timelineSharePath, timelineShareText, type TimelineShareData } from "~~/lib/timeline-share";
 
 const accountName = (profile: Profile) => (profile.username ? `@${profile.username}` : `FID ${profile.fid}`);
@@ -547,12 +548,7 @@ export function FollowTimeline({
                 </span>
                 {account(event.target, true)}
               </div>
-              <time
-                dateTime={event.timestamp}
-                title={new Date(event.timestamp).toLocaleString("en-GB", { timeZone: "UTC" }) + " UTC"}
-              >
-                <NumberText>{relativeEventTime(event.timestamp, now)}</NumberText>
-              </time>
+              <TimelineTime timestamp={event.timestamp} now={now} />
             </li>
           ))}
         </ol>
