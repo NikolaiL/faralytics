@@ -1,4 +1,5 @@
 "use client";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
@@ -17,6 +18,8 @@ import { PURPLES, type Profile } from "~~/lib/activity";
 import { LOGO_PIXELS } from "~~/lib/brand";
 import { mergeTimeline, type TimelineEvent, type TimelinePage } from "~~/lib/follow-timeline";
 import { timelineSharePath, timelineShareText, type TimelineShareData } from "~~/lib/timeline-share";
+
+const OnchainActions = dynamic(() => import("./OnchainActions"), { ssr: false });
 
 const accountName = (profile: Profile) => (profile.username ? `@${profile.username}` : `FID ${profile.fid}`);
 export function FollowTimeline({
@@ -592,6 +595,10 @@ export function FollowTimeline({
         disabled={loading || sharing}
         onShare={share}
         placement="below"
+      />
+      <OnchainActions
+        snapshot={{ kind: "follow-timeline", actor: filters.actor?.fid, target: filters.target?.fid }}
+        disabled={loading || !!error}
       />
       {!loading && !error && (
         <ChartImages

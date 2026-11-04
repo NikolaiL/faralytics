@@ -1,6 +1,7 @@
 "use client";
 
 import { sdk } from "@farcaster/miniapp-sdk";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { PURPLES, type Profile } from "~~/lib/activity";
@@ -17,6 +18,8 @@ import { ShareActions } from "./ShareActions";
 import { ChartImages } from "./ChartImages";
 import { CopyToast } from "./CopyToast";
 import { formatShareText, shareCredit, type ShareTarget } from "~~/lib/share-credit";
+
+const OnchainActions = dynamic(() => import("./OnchainActions"), { ssr: false });
 
 const name = (profile: Profile) => (profile.username ? `@${profile.username}` : `FID ${profile.fid}`);
 
@@ -209,6 +212,7 @@ function FriendshipResults({
             </div>
           </section>
           <ShareActions placement="below" heading="a friendship worth sharing:" disabled={false} onShare={onShare} />
+          <OnchainActions snapshot={{ kind: "friendship", first, second, ts: ts || undefined }} />
           <ChartImages
             basePath="/api/og/friendship"
             params={new URLSearchParams({ first, second, ...(ts ? { ts } : {}) }).toString()}

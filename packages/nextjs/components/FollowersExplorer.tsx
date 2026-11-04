@@ -26,6 +26,7 @@ import {
   followerTimestamp,
   type FollowerChartData,
 } from "~~/lib/followers";
+const OnchainActions = dynamic(() => import("./OnchainActions"), { ssr: false });
 const FollowerPlot = dynamic(() => import("./FollowerPlot"), {
   ssr: false,
   loading: () => <div className="followers-no-history">Loading chart…</div>,
@@ -282,6 +283,10 @@ export function FollowersExplorer({
       {data && (
         <>
           <ShareActions heading="a chart worth of sharing:" disabled={busy} onShare={share} placement="below" />
+          <OnchainActions
+            snapshot={{ kind: "followers", fids: ids.join(","), end: data.anchor }}
+            disabled={busy || !!error}
+          />
           <ChartImages
             basePath="/api/og/followers"
             params={imageParams.toString()}

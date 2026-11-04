@@ -43,9 +43,22 @@ function coffeeReceived(receipt: {
 }
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } } });
 type PendingNFT = { package: PreparedNFT; transactionHash: `0x${string}`; tokenId?: string };
-type Selection = { kind: "mint" | "coffee"; activity: Activity; resume?: PendingNFT };
+type SnapshotMint =
+  | { kind: "friendship"; first: string; second: string; ts?: string }
+  | { kind: "followers"; fids: string; end: string }
+  | { kind: "follow-timeline"; actor?: string; target?: string };
+type MintInput = { user: string; period: string; end: string } | SnapshotMint;
+type ActionsProps = ({ activity: Activity; snapshot?: never } | { snapshot: SnapshotMint; activity?: never }) & {
+  disabled?: boolean;
+};
+const mintLabels = {
+  friendship: "Mint Friendship NFT",
+  followers: "Mint Followers NFT",
+  "follow-timeline": "Mint Follow Timeline NFT",
+};
+type Selection = { kind: "mint" | "coffee"; input: MintInput; resume?: PendingNFT };
 const PENDING_KEY = "faralytics:pending-ipfs-nft";
-function Actions({ activity, disabled }: { activity: Activity; disabled?: boolean }) {
+function Actions({ activity, snapshot, disabled }: ActionsProps) {
   const { isMiniApp } = useMiniapp();
   const account = useAccount();
   const { connectors, connectAsync } = useConnect();
@@ -90,11 +103,7 @@ function Actions({ activity, disabled }: { activity: Activity; disabled?: boolea
         void fetch("/api/nft/prepare", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            user: selection.activity.profile.fid,
-            period: selection.activity.period,
-            end: selection.activity.anchor,
-          }),
+          body: JSON.stringify(selection.input),
           signal: abort.signal,
         })
           .then(async (response) => {
@@ -245,7 +254,7 @@ function Actions({ activity, disabled }: { activity: Activity; disabled?: boolea
     if (result.metadataURI !== value.package.metadataURI) throw new Error("Unexpected metadata address.");
     savePending(null);
     celebrateTransaction(value.transactionHash);
-    setMessage("Your activity NFT is minted. Its image and metadata are pinned on IPFS.");
+    setMessage("Your Faralytics NFT is minted. Its image and metadata are pinned on IPFS.");
   }
   async function retryUpload() {
     if (!pendingNFT || guard.current) return;
@@ -265,12 +274,13 @@ function Actions({ activity, disabled }: { activity: Activity; disabled?: boolea
     setShowWallets(false);
     setTx(null);
     setToken(null);
+    const input: MintInput = snapshot ?? { user: activity.profile.fid, period: activity.period, end: activity.anchor };
     if (kind === "mint" && pendingNFT) {
       setTx(pendingNFT.transactionHash);
       setToken(pendingNFT.tokenId || null);
       setMessage("Finish the saved NFT upload without another mint payment.");
-      setSelection({ kind, activity, resume: pendingNFT });
-    } else setSelection({ kind, activity });
+      setSelection({ kind, input, resume: pendingNFT });
+    } else setSelection({ kind, input });
   }
   async function run() {
     if (!selection || guard.current || !client) return;
@@ -378,7 +388,7 @@ function Actions({ activity, disabled }: { activity: Activity; disabled?: boolea
     <>
       <div className="onchain-actions" data-testid="onchain-actions">
         <button className="mint-button" data-testid="mint-nft" disabled={disabled} onClick={() => open("mint")}>
-          {pendingNFT ? "Finish NFT upload" : "Mint my activity NFT"}{" "}
+          {pendingNFT ? "Finish NFT upload" : snapshot ? mintLabels[snapshot.kind] : "Mint my activity NFT"}{" "}
           <span>
             <NumberText>{pendingNFT ? "No new mint fee" : "0.001 ETH ↗"}</NumberText>
           </span>
@@ -418,7 +428,15 @@ function Actions({ activity, disabled }: { activity: Activity; disabled?: boolea
                 }
               }}
             >
-              <h2 id="payment-title">{isMint ? "Keep this year forever" : "A coffee for the creator"}</h2>
+              <h2 id="payment-title">
+                {isMint
+                  ? selection.resume
+                    ? "Finish NFT upload"
+                    : "kind" in selection.input
+                      ? mintLabels[selection.input.kind]
+                      : "Keep this year forever"
+                  : "A coffee for the creator"}
+              </h2>
               {isMint &&
                 (preview ? (
                   <img className="nft-preview" src={preview} alt="Exact permanent NFT artwork preview" />
@@ -457,7 +475,7 @@ function Actions({ activity, disabled }: { activity: Activity; disabled?: boolea
               </dl>
               <p>
                 {isMint
-                  ? "One transferable NFT of this chart. The image and metadata are pinned to public IPFS; their permanent content address is stored onchain. This is a snapshot of captured activity; it does not verify account ownership. Mint payments are final."
+                  ? "One transferable NFT of this snapshot. The image and metadata are pinned to public IPFS; their permanent content address is stored onchain. This is a snapshot of captured activity; it does not verify account ownership. Mint payments are final."
                   : "A voluntary tip to support Faralytics. No purchase or NFT is included."}
               </p>
               {nativeCoffee && !isMint && (
@@ -551,7 +569,7 @@ function Actions({ activity, disabled }: { activity: Activity; disabled?: boolea
     </>
   );
 }
-export default function OnchainActions(props: { activity: Activity; disabled?: boolean }) {
+export default function OnchainActions(props: ActionsProps) {
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>

@@ -9,10 +9,12 @@ export function TimelineOg({
   data,
   height,
   avatars = [],
+  snapshot = false,
 }: {
   data: TimelineShareData;
   height: number;
   avatars?: (string | null)[];
+  snapshot?: boolean;
 }) {
   const compact = height === 600;
   const { actor, target } = data.filters;
@@ -24,11 +26,13 @@ export function TimelineOg({
     outgoing = !!actor && !target;
   const name = (profile: Profile) => (profile.username ? `@${profile.username}` : `FID ${profile.fid}`);
   const shorten = (text: string, length: number) => (text.length > length ? text.slice(0, length - 1) + "…" : text);
-  const heading = incoming
-    ? `Latest followers of ${name(target!)}`
-    : actor
-      ? `Latest followings by ${name(actor)}`
-      : "Latest global follows & unfollows.";
+  const heading = snapshot
+    ? "Follow timeline"
+    : incoming
+      ? `Latest followers of ${name(target!)}`
+      : actor
+        ? `Latest followings by ${name(actor)}`
+        : "Latest global follows & unfollows.";
   const header = target || actor;
   function avatar(profile: Profile, index: number, size: number) {
     return (
@@ -249,11 +253,11 @@ export function TimelineOg({
                       width: "12%",
                       flexShrink: 0,
                       justifyContent: "center",
-                      color: "#48d9ac",
+                      color: event.action === "follow" ? "#48d9ac" : "#ff8970",
                       fontSize: 12,
                     }}
                   >
-                    followed
+                    {event.action === "follow" ? "followed" : "unfollowed"}
                   </div>
                   <div
                     style={{
@@ -294,7 +298,12 @@ export function TimelineOg({
                   <span style={{ color: "#b594ee", fontSize: compact ? 26 : 30, fontWeight: 700 }}>
                     {shorten(name(profile), 26)}
                   </span>
-                  <div style={{ display: "flex", color: "#a99aba", fontSize: compact ? 14 : 17 }}>
+                  <div style={{ display: "flex", gap: 8, color: "#a99aba", fontSize: compact ? 14 : 17 }}>
+                    {snapshot && (
+                      <span style={{ color: event.action === "follow" ? "#48d9ac" : "#ff8970" }}>
+                        {event.action === "follow" ? "followed" : "unfollowed"}
+                      </span>
+                    )}
                     <NumberText preserveSpaces>
                       {relativeEventTime(event.timestamp, Date.parse(data.generatedAt))}
                     </NumberText>
@@ -307,7 +316,7 @@ export function TimelineOg({
       })}
       {!data.events.length && (
         <div style={{ display: "flex", position: "absolute", left: 64, top: 250, fontSize: 26, color: "#a99aba" }}>
-          {global ? "No captured follow activity yet." : "No captured follows yet."}
+          {global || snapshot ? "No captured follow activity yet." : "No captured follows yet."}
         </div>
       )}
       <div
@@ -322,7 +331,9 @@ export function TimelineOg({
           color: "#857594",
         }}
       >
-        <span>{global ? "Latest captured follows & unfollows · UTC" : "Latest captured follows · UTC"}</span>
+        <span>
+          {global || snapshot ? "Latest captured follows & unfollows · UTC" : "Latest captured follows · UTC"}
+        </span>
         <NumberText
           preserveSpaces
         >{`created with viniapp · ${data.generatedAt.slice(0, 19).replace("T", " ")} UTC`}</NumberText>

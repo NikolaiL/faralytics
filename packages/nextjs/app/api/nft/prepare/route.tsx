@@ -1,6 +1,14 @@
+import { FollowersOg } from "~~/components/FollowersOg";
+import { TimelineOg } from "~~/components/TimelineOg";
+import { loadFollowers } from "~~/lib/follower-data";
+import { followersPath } from "~~/lib/followers";
+import { loadTimeline } from "~~/lib/follow-timeline-data";
+import { timelineSharePath } from "~~/lib/timeline-share";
 import { OG_FONTS } from "~~/lib/og-fonts";
 import { ImageResponse } from "next/og";
 import sharp from "sharp";
+import { FriendshipOg } from "~~/components/FriendshipOg";
+import { loadFriendship } from "~~/lib/friendship-data";
 import { ActivityOg } from "~~/components/ActivityOg";
 import { loadActivity } from "~~/lib/data";
 import { loadAvatar } from "~~/lib/avatar";
@@ -9,6 +17,7 @@ import { signNFTPackage } from "~~/lib/nft-auth";
 import { contentCID } from "~~/lib/ipfs";
 import { reportServerError, withErrorReporting } from "~~/utils/reportServerError";
 export const runtime = "nodejs";
+export const maxDuration = 60;
 export const POST = withErrorReporting("/api/nft/prepare", async (request) => {
   try {
     if (!process.env.PINATA_JWT || !process.env.PINATA_API_SECRET)
@@ -16,36 +25,14 @@ export const POST = withErrorReporting("/api/nft/prepare", async (request) => {
     const text = await request.text();
     if (text.length > 2048) return Response.json({ error: "Request too large." }, { status: 413 });
     const input = JSON.parse(text);
-    if (typeof input.user !== "string" || typeof input.period !== "string" || typeof input.end !== "string")
-      return Response.json({ error: "Choose an account and period." }, { status: 400 });
-    const data = await loadActivity(input.user, input.period, input.end);
-    const avatarBytes = await loadAvatar(data.profile.pfp_url);
-    const avatar = avatarBytes ? `data:image/png;base64,${avatarBytes.toString("base64")}` : null;
-    const capturedAt = new Date().toISOString();
-    const response = new ImageResponse(
-      <ActivityOg data={data} avatar={avatar} generatedAt={capturedAt.slice(0, 19).replace("T", " ")} height={800} />,
-      { width: 1200, height: 800, fonts: OG_FONTS },
-    );
+    const { artwork, metadata } = await prepareSnapshot(input);
+    const response = new ImageResponse(artwork, { width: 1200, height: 800, fonts: OG_FONTS });
     const image = await sharp(Buffer.from(await response.arrayBuffer()))
       .png({ palette: true, colors: 256, effort: 6 })
       .toBuffer();
     if (image.length > 262_144) throw new Error("NFT image exceeds the immutable raw-block size limit.");
     const imageURI = `ipfs://${await contentCID(image)}`;
-    const metadataJSON = JSON.stringify({
-      name: `Faralytics · @${data.profile.username || data.profile.fid} · ${data.period === "365" ? "365 days" : data.period}`,
-      description: `Snapshot of captured Farcaster activity in ${periodLabel(data.period)}. User-submitted artwork; not proof of account ownership or complete history.`,
-      image: imageURI,
-      external_url: `https://faralytics.vercel.app${sharePath(data.profile.fid, data.period, data.anchor)}`,
-      attributes: [
-        { trait_type: "FID", value: data.profile.fid },
-        { trait_type: "Period", value: data.period },
-        { trait_type: "Actions", value: data.total },
-        { trait_type: "Active days", value: data.activeDays },
-        { trait_type: "Longest streak", value: data.longestStreak },
-        { trait_type: "Captured at", value: capturedAt },
-      ],
-      properties: { activity: data },
-    });
+    const metadataJSON = JSON.stringify({ ...metadata, image: imageURI });
     const metadataURI = `ipfs://${await contentCID(Buffer.from(metadataJSON))}`;
     return Response.json(
       {
@@ -64,3 +51,156 @@ export const POST = withErrorReporting("/api/nft/prepare", async (request) => {
     return Response.json({ error: "Could not prepare the NFT image. Please try again." }, { status: 502 });
   }
 });
+
+function prepareSnapshot(input: Record<string, unknown> | null) {
+  switch (input?.kind) {
+    case "friendship":
+      return prepareFriendship(input);
+    case "followers":
+      return prepareFollowers(input);
+    case "follow-timeline":
+      return prepareTimeline(input);
+    case undefined:
+      return prepareActivity(input ?? {});
+    default:
+      throw new InputError("Choose a supported NFT snapshot.");
+  }
+}
+
+async function prepareActivity(input: { user?: unknown; period?: unknown; end?: unknown }) {
+  if (typeof input?.user !== "string" || typeof input.period !== "string" || typeof input.end !== "string")
+    throw new InputError("Choose an account and period.");
+  const data = await loadActivity(input.user, input.period, input.end);
+  const avatar = await nftAvatar(data.profile.pfp_url);
+  const capturedAt = new Date().toISOString();
+  return {
+    artwork: (
+      <ActivityOg data={data} avatar={avatar} generatedAt={capturedAt.slice(0, 19).replace("T", " ")} height={800} />
+    ),
+    metadata: {
+      name: `Faralytics · @${data.profile.username || data.profile.fid} · ${data.period === "365" ? "365 days" : data.period}`,
+      description: `Snapshot of captured Farcaster activity in ${periodLabel(data.period)}. User-submitted artwork; not proof of account ownership or complete history.`,
+      external_url: `https://faralytics.vercel.app${sharePath(data.profile.fid, data.period, data.anchor)}`,
+      attributes: [
+        { trait_type: "FID", value: data.profile.fid },
+        { trait_type: "Period", value: data.period },
+        { trait_type: "Actions", value: data.total },
+        { trait_type: "Active days", value: data.activeDays },
+        { trait_type: "Longest streak", value: data.longestStreak },
+        { trait_type: "Captured at", value: capturedAt },
+      ],
+      properties: { activity: data },
+    },
+  };
+}
+
+async function nftAvatar(source?: string | null) {
+  const bytes = await loadAvatar(source);
+  return bytes ? `data:image/png;base64,${bytes.toString("base64")}` : null;
+}
+
+async function prepareFriendship(input: { first?: unknown; second?: unknown; ts?: unknown }) {
+  if (
+    typeof input.first !== "string" ||
+    typeof input.second !== "string" ||
+    (input.ts !== undefined && typeof input.ts !== "string")
+  )
+    throw new InputError("Choose two accounts.");
+  const ts = input.ts || Date.now().toString();
+  const data = await loadFriendship(new URLSearchParams({ first: input.first, second: input.second, ts }));
+  const [first, second] = data.profiles;
+  const avatars = await Promise.all(data.profiles.map((profile) => nftAvatar(profile.pfp_url)));
+  const capturedAt = new Date(Number(ts)).toISOString();
+  const params = new URLSearchParams({ first: first.fid, second: second.fid, ts });
+  const total = (period: "all" | "days30" | "days7") =>
+    (data.counts[first.fid]?.[period] ?? 0) + (data.counts[second.fid]?.[period] ?? 0);
+  return {
+    artwork: <FriendshipOg data={data} avatars={avatars} height={800} ts={Number(ts)} />,
+    metadata: {
+      name: `Faralytics Friendship · @${first.username || first.fid} & @${second.username || second.fid}`,
+      description:
+        "Snapshot of captured Farcaster interactions between two accounts. This artwork does not verify account ownership or complete history.",
+      external_url: `https://faralytics.vercel.app/friendship?${params}`,
+      attributes: [
+        { trait_type: "Type", value: "Friendship" },
+        { trait_type: "First FID", value: first.fid },
+        { trait_type: "Second FID", value: second.fid },
+        { trait_type: "All-time interactions", value: total("all") },
+        { trait_type: "30-day interactions", value: total("days30") },
+        { trait_type: "7-day interactions", value: total("days7") },
+        { trait_type: "Captured at", value: capturedAt },
+      ],
+      properties: { friendship: { profiles: data.profiles, counts: data.counts, events: data.events.slice(0, 10) } },
+    },
+  };
+}
+
+async function prepareFollowers(input: { fids?: unknown; end?: unknown }) {
+  if (typeof input.fids !== "string" || typeof input.end !== "string")
+    throw new InputError("Choose follower accounts and an end date.");
+  const data = await loadFollowers({ fids: input.fids, end: input.end });
+  const capturedAt = new Date().toISOString();
+  const avatars = await Promise.all(data.series.map(({ profile }) => nftAvatar(profile.pfp_url)));
+  const accounts = data.series.map(({ profile, followers }) => ({
+    fid: profile.fid,
+    username: profile.username,
+    followers,
+  }));
+  return {
+    artwork: (
+      <FollowersOg data={data} avatars={avatars} height={800} generatedAt={capturedAt.slice(0, 19).replace("T", " ")} />
+    ),
+    metadata: {
+      name: "Faralytics · Followers",
+      description: "Snapshot of captured Farcaster follower history for the selected accounts.",
+      external_url: `https://faralytics.vercel.app${followersPath(data, String(Date.parse(capturedAt)))}`,
+      attributes: [
+        { trait_type: "Type", value: "Followers" },
+        { trait_type: "Accounts", value: accounts.length },
+        { trait_type: "Chart end", value: data.anchor },
+        { trait_type: "Captured at", value: capturedAt },
+      ],
+      properties: { followers: { accounts, from: data.from, end: data.anchor } },
+    },
+  };
+}
+
+async function prepareTimeline(input: { actor?: unknown; target?: unknown }) {
+  const { actor, target } = input;
+  if ((actor !== undefined && typeof actor !== "string") || (target !== undefined && typeof target !== "string"))
+    throw new InputError("Choose valid timeline filters.");
+  const timeline = await loadTimeline({ actor, target });
+  const events = timeline.events.slice(0, 10);
+  const generatedAt = new Date().toISOString();
+  const data = { filters: timeline.filters, events, generatedAt };
+  const sources = Array.from({ length: 22 }, (_, index) =>
+    index === 20
+      ? data.filters.actor?.pfp_url
+      : index === 21
+        ? data.filters.target?.pfp_url
+        : index < 10
+          ? events[index]?.actor.pfp_url
+          : events[index - 10]?.target.pfp_url,
+  );
+  const avatars = await Promise.all(sources.map(nftAvatar));
+  return {
+    artwork: <TimelineOg data={data} avatars={avatars} height={800} snapshot />,
+    metadata: {
+      name: "Faralytics · Follow Timeline",
+      description: "Snapshot of the latest captured Farcaster follows and unfollows for the selected timeline.",
+      external_url: `https://faralytics.vercel.app${timelineSharePath(
+        {
+          actor: data.filters.actor?.fid,
+          target: data.filters.target?.fid,
+        },
+        String(Date.parse(generatedAt)),
+      )}`,
+      attributes: [
+        { trait_type: "Type", value: "Follow Timeline" },
+        { trait_type: "Events", value: events.length },
+        { trait_type: "Captured at", value: generatedAt },
+      ],
+      properties: { timeline: data },
+    },
+  };
+}
