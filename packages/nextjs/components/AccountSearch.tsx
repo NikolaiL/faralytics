@@ -2,7 +2,7 @@
 import { NumberText } from "./NumberText";
 import { useEffect, useRef, useState } from "react";
 import { AvatarImage } from "./AvatarImage";
-import type { SearchProfile } from "~~/lib/activity";
+import type { Profile, SearchProfile } from "~~/lib/activity";
 
 export function AccountSearch({
   value,
@@ -10,6 +10,7 @@ export function AccountSearch({
   onSelect,
   busy,
   resolved,
+  profile,
   onReset,
   onShowMe,
   searchId = "lookup",
@@ -20,6 +21,7 @@ export function AccountSearch({
   onSelect: (fid: string) => void;
   busy: boolean;
   resolved: boolean;
+  profile?: Profile;
   onReset: () => void;
   onShowMe?: () => void;
   searchId?: string;
@@ -88,9 +90,16 @@ export function AccountSearch({
       }}
     >
       <div className="search-field">
-        <span aria-hidden="true" className="search-icon">
-          {busy ? <span className="search-spinner" data-testid={`${searchId}-spinner`} /> : "⌕"}
-        </span>
+        {profile ? (
+          <span aria-hidden="true" className="result-avatar search-profile-avatar">
+            {(profile.username || "fc").slice(0, 2)}
+            <AvatarImage source={profile.pfp_url} size={32} />
+          </span>
+        ) : (
+          <span aria-hidden="true" className="search-icon">
+            {busy ? <span className="search-spinner" data-testid={`${searchId}-spinner`} /> : "⌕"}
+          </span>
+        )}
         <label className="sr-only" htmlFor={searchId === "lookup" ? "username" : `${searchId}-input`}>
           {label}
         </label>

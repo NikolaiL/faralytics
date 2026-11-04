@@ -4,7 +4,7 @@ export function AppNavigation({
   fids = [],
   end,
 }: {
-  active: "activity" | "followers" | "follow-timeline";
+  active: "activity" | "followers" | "follow-timeline" | "friendship";
   fids?: string[];
   end?: string;
 }) {
@@ -15,6 +15,9 @@ export function AppNavigation({
   const followers = new URLSearchParams();
   if (fids.length) followers.set("fids", fids.join(","));
   if (end) followers.set("end", end);
+  const friendship = new URLSearchParams();
+  if (fids[0]) friendship.set("first", fids[0]);
+  if (fids[1]) friendship.set("second", fids[1]);
   return (
     <nav className="app-navigation" aria-label="Faralytics sections">
       <Link
@@ -51,6 +54,16 @@ export function AppNavigation({
           <circle cx="7" cy="18" r="2" />
         </svg>
         Follow timeline
+      </Link>
+      <Link
+        href={friendship.size ? `/friendship?${friendship}` : "/friendship"}
+        aria-current={active === "friendship" ? "page" : undefined}
+        data-testid="tab-friendship"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+          <path d="M12 20S3 14.5 3 8.8A4.4 4.4 0 0 1 12 7a4.4 4.4 0 0 1 9 1.8C21 14.5 12 20 12 20Z" />
+        </svg>
+        Friendship
       </Link>
     </nav>
   );

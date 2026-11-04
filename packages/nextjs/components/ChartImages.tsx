@@ -24,7 +24,7 @@ export function ChartImages({
   const id = useId();
   const inlinePreview = isMiniApp || previewOnly;
   const imageParams = new URLSearchParams(params);
-  if (previewOnly && previewAt) imageParams.set("ts", previewAt);
+  if (previewOnly && previewAt && !imageParams.has("ts")) imageParams.set("ts", previewAt);
   const source = preview ? `${basePath}/${preview}.png?${imageParams}` : "";
   return (
     <>
