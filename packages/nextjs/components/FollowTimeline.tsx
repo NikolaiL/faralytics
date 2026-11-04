@@ -117,15 +117,43 @@ export function FollowTimeline({
       if (mode === "older" && tail) params.set("before", tail);
       // shortcut: late backfills older than this event-time cursor appear on refresh/older pages; use an observed-at stream if they must be pushed immediately.
       if (mode === "newer" && head) params.set("after", head);
-      try {
+      async function fetchPage() {
         const response = await fetch(`/api/follow-timeline?${params}`, {
           cache: "no-store",
           signal: AbortSignal.any([controller.signal, AbortSignal.timeout(25000)]),
         });
         const data = (await response.json()) as TimelinePage & { error?: string };
         if (!response.ok) throw new Error(data.error || "Could not load follow events.");
+        return data;
+      }
+      try {
+        let data = await fetchPage();
         if (!active) return;
         if (mode === "newer" && (!liveRef.current || document.hidden)) return;
+        if (mode === "newer" && data.events.length) {
+          if (!atTop()) {
+            setError("");
+            setHasNew(true);
+            return;
+          }
+          const previousHeadTime = Date.parse(rows[0]?.timestamp ?? "");
+          if (data.hasMore && Date.now() - previousHeadTime > 5 * 60_000) {
+            // Catch-up pages are oldest-first, so check the actual newest event before replacing the feed.
+            params.delete("after");
+            const latest = await fetchPage();
+            if (!active || !liveRef.current || document.hidden) return;
+            if (!atTop()) {
+              setError("");
+              setHasNew(true);
+              return;
+            }
+            if (Date.parse(latest.events[0]?.timestamp ?? "") - previousHeadTime > 5 * 60_000) {
+              animateFrom.current = null;
+              data = latest;
+              mode = "reset";
+            }
+          }
+        }
         setError("");
         if (mode === "reset") {
           if (selected.actor && selected.target && data.filters.actor && !data.filters.target) {
@@ -165,10 +193,6 @@ export function FollowTimeline({
           setHasMore(more);
           setEvents(rows);
         } else if (data.events.length) {
-          if (!atTop()) {
-            setHasNew(true);
-            return;
-          }
           animateFrom.current = new Map(
             Array.from(list.current?.children || []).map((node) => [
               (node as HTMLElement).dataset.eventId!,
