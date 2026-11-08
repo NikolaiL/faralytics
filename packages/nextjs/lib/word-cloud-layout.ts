@@ -3,6 +3,19 @@ export const cloudHeight = 478;
 const gap = 10;
 const step = 8;
 
+const cloudPurples = ["#b596f2", "#d1b7ff", "#aa84f3", "#9772d7", "#ede0ff"];
+
+export function cloudWordColor(rank: number) {
+  return rank === 0 ? "#d6ff3f" : cloudPurples[(rank - 1) % cloudPurples.length];
+}
+
+export function cloudWordSize(word: string, count: number, peak: number, height = cloudHeight) {
+  return Math.min(
+    Math.floor(1350 / [...word].length),
+    Math.round(17 + (height < cloudHeight ? 68 : 85) * (count / peak) ** 0.7),
+  );
+}
+
 export type WordBox = { left: number; top: number; width: number; height: number };
 export type WordPlacement = WordBox & { angle: 0 | 90 };
 type WordSize = { width: number; height: number; fontSize: number };

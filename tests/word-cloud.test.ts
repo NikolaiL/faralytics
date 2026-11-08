@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { packWords, placeWord, cloudHeight, cloudWidth, type WordPlacement } from "../packages/nextjs/lib/word-cloud-layout.ts";
-import { wordCloudPath, wordCloudSelection } from "../packages/nextjs/lib/word-cloud.ts";
+import { wordCloudFrameEnds, wordCloudPath, wordCloudSelection } from "../packages/nextjs/lib/word-cloud.ts";
 
 test("word cloud shares preserve a valid UTC cutoff and default to 30 days", () => {
   const now = 1794102007;
@@ -44,4 +44,17 @@ test("word cloud packs rendered rectangles at 0 or clockwise 90 degrees without 
   }
   assert.ok(placements.length > 25);
   assert.ok(placements.some(box => box.angle === 90));
+});
+
+
+test("time machine starts with the first UTC day and ends at the exact cutoff", () => {
+  const first = Date.parse("2024-02-21T18:13:55Z") / 1000;
+  const cutoff = Date.parse("2026-11-08T04:02:00Z") / 1000;
+  const frames = wordCloudFrameEnds(first, cutoff);
+  assert.equal(frames.length, 14);
+  assert.equal(new Date(frames[0] * 1000).toISOString(), "2024-02-21T23:59:59.000Z");
+  assert.equal(frames.at(-1), cutoff);
+  assert.ok(frames.every((frame, index) => !index || frame > frames[index - 1]));
+  assert.deepEqual(wordCloudFrameEnds(cutoff - 60, cutoff), [cutoff]);
+  assert.deepEqual(wordCloudFrameEnds(cutoff, cutoff - 86400), []);
 });

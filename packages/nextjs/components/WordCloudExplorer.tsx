@@ -26,6 +26,7 @@ import { CopyToast } from "./CopyToast";
 import { useMiniapp } from "./MiniappProvider";
 import { NumberText } from "./NumberText";
 import { ShareActions } from "./ShareActions";
+import { WordCloudTimeMachine } from "./WordCloudTimeMachine";
 
 const OnchainActions = dynamic(() => import("./OnchainActions"), { ssr: false });
 
@@ -43,6 +44,7 @@ export function WordCloudExplorer({
   const [meaningful, setMeaningful] = useState(false);
   const [copyCount, setCopyCount] = useState(0);
   const [shareError, setShareError] = useState("");
+  const [showTimeline, setShowTimeline] = useState(false);
   const [imageError, setImageError] = useState("");
   const current = result?.request === request ? result : undefined;
   const data = current?.data;
@@ -85,6 +87,7 @@ export function WordCloudExplorer({
     const selection = wordCloudSelection(period, at);
     if (user !== request.user || !user) resetLog();
     setDraft(user);
+    setShowTimeline(false);
     setRequest({ user, ...selection });
     setShareError("");
     if (user) setMeaningful(true);
@@ -143,7 +146,12 @@ export function WordCloudExplorer({
           </span>
           faralytics<span className="wordmark-dot">.</span>
         </Link>
-        <ShareActions placement="header" heading="a cloud worth sharing:" disabled={!data} onShare={share} />
+        <ShareActions
+          placement="header"
+          heading="a cloud worth sharing:"
+          disabled={!data || showTimeline}
+          onShare={share}
+        />
       </header>
       <AppNavigation active="word-cloud" fids={profile ? [profile.fid] : []} />
       <section className="timeline-intro">
@@ -191,6 +199,16 @@ export function WordCloudExplorer({
                 ))}
               </select>
             </label>
+            <button
+              type="button"
+              className="word-cloud-time-toggle"
+              disabled={!data}
+              aria-expanded={showTimeline}
+              aria-controls={showTimeline ? "word-cloud-time-machine" : undefined}
+              onClick={() => setShowTimeline((value) => !value)}
+            >
+              {showTimeline ? "Back to snapshot" : "Time Machine"}
+            </button>
           </div>
           {busy && (
             <p className="timeline-empty" role="status">
@@ -209,7 +227,9 @@ export function WordCloudExplorer({
               </button>
             </p>
           )}
+          {data && showTimeline && <WordCloudTimeMachine key={data.profile.fid} fid={data.profile.fid} />}
           {data &&
+            !showTimeline &&
             (data.words.length ? (
               <>
                 {imageError === image ? (
@@ -246,7 +266,7 @@ export function WordCloudExplorer({
             ) : (
               <p className="timeline-empty">No matching words in this period.</p>
             ))}
-          {data && (
+          {data && !showTimeline && (
             <p className="timeline-note word-cloud-note">
               <NumberText>{data.casts.toLocaleString("en-US")}</NumberText>
               {" captured casts with text. Common plurals are combined. Older text may be missing."}
@@ -254,7 +274,7 @@ export function WordCloudExplorer({
           )}
         </section>
       )}
-      {data && (
+      {data && !showTimeline && (
         <>
           <ShareActions placement="below" heading="a cloud worth sharing:" disabled={false} onShare={share} />
           <CopyToast count={copyCount} />

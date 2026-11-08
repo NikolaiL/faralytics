@@ -42,36 +42,67 @@ export function wordCloudRange({ period, at }: WordCloudSelection) {
     : `${date(Math.max(farcasterEpoch, Number(at) - Number(period) * 86400))} – ${date(Number(at))} UTC`;
 }
 
+export type WordCloudFrame = { at: string; casts: number; words: WordCloudData["words"] };
+
+export function wordCloudFrameEnds(first: number, end: number) {
+  if (first > end) return [];
+  const day = 86400;
+  const firstDay = Math.floor(first / day);
+  const lastDay = Math.floor(end / day);
+  const frames = Math.min(14, lastDay - firstDay + 1);
+  return Array.from({ length: frames }, (_, index) => {
+    if (index === frames - 1) return end;
+    const offset = Math.floor((index * (lastDay - firstDay)) / (frames - 1));
+    return (firstDay + offset + 1) * day - 1;
+  });
+}
+
+const capturedCasts = `
+  FROM snapchain.messages AS m FINAL
+  PREWHERE m.fid = account AND m.type = 1
+  WHERE m.timestamp BETWEEN {start:UInt32} AND {end:UInt32}
+    AND m.operation IN ('merge', 'prune') AND notEmpty(trimBoth(m.text))
+    AND m.hash NOT IN (
+      SELECT target_hash FROM snapchain.cast_removals FINAL
+      PREWHERE fid = account
+      WHERE operation = 'merge'
+    )
+`;
+
+export const firstWordCloudCastSql = `
+WITH {fid:UInt64} AS account
+SELECT minOrNull(timestamp) AS first ${capturedCasts}
+`;
+
 export const wordCloudSql = `
 WITH {fid:UInt64} AS account,
   map('people','person','children','child','women','woman','men','man',
       'mice','mouse','geese','goose','teeth','tooth','feet','foot',
       'movies','movie','cookies','cookie','lies','lie','ties','tie','buses','bus') AS irregular,
-  frequencies AS (
-    SELECT word, count() AS occurrences
+  bucket_counts AS (
+    SELECT arrayFirstIndex(cutoff -> timestamp <= cutoff, {frames:Array(UInt32)}) AS bucket,
+      word, count() AS occurrences
     FROM (
-      SELECT arrayFilter(token -> lengthUTF8(token) <= 32
+      SELECT timestamp, arrayFilter(token -> lengthUTF8(token) <= 32
           AND lengthUTF8(replaceRegexpAll(token, {nonLetters:String}, '')) >= 3
           AND NOT has({stopwords:Array(String)}, token),
         extractAll(lowerUTF8(normalizeUTF8NFC(
           replaceAll(replaceRegexpAll(m.text, {exclude:String}, ' '), '’', char(39))
         )), {tokenPattern:String})
       ) AS tokens
-      FROM snapchain.messages AS m FINAL
-      PREWHERE m.fid = account AND m.type = 1
-      WHERE m.timestamp BETWEEN {start:UInt32} AND {end:UInt32}
-        AND m.operation IN ('merge', 'prune') AND notEmpty(trimBoth(m.text))
-        AND m.hash NOT IN (
-          SELECT target_hash FROM snapchain.cast_removals FINAL
-          PREWHERE fid = account
-          WHERE operation = 'merge'
-        )
+      ${capturedCasts}
     )
     ARRAY JOIN arrayPushFront(tokens, '') AS word
-    GROUP BY word
+    GROUP BY bucket, word
+  ),
+  frequencies AS (
+    SELECT frame, word, sum(occurrences) AS occurrences
+    FROM bucket_counts
+    ARRAY JOIN arraySlice({frames:Array(UInt32)}, bucket) AS frame
+    GROUP BY frame, word
   ),
   candidates AS (
-    SELECT word, occurrences, multiIf(
+    SELECT frame, word, occurrences, multiIf(
       NOT match(word, '^[a-z]+$') OR word IN
         ('news','series','species','analytics','politics','economics','physics','mathematics',
          'athletics','gymnastics','diabetes','measles','thanks'), word,
@@ -82,15 +113,15 @@ WITH {fid:UInt64} AS account,
     ) AS singular
     FROM frequencies
   )
-SELECT entry.1 AS term, entry.2 AS occurrences
+SELECT frame, entry.1 AS term, entry.2 AS occurrences
 FROM (
-  SELECT if(countIf(word = singular) > 0,
+  SELECT frame, if(countIf(word = singular) > 0,
     [(singular, sum(occurrences))],
     groupArray((word, occurrences))) AS entries
   FROM candidates
-  GROUP BY singular
+  GROUP BY frame, singular
 )
 ARRAY JOIN entries AS entry
-ORDER BY (term = '') DESC, occurrences DESC, term
-LIMIT 61
+ORDER BY frame, (term = '') DESC, occurrences DESC, term
+LIMIT 61 BY frame
 `;

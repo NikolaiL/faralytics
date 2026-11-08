@@ -3,23 +3,19 @@ import { unstable_cache } from "next/cache";
 import { join } from "node:path";
 import sharp from "sharp";
 import { OgLogo } from "~~/components/OgLogo";
-import { cloudHeight, cloudWidth, packWords } from "~~/lib/word-cloud-layout";
+import { cloudHeight, cloudWidth, cloudWordColor, cloudWordSize, packWords } from "~~/lib/word-cloud-layout";
 import { readWordCloud } from "~~/lib/word-cloud-data";
 import { wordCloudPeriods, wordCloudRange, type WordCloudData, type WordCloudSelection } from "~~/lib/word-cloud";
 
-const purples = ["#b596f2", "#d1b7ff", "#aa84f3", "#9772d7", "#ede0ff"];
 const face = join(process.cwd(), "assets/fonts/FaralyticsOG-Bold.ttf");
 
 async function renderCloud(words: WordCloudData["words"], height: number) {
   const top = words[0]?.[1] || 1;
   const rasters = await Promise.all(
     words.slice(0, 52).map(async ([word, count], index) => {
-      const size = Math.min(
-        Math.floor(1350 / [...word].length),
-        Math.round(17 + (height < cloudHeight ? 68 : 85) * (count / top) ** 0.7),
-      );
+      const size = cloudWordSize(word, count, top, height);
       const safeWord = word.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-      const color = index === 0 ? "#d6ff3f" : purples[(index - 1) % purples.length];
+      const color = cloudWordColor(index);
       const raster = await sharp({
         text: {
           text: `<span foreground="${color}">${safeWord}</span>`,
