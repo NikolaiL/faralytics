@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { packWords, placeWord, cloudHeight, cloudWidth, type WordPlacement } from "../packages/nextjs/lib/word-cloud-layout.ts";
 import { wordCloudFrameEnds, wordCloudPath, wordCloudSelection } from "../packages/nextjs/lib/word-cloud.ts";
+import { fitMovingWord, interpolateWord, type WordPose } from "../packages/nextjs/lib/word-cloud-motion.ts";
 
 test("word cloud shares preserve a valid UTC cutoff and default to 30 days", () => {
   const now = 1794102007;
@@ -57,4 +58,16 @@ test("time machine starts with the first UTC day and ends at the exact cutoff", 
   assert.ok(frames.every((frame, index) => !index || frame > frames[index - 1]));
   assert.deepEqual(wordCloudFrameEnds(cutoff - 60, cutoff), [cutoff]);
   assert.deepEqual(wordCloudFrameEnds(cutoff, cutoff - 86400), []);
+});
+
+test("time machine interpolates a retained word's position, size and color", () => {
+  const first: WordPose = { x: 100, y: 100, width: 100, height: 40, angle: 0, opacity: 1, color: [80, 100, 120] };
+  const next: WordPose = { ...first, x: 200, width: 60, angle: Math.PI / 2, color: [100, 200, 220] };
+  const middle = interpolateWord(first, next, 0.5);
+  assert.deepEqual(middle, { ...first, x: 150, width: 80, angle: Math.PI / 4, color: [90, 150, 170] });
+  const obstacle = { x: 100, y: 100, halfWidth: 20, halfHeight: 20 };
+  const fit = fitMovingWord(middle, [obstacle]);
+  assert.ok(fit);
+  assert.ok(fit.pose.width < middle.width);
+  assert.ok(fit.bounds.x - fit.bounds.halfWidth >= obstacle.x + obstacle.halfWidth + 3);
 });

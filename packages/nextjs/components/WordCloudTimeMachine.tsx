@@ -2,55 +2,136 @@
 
 import { useEffect, useRef, useState } from "react";
 import { cloudHeight, cloudWidth, cloudWordColor, cloudWordSize, packWords } from "~~/lib/word-cloud-layout";
+import { blendWordColor, fitMovingWord, interpolateWord, type WordPose } from "~~/lib/word-cloud-motion";
 import type { WordCloudFrame } from "~~/lib/word-cloud";
 
 const date = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", dateStyle: "medium" });
 
+const referenceFontSize = 100;
+const timelineFont = `700 ${referenceFontSize}px Arial, sans-serif`;
+const basePurple = [133, 93, 205] as const;
+const animationMs = 800;
+
+type Ink = { width: number; height: number; bearing: number; ascent: number };
+type PaintedWord = { word: string; ink: Ink; pose: WordPose };
+
+function wordColor(rank: number, frequency: number): WordPose["color"] {
+  const rgb = Number.parseInt(cloudWordColor(rank).slice(1), 16);
+  const ranked = [rgb >> 16, (rgb >> 8) & 255, rgb & 255] as const;
+  return rank === 0 ? ranked : blendWordColor(basePurple, ranked, 0.5 + 0.5 * Math.sqrt(frequency));
+}
+
+function faded(pose: WordPose): WordPose {
+  return { ...pose, opacity: 0, width: pose.width * 0.65, height: pose.height * 0.65 };
+}
+
 function TimelineCloud({ words }: { words: WordCloudFrame["words"] }) {
   const canvas = useRef<HTMLCanvasElement>(null);
+  const visible = useRef(new Map<string, PaintedWord>());
+  const initialized = useRef(false);
+
   useEffect(() => {
     const context = canvas.current?.getContext("2d");
-    if (!context || !words.length) return;
-    context.clearRect(0, 0, cloudWidth, cloudHeight);
+    if (!context) return;
+    context.font = timelineFont;
     const measured = words.slice(0, 40).map(([word, count]) => {
       const fontSize = cloudWordSize(word, count, words[0][1]);
-      context.font = `700 ${fontSize}px Arial, sans-serif`;
       const metrics = context.measureText(word);
-      return {
-        word,
-        fontSize,
+      const ink = {
         bearing: metrics.actualBoundingBoxLeft,
         ascent: metrics.actualBoundingBoxAscent,
         width: Math.ceil(metrics.actualBoundingBoxLeft + metrics.actualBoundingBoxRight) + 2,
         height: Math.ceil(metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent) + 2,
       };
+      return {
+        word,
+        ink,
+        fontSize,
+        count,
+        width: Math.ceil((ink.width * fontSize) / referenceFontSize),
+        height: Math.ceil((ink.height * fontSize) / referenceFontSize),
+      };
     });
-    for (const { index, left, top, width, height, angle } of packWords(measured, cloudHeight)) {
-      const word = measured[index];
-      context.save();
-      context.translate(left + (angle ? width : 0), top);
-      if (angle) context.rotate(Math.PI / 2);
-      context.scale((angle ? height : width) / word.width, (angle ? width : height) / word.height);
-      context.font = `700 ${word.fontSize}px Arial, sans-serif`;
-      context.fillStyle = cloudWordColor(index);
-      context.fillText(word.word, word.bearing + 1, word.ascent + 1);
-      context.restore();
+    const next = packWords(measured, cloudHeight).map(({ index, left, top, width, height, angle }) => {
+      const { word, ink, count } = measured[index];
+      return {
+        word,
+        ink,
+        pose: {
+          x: left + width / 2,
+          y: top + height / 2,
+          width: angle ? height : width,
+          height: angle ? width : height,
+          angle: (angle * Math.PI) / 180,
+          opacity: 1,
+          color: wordColor(index, count / words[0][1]),
+        },
+      };
+    });
+    const incoming = new Set(next.map(({ word }) => word));
+    const movements = [
+      ...next.map((entry) => ({
+        ...entry,
+        from: visible.current.get(entry.word)?.pose ?? faded(entry.pose),
+      })),
+      ...Array.from(visible.current.values())
+        .filter((entry) => !incoming.has(entry.word))
+        .map((entry) => ({ ...entry, from: entry.pose, pose: faded(entry.pose) })),
+    ];
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const started = performance.now();
+    const duration = initialized.current ? animationMs : 0;
+    initialized.current = true;
+    let handle = 0;
+
+    function paint(now: number) {
+      if (!context) return;
+      const elapsed = duration && !motion.matches ? Math.min(1, (now - started) / duration) : 1;
+      const progress = elapsed * elapsed * (3 - 2 * elapsed);
+      const occupied: Parameters<typeof fitMovingWord>[1] = [];
+      const painted = new Map<string, PaintedWord>();
+      context.clearRect(0, 0, cloudWidth, cloudHeight);
+      for (const { word, ink, from, pose } of movements) {
+        const current = interpolateWord(from, pose, progress);
+        if (current.opacity < 0.01) continue;
+        const fitted = fitMovingWord(current, occupied);
+        if (!fitted || fitted.pose.opacity < 0.01) continue;
+        const { x, y, angle, width, height, opacity, color } = fitted.pose;
+        context.save();
+        context.translate(x, y);
+        context.rotate(angle);
+        context.scale(width / ink.width, height / ink.height);
+        context.globalAlpha = opacity;
+        context.fillStyle = `rgb(${color.join(",")})`;
+        context.fillText(word, ink.bearing + 1 - ink.width / 2, ink.ascent + 1 - ink.height / 2);
+        context.restore();
+        occupied.push(fitted.bounds);
+        painted.set(word, { word, ink, pose: fitted.pose });
+      }
+      visible.current = painted;
+      if (elapsed < 1) handle = requestAnimationFrame(paint);
     }
+
+    paint(started);
+    return () => cancelAnimationFrame(handle);
   }, [words]);
-  return words.length ? (
+
+  return (
     <canvas
       ref={canvas}
       className="word-cloud-time-frame"
       width={cloudWidth}
       height={cloudHeight}
       role="img"
-      aria-label={`Word cloud. Most used: ${words
-        .slice(0, 5)
-        .map(([word]) => word)
-        .join(", ")}`}
+      aria-label={
+        words.length
+          ? `Word cloud. Most used: ${words
+              .slice(0, 5)
+              .map(([word]) => word)
+              .join(", ")}`
+          : "No matching words yet."
+      }
     />
-  ) : (
-    <p className="timeline-empty">No matching words yet.</p>
   );
 }
 
@@ -121,7 +202,8 @@ export function WordCloudTimeMachine({ fid }: { fid: string }) {
       {frame && (
         <>
           <div className="word-cloud-time-canvas" data-testid="word-cloud-time-frame">
-            <TimelineCloud key={frame.at} words={frame.words} />
+            <TimelineCloud words={frame.words} />
+            {!frame.words.length && <p className="timeline-empty word-cloud-time-empty">No matching words yet.</p>}
           </div>
           <div className="word-cloud-time-controls">
             <div className="word-cloud-time-progress">
