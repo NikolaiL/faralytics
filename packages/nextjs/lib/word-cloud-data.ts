@@ -15,7 +15,7 @@ import {
 } from "~~/lib/word-cloud";
 import { wordCloudTokens } from "~~/lib/word-cloud-tokens";
 
-async function readWordCounts(fid: string, start: number, frames: number[]) {
+export async function readWordCounts(fid: string, start: number, frames: number[]) {
   const rows = await query<{ frame: number; term: string; occurrences: string | number }>(
     wordCloudSql,
     {

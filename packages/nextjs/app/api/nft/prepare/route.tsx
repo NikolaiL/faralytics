@@ -1,3 +1,6 @@
+import { YearReviewOg } from "~~/components/YearReviewOg";
+import { yearReviewEnd, yearReviewPath, yearReviewSections, yearReviewYear } from "~~/lib/year-review";
+import { readYearReview, yearReviewAvailable, yearReviewPublished } from "~~/lib/year-review-data";
 import { wordCloudPath, wordCloudPeriods, wordCloudSelection } from "~~/lib/word-cloud";
 import { prepareWordCloudArtwork } from "~~/lib/word-cloud-artwork";
 import { resolveAccount } from "~~/lib/data";
@@ -25,17 +28,22 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 export const POST = withErrorReporting("/api/nft/prepare", async (request) => {
   try {
-    if (!process.env.PINATA_JWT || !process.env.PINATA_API_SECRET)
-      return Response.json({ error: "NFT storage is not configured." }, { status: 503 });
     const text = await request.text();
     if (text.length > 2048) return Response.json({ error: "Request too large." }, { status: 413 });
     const input = JSON.parse(text);
+    const isYearReview = input?.kind === "year-review";
+    if (isYearReview && !yearReviewAvailable()) throw new InputError("Review not found.", 404);
+    const previewOnly = isYearReview && !yearReviewPublished();
+    if (!previewOnly && (!process.env.PINATA_JWT || !process.env.PINATA_API_SECRET))
+      return Response.json({ error: "NFT storage is not configured." }, { status: 503 });
     const { artwork, metadata } = await prepareSnapshot(input);
     const response = new ImageResponse(artwork, { width: 1200, height: 800, fonts: OG_FONTS });
     const image = await sharp(Buffer.from(await response.arrayBuffer()))
       .png({ palette: true, colors: 256, effort: 6 })
       .toBuffer();
     if (image.length > 262_144) throw new Error("NFT image exceeds the immutable raw-block size limit.");
+    if (previewOnly)
+      return Response.json({ imageBase64: image.toString("base64") }, { headers: { "Cache-Control": "no-store" } });
     const imageURI = `ipfs://${await contentCID(image)}`;
     const metadataJSON = JSON.stringify({ ...metadata, image: imageURI });
     const metadataURI = `ipfs://${await contentCID(Buffer.from(metadataJSON))}`;
@@ -59,6 +67,8 @@ export const POST = withErrorReporting("/api/nft/prepare", async (request) => {
 
 function prepareSnapshot(input: Record<string, unknown> | null) {
   switch (input?.kind) {
+    case "year-review":
+      return prepareYearReview(input);
     case "word-cloud":
       return prepareWordCloud(input);
     case "interactions":
@@ -261,6 +271,36 @@ async function prepareWordCloud(input: { user?: unknown; period?: unknown; at?: 
         { trait_type: "Snapshot through", value: new Date(Number(selection.at) * 1000).toISOString() },
       ],
       properties: { wordCloud: data },
+    },
+  };
+}
+
+async function prepareYearReview(input: { user?: unknown; end?: unknown }) {
+  if (typeof input.user !== "string" || typeof input.end !== "string")
+    throw new InputError("Choose a Farcaster account and a review date.");
+  const end = yearReviewEnd(input.end);
+  const fid = await resolveAccount(input.user);
+  const data = await readYearReview(fid, end);
+  const sections = yearReviewSections(data);
+  if (!sections.some((section) => section.stats.some(([, count]) => count > 0)))
+    throw new InputError("This account has no captured activity in the selected year.");
+  const avatar = await nftAvatar(data.profile.pfp_url);
+  const label = data.profile.username ? `@${data.profile.username}` : `FID ${fid}`;
+  return {
+    artwork: <YearReviewOg data={data} avatar={avatar} />,
+    metadata: {
+      name: `Faralytics · ${yearReviewYear} in Review · ${label}`,
+      description: `Captured Farcaster activity through ${end} UTC, including casts, received engagement, follows and most-used words.`,
+      external_url: `https://faralytics.vercel.app${yearReviewPath(fid, end)}`,
+      attributes: [
+        { trait_type: "FID", value: fid },
+        { trait_type: "Year", value: Number(yearReviewYear) },
+        { trait_type: "Through", value: end },
+        ...sections
+          .slice(0, 3)
+          .flatMap((section) => section.stats.map(([trait_type, value]) => ({ trait_type, value }))),
+      ],
+      properties: { yearReview: data },
     },
   };
 }

@@ -50,7 +50,8 @@ type SnapshotMint =
   | { kind: "followers"; fids: string; end: string }
   | { kind: "follow-timeline"; actor?: string; target?: string }
   | { kind: "interactions"; user: string; period: InteractionPeriod; metric: InteractionMetric }
-  | ({ kind: "word-cloud"; user: string } & WordCloudSelection);
+  | ({ kind: "word-cloud"; user: string } & WordCloudSelection)
+  | { kind: "year-review"; user: string; end: string };
 type MintInput = { user: string; period: string; end: string } | SnapshotMint;
 type ActionsProps = ({ activity: Activity; snapshot?: never } | { snapshot: SnapshotMint; activity?: never }) & {
   disabled?: boolean;
@@ -59,6 +60,7 @@ const mintLabels = {
   friendship: "Mint Friendship NFT",
   interactions: "Mint Top Interactions NFT",
   "word-cloud": "Mint Word Cloud NFT",
+  "year-review": "Mint full recap NFT",
   followers: "Mint Followers NFT",
   "follow-timeline": "Mint Follow Timeline NFT",
 };

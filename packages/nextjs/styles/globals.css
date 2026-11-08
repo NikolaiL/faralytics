@@ -115,3 +115,21 @@
 .word-cloud-time-caption{justify-content:space-between;flex-wrap:wrap;margin:10px 0 6px}
 .word-cloud-time-caption strong{color:var(--accent)}
 .word-cloud-time-empty{position:absolute;inset:0;display:grid;place-items:center;margin:0}
+
+.year-review-badge,.year-review-meta{color:var(--muted);font-size:12px}
+.year-review-badge{padding:7px 11px;border:1px solid var(--border);border-radius:20px}
+.year-review-panel{margin-top:20px;padding:clamp(16px,4vw,32px);border:1px solid var(--border);border-radius:18px;background:linear-gradient(155deg,#231932,#15101c 56%)}
+.year-review-meta,.year-review-pager,.year-review-pager>div{display:flex;align-items:center;gap:6px}
+.year-review-meta,.year-review-pager{justify-content:space-between}
+.year-review-panel h2{font-size:clamp(23px,5vw,40px);letter-spacing:-.03em;margin:12px 0 6px}
+.year-review-panel p{font-size:13px;color:var(--muted);line-height:1.5}
+.year-review-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:22px 0;min-height:200px}
+.year-review-stats>div{display:flex;flex-direction:column-reverse;justify-content:center;gap:6px;min-width:0;min-height:95px;padding:12px;border:1px solid var(--border);border-radius:12px;background:#17111f}
+.year-review-stats dt{font-size:12px;color:#d1b7e6;overflow-wrap:anywhere}
+.year-review-stats dd{margin:0;font-size:clamp(21px,5vw,40px);color:var(--accent)}
+.year-review-pager button,.year-review-nft button{min-height:44px;padding:8px 10px;border:1px solid #4c3a5e;border-radius:9px;background:#21182b;color:#ede0ff;font-size:12px;white-space:nowrap}
+.year-review-pager button[aria-current=page]{color:var(--accent);border-color:#855dcd}
+.year-review-nft{margin-top:20px}
+.year-review-nft button{color:var(--accent)}
+.year-review-artwork{display:block;width:100%;height:auto;margin-top:12px;border:1px solid var(--border);border-radius:12px}
+@media(max-width:570px){.year-review-stats{grid-template-columns:repeat(2,minmax(0,1fr));min-height:240px}.year-review-pager button{padding-inline:7px}.year-review-pager,.year-review-pager>div{gap:4px}}
