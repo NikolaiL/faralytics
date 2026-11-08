@@ -107,6 +107,38 @@
           "test_id": "tab-follow-timeline"
         }
       ]
+    },
+    {
+      "name": "word-cloud-lookup",
+      "path": "/word-cloud",
+      "viewport": "mobile",
+      "steps": [
+        {
+          "probe": "/api/word-cloud?user=366713&period=30",
+          "expect": 200
+        },
+        {
+          "action": "fill",
+          "test_id": "word-cloud-account-input",
+          "value": "366713"
+        },
+        {
+          "action": "click",
+          "test_id": "word-cloud-account-submit"
+        },
+        {
+          "assert": "visible",
+          "test_id": "word-cloud-image"
+        },
+        {
+          "assert": "visible",
+          "test_id": "mint-nft"
+        },
+        {
+          "assert": "fits",
+          "test_id": "tab-word-cloud"
+        }
+      ]
     }
   ]
 }

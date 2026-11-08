@@ -4,6 +4,8 @@ import { friendshipLabels, friendshipPeriods } from "~~/lib/friendship";
 import type { loadFriendship } from "~~/lib/friendship-data";
 import { OgLogo } from "./OgLogo";
 
+const timelineCenter = 536;
+const bubbleGap = 105;
 const colors = ["#b596f2", "#82b7ff"];
 
 export function FriendshipOg({
@@ -119,18 +121,25 @@ export function FriendshipOg({
       </div>
       <div style={{ display: "flex", position: "relative", height: timelineHeight, margin: "8px 0" }}>
         {events.length > 0 && (
-          <svg width={1072} height={timelineHeight} style={{ position: "absolute", top: 0, left: 0 }}>
-            <line x1={536} x2={536} y1={4} y2={timelineHeight - 4} stroke="#41344f" strokeWidth={2} />
+          <svg width={timelineCenter * 2} height={timelineHeight} style={{ position: "absolute", top: 0, left: 0 }}>
+            <line
+              x1={timelineCenter}
+              x2={timelineCenter}
+              y1={4}
+              y2={timelineHeight - 4}
+              stroke="#41344f"
+              strokeWidth={2}
+            />
             {events.map((event, index) => {
               const actor = event.actor === data.profiles[0].fid ? 0 : 1;
-              const x = actor === 0 ? 493 : 579;
-              const midX = (536 + x) / 2;
+              const x = timelineCenter + (actor === 0 ? -bubbleGap : bubbleGap);
+              const midX = (timelineCenter + x) / 2;
               const startY = dotY(event.ts);
               const endY = bubbleY(index);
               return (
                 <path
                   key={event.hash}
-                  d={`M 536 ${startY} C ${midX} ${startY}, ${midX} ${endY}, ${x} ${endY}`}
+                  d={`M ${timelineCenter} ${startY} C ${midX} ${startY}, ${midX} ${endY}, ${x} ${endY}`}
                   fill="none"
                   stroke={colors[actor]}
                   strokeWidth={1}
@@ -140,7 +149,7 @@ export function FriendshipOg({
             {events.map((event) => (
               <circle
                 key={event.hash}
-                cx={536}
+                cx={timelineCenter}
                 cy={dotY(event.ts)}
                 r={5}
                 fill={colors[event.actor === data.profiles[0].fid ? 0 : 1]}
@@ -168,7 +177,7 @@ export function FriendshipOg({
                 style={{
                   display: "flex",
                   position: "absolute",
-                  ...(actor === 0 ? { right: 579 } : { left: 579 }),
+                  ...(actor === 0 ? { right: timelineCenter + bubbleGap } : { left: timelineCenter + bubbleGap }),
                   flexDirection: actor === 0 ? "row-reverse" : "row",
 
                   height: bubbleHeight,

@@ -4,7 +4,7 @@ export function AppNavigation({
   fids = [],
   end,
 }: {
-  active: "activity" | "followers" | "follow-timeline" | "friendship";
+  active: "activity" | "followers" | "follow-timeline" | "friendship" | "word-cloud";
   fids?: string[];
   end?: string;
 }) {
@@ -53,7 +53,8 @@ export function AppNavigation({
           <circle cx="7" cy="6" r="2" />
           <circle cx="7" cy="18" r="2" />
         </svg>
-        Follow timeline
+        <span className="navigation-wide-label">Follow timeline</span>
+        <span className="navigation-short-label">Timeline</span>
       </Link>
       <Link
         href={friendship.size ? `/friendship?${friendship}` : "/friendship"}
@@ -64,6 +65,16 @@ export function AppNavigation({
           <path d="M12 20S3 14.5 3 8.8A4.4 4.4 0 0 1 12 7a4.4 4.4 0 0 1 9 1.8C21 14.5 12 20 12 20Z" />
         </svg>
         Friendship
+      </Link>
+      <Link
+        href={fids[0] ? `/word-cloud?user=${fids[0]}` : "/word-cloud"}
+        aria-current={active === "word-cloud" ? "page" : undefined}
+        data-testid="tab-word-cloud"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+          <path d="M7 17h10a4 4 0 0 0 .5-8 5.5 5.5 0 0 0-10.4 1A3.5 3.5 0 0 0 7 17Z" />
+        </svg>
+        Word Cloud
       </Link>
     </nav>
   );

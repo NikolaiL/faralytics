@@ -10,3 +10,9 @@ test("lookup input rejects unsupported tools, duplicate/invalid accounts, unboun
  const followers=parseLookup({...lookup,tool:"followers",period:"all",fids:Array.from({length:10},(_,i)=>String(i+1))});assert.equal(followers.fids.length,10);
  assert.throws(()=>parseLookup({...lookup,tool:"followers",period:"all",fids:Array.from({length:11},(_,i)=>String(i+1))}));
 });
+test("friendship records an ordered pair under its own tool", () => {
+  const pair = { ...lookup, tool: "friendship", period: "all", fids: ["366713", "268438"] };
+  assert.equal(parseLookup(pair).tool, "friendship");
+  assert.deepEqual(parseLookup(pair).fids, pair.fids);
+  assert.throws(() => parseLookup({ ...pair, fids: pair.fids.slice(0, 1) }));
+});

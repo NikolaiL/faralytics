@@ -15,6 +15,7 @@ export function AccountSearch({
   onShowMe,
   searchId = "lookup",
   label = "Username or FID",
+  placeholder = "Username or FID",
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -26,6 +27,7 @@ export function AccountSearch({
   onShowMe?: () => void;
   searchId?: string;
   label?: string;
+  placeholder?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [results, setResults] = useState<SearchProfile[]>([]);
@@ -149,7 +151,7 @@ export function AccountSearch({
           aria-expanded={open}
           aria-controls={`${searchId}-results`}
           aria-activedescendant={open && active >= 0 && results[active] ? `${searchId}-result-${active}` : undefined}
-          placeholder="Username or FID"
+          placeholder={placeholder}
           autoComplete="off"
           autoCapitalize="none"
           spellCheck={false}
@@ -198,7 +200,7 @@ export function AccountSearch({
               onShowMe();
             }}
           >
-            {busy ? "Looking up…" : "Show me"}
+            {busy ? "Looking up…" : "Me"}
             <span aria-hidden="true">↗</span>
           </button>
         ) : (

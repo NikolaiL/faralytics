@@ -1,3 +1,8 @@
+import { wordCloudPath, wordCloudPeriods, wordCloudSelection } from "~~/lib/word-cloud";
+import { prepareWordCloudArtwork } from "~~/lib/word-cloud-artwork";
+import { resolveAccount } from "~~/lib/data";
+import { interactionMetrics, interactionSelection } from "~~/lib/interaction-ranking";
+import { prepareRankingArtwork } from "~~/lib/interaction-ranking-artwork";
 import { FollowersOg } from "~~/components/FollowersOg";
 import { TimelineOg } from "~~/components/TimelineOg";
 import { loadFollowers } from "~~/lib/follower-data";
@@ -54,6 +59,10 @@ export const POST = withErrorReporting("/api/nft/prepare", async (request) => {
 
 function prepareSnapshot(input: Record<string, unknown> | null) {
   switch (input?.kind) {
+    case "word-cloud":
+      return prepareWordCloud(input);
+    case "interactions":
+      return prepareInteractions(input);
     case "friendship":
       return prepareFriendship(input);
     case "followers":
@@ -201,6 +210,57 @@ async function prepareTimeline(input: { actor?: unknown; target?: unknown }) {
         { trait_type: "Captured at", value: generatedAt },
       ],
       properties: { timeline: data },
+    },
+  };
+}
+
+async function prepareInteractions(input: { user?: unknown; period?: unknown; metric?: unknown }) {
+  const { period, metric } = interactionSelection(input.period, input.metric);
+  if (typeof input.user !== "string" || period !== input.period || metric !== input.metric)
+    throw new InputError("Choose an account, period, and ranking mode.");
+  const fid = await resolveAccount(input.user);
+  const { artwork, profile, rows, label } = await prepareRankingArtwork(fid, period, metric, 800);
+  const capturedAt = new Date().toISOString();
+  const params = new URLSearchParams({ user: fid, period, metric, ts: String(Date.parse(capturedAt)) });
+  return {
+    artwork,
+    metadata: {
+      name: `Faralytics Top Interactions · ${profile.username ? "@" + profile.username : "FID " + fid}`,
+      description: `Top captured Farcaster interactions ranked by ${interactionMetrics[metric].toLowerCase()} · ${label}.`,
+      external_url: `https://faralytics.vercel.app/interactions?${params}`,
+      attributes: [
+        { trait_type: "Type", value: "Top Interactions" },
+        { trait_type: "FID", value: fid },
+        { trait_type: "Period", value: label },
+        { trait_type: "Ranked by", value: interactionMetrics[metric] },
+        { trait_type: "Captured at", value: capturedAt },
+      ],
+      properties: { interactions: { profile, period, metric, rows } },
+    },
+  };
+}
+
+async function prepareWordCloud(input: { user?: unknown; period?: unknown; at?: unknown }) {
+  if (typeof input.user !== "string") throw new InputError("Choose a word cloud account.");
+  const selection = wordCloudSelection(input.period, input.at);
+  if (selection.period !== input.period || selection.at !== input.at)
+    throw new InputError("Choose a valid word cloud period and snapshot time.");
+  const fid = await resolveAccount(input.user);
+  const { artwork, data, label } = await prepareWordCloudArtwork(fid, selection);
+  if (!data.words.length) throw new InputError("This word cloud has no words to mint.");
+  return {
+    artwork,
+    metadata: {
+      name: `Faralytics · Word Cloud · ${label}`,
+      description: `Most-used words in captured Farcaster casts and replies · ${wordCloudPeriods[selection.period]}.`,
+      external_url: `https://faralytics.vercel.app${wordCloudPath(fid, selection)}`,
+      attributes: [
+        { trait_type: "FID", value: fid },
+        { trait_type: "Period", value: wordCloudPeriods[selection.period] },
+        { trait_type: "Captured casts with text", value: data.casts },
+        { trait_type: "Snapshot through", value: new Date(Number(selection.at) * 1000).toISOString() },
+      ],
+      properties: { wordCloud: data },
     },
   };
 }

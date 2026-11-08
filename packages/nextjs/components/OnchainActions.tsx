@@ -13,6 +13,8 @@ import { useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 import deployedContracts from "~~/contracts/deployedContracts";
 import externalContracts, { TREASURY } from "~~/contracts/externalContracts";
 import type { Activity } from "~~/lib/activity";
+import type { WordCloudSelection } from "~~/lib/word-cloud";
+import type { InteractionMetric, InteractionPeriod } from "~~/lib/interaction-ranking";
 import type { PreparedNFT } from "~~/lib/ipfs";
 import { waitForConfirmation } from "~~/lib/transactions";
 import { celebrateTransaction } from "~~/lib/confetti";
@@ -46,13 +48,17 @@ type PendingNFT = { package: PreparedNFT; transactionHash: `0x${string}`; tokenI
 type SnapshotMint =
   | { kind: "friendship"; first: string; second: string; ts?: string }
   | { kind: "followers"; fids: string; end: string }
-  | { kind: "follow-timeline"; actor?: string; target?: string };
+  | { kind: "follow-timeline"; actor?: string; target?: string }
+  | { kind: "interactions"; user: string; period: InteractionPeriod; metric: InteractionMetric }
+  | ({ kind: "word-cloud"; user: string } & WordCloudSelection);
 type MintInput = { user: string; period: string; end: string } | SnapshotMint;
 type ActionsProps = ({ activity: Activity; snapshot?: never } | { snapshot: SnapshotMint; activity?: never }) & {
   disabled?: boolean;
 };
 const mintLabels = {
   friendship: "Mint Friendship NFT",
+  interactions: "Mint Top Interactions NFT",
+  "word-cloud": "Mint Word Cloud NFT",
   followers: "Mint Followers NFT",
   "follow-timeline": "Mint Follow Timeline NFT",
 };

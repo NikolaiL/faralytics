@@ -1,6 +1,13 @@
 import { validFid } from "./activity.ts";
 
-export const LOOKUP_TOOLS = { activity: 2, followers: 10, "follow-timeline": 2 } as const;
+export const LOOKUP_TOOLS = {
+  activity: 2,
+  followers: 10,
+  "follow-timeline": 2,
+  friendship: 2,
+  interactions: 1,
+  "word-cloud": 1,
+} as const;
 export type LookupTool = keyof typeof LOOKUP_TOOLS;
 export const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export function parseLookup(value: unknown) {
@@ -13,13 +20,18 @@ export function parseLookup(value: unknown) {
     !Array.isArray(body.fids) ||
     !body.fids.length ||
     body.fids.length > LOOKUP_TOOLS[tool] ||
+    (tool === "friendship" && body.fids.length !== 2) ||
     body.fids.some((fid) => typeof fid !== "string" || !validFid(fid)) ||
     new Set(body.fids).size !== body.fids.length
   )
     throw new Error("Invalid viewed FIDs.");
   if (
     typeof body.period !== "string" ||
-    (tool !== "activity" ? body.period !== "all" : !/^(365|20\d{2})$/.test(body.period))
+    (tool === "activity"
+      ? !/^(365|20\d{2})$/.test(body.period)
+      : tool === "word-cloud"
+        ? !/^(7|30|365|all)$/.test(body.period)
+        : body.period !== "all")
   )
     throw new Error("Invalid period.");
   if (

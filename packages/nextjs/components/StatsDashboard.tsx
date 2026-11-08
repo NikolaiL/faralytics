@@ -17,7 +17,12 @@ const relativeTime = (value: string, now: number) => {
           : [Math.floor(seconds / 86400), "day"];
   return `${amount} ${unit}${amount === 1 ? "" : "s"} ago`;
 };
-const toolName = (tool: string) => tool.replace(/[-_]/g, " ").replace(/^./, (character) => character.toUpperCase());
+const toolName = (tool: string) =>
+  tool === "follow-timeline"
+    ? "Follow Timeline"
+    : tool === "word-cloud"
+      ? "Word Cloud"
+      : tool.replace(/[-_]/g, " ").replace(/^./, (character) => character.toUpperCase());
 export function StatsDashboard() {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -64,7 +69,7 @@ export function StatsDashboard() {
       document.removeEventListener("visibilitychange", visible);
     };
   }, []);
-  function profile(fid: string, tool = "activity") {
+  function profile(fid: string, tool = "activity", pair: string[] = []) {
     const account = data?.profiles.find((profile) => profile.fid === fid);
     const label = account?.username ? `@${account.username}` : account?.display_name || `FID ${fid}`;
     return (
@@ -75,7 +80,13 @@ export function StatsDashboard() {
             ? `/followers?fids=${fid}`
             : tool === "follow-timeline"
               ? `/follow-timeline?target=${fid}`
-              : `/?user=${fid}`
+              : tool === "friendship" && pair.length === 2
+                ? `/friendship?first=${pair[0]}&second=${pair[1]}`
+                : tool === "interactions"
+                  ? `/interactions?user=${fid}`
+                  : tool === "word-cloud"
+                    ? `/word-cloud?user=${fid}`
+                    : `/?user=${fid}`
         }
       >
         <span>{account?.username || account?.display_name ? label : <NumberText>{label}</NumberText>}</span>
@@ -233,7 +244,7 @@ export function StatsDashboard() {
                         <td data-label="Viewed accounts">
                           <div className="stats-viewed">
                             {row.fids.map((fid) => (
-                              <div key={fid}>{profile(fid, row.tool)}</div>
+                              <div key={fid}>{profile(fid, row.tool, row.fids)}</div>
                             ))}
                             {Number(row.accountCount) > row.fids.length && (
                               <span>
@@ -244,7 +255,7 @@ export function StatsDashboard() {
                         </td>
                         <td>
                           <span
-                            className={`stats-tool ${row.tool === "activity" ? "tool-activity" : row.tool === "followers" ? "tool-followers" : ""}`}
+                            className={`stats-tool ${row.tool === "friendship" ? "tool-friendship" : row.tool === "activity" ? "tool-activity" : row.tool === "followers" ? "tool-followers" : ""}`}
                           >
                             {toolName(row.tool)}
                           </span>

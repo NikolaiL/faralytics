@@ -4,13 +4,15 @@ import { sdk } from "@farcaster/miniapp-sdk";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useLookupLog } from "~~/hooks/useLookupLog";
 import { PURPLES, type Profile } from "~~/lib/activity";
 import { LOGO_PIXELS } from "~~/lib/brand";
 import { friendshipLabels, friendshipPeriods, type FriendshipPage } from "~~/lib/friendship";
+import { interactionSelection } from "~~/lib/interaction-ranking";
+import { EmbeddedInteractionRanking } from "./InteractionExplorer";
 import { AccountSearch } from "./AccountSearch";
 import { AddMiniappButton } from "./AddMiniappButton";
 import { AppNavigation } from "./AppNavigation";
-import { AvatarImage } from "./AvatarImage";
 import { useMiniapp } from "./MiniappProvider";
 import { NumberText } from "./NumberText";
 import { TimelineTime } from "./TimelineTime";
@@ -22,23 +24,6 @@ import { formatShareText, shareCredit, type ShareTarget } from "~~/lib/share-cre
 const OnchainActions = dynamic(() => import("./OnchainActions"), { ssr: false });
 
 const name = (profile: Profile) => (profile.username ? `@${profile.username}` : `FID ${profile.fid}`);
-
-function Account({ profile, trailing = false }: { profile: Profile; trailing?: boolean }) {
-  return (
-    <a
-      className={`timeline-account${trailing ? " is-target" : ""}`}
-      href={`https://farcaster.xyz/~/profiles/${profile.fid}`}
-      target="_blank"
-      rel="noreferrer"
-    >
-      <span className="result-avatar timeline-avatar" aria-hidden="true">
-        {(profile.username || "fc").slice(0, 2)}
-        <AvatarImage source={profile.pfp_url} size={40} />
-      </span>
-      <span>{name(profile)}</span>
-    </a>
-  );
-}
 
 function FriendshipResults({
   first,
@@ -57,6 +42,16 @@ function FriendshipResults({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [now, setNow] = useState(() => Date.now());
+  useLookupLog(
+    data
+      ? {
+          tool: "friendship",
+          fids: [first, second],
+          period: "all",
+          end: new Date(Number(ts) || now).toISOString().slice(0, 10),
+        }
+      : null,
+  );
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -104,13 +99,6 @@ function FriendshipResults({
   return (
     <>
       <section className="timeline-feed" aria-label="Friendship timeline" aria-busy={loading}>
-        {data && (
-          <div className="friendship-timeline-header">
-            <Account profile={data.profiles[0]} />
-            <h2>Friendship</h2>
-            <Account profile={data.profiles[1]} trailing />
-          </div>
-        )}
         {error && (
           <div className="timeline-error" role="alert">
             <span>{error}</span>
@@ -269,6 +257,8 @@ export function Friendship({
   const [selected, setSelected] = useState({ first: initialFirst, second: initialSecond });
   const [draft, setDraft] = useState(selected);
   const [attempt, setAttempt] = useState({ first: 0, second: 0 });
+  const [rankingFilters, setRankingFilters] = useState(() => interactionSelection(undefined, undefined));
+  const [rankingShareSlot, setRankingShareSlot] = useState<HTMLDivElement | null>(null);
   const first = useSelectedProfile(selected.first, attempt.first);
   const second = useSelectedProfile(selected.second, attempt.second);
   async function share(target: ShareTarget) {
@@ -333,12 +323,16 @@ export function Friendship({
           </span>
           faralytics<span className="wordmark-dot">.</span>
         </Link>
-        <ShareActions
-          placement="header"
-          heading="a friendship worth sharing:"
-          disabled={!first?.profile || !second?.profile || first.profile.fid === second.profile.fid}
-          onShare={share}
-        />
+        {(first?.profile && !selected.second) || (second?.profile && !selected.first) ? (
+          <div ref={setRankingShareSlot} style={{ display: "contents" }} />
+        ) : (
+          <ShareActions
+            placement="header"
+            heading="a friendship worth sharing:"
+            disabled={!first?.profile || !second?.profile || first.profile.fid === second.profile.fid}
+            onShare={share}
+          />
+        )}
       </header>
       {shareError && (
         <p className="notice" role="status">
@@ -353,30 +347,31 @@ export function Friendship({
         </h1>
         <p>See how two accounts have interacted on Farcaster.</p>
       </section>
-      <div className="timeline-filters">
+      <div className="friendship-timeline-header">
         {(["first", "second"] as const).map((field, index) => {
           const label = `Account ${index + 1}`;
           const searchId = `friendship-${field}`;
           const lookup = field === "first" ? first : second;
+          const other = field === "first" ? "second" : "first";
+          const otherProfile = field === "first" ? second?.profile : first?.profile;
+          const canSelectMe = isMiniApp && fid && selected[other] !== fid && otherProfile?.fid !== fid;
           const committed = !!selected[field] && draft[field] === selected[field];
           const profile = committed ? lookup?.profile : undefined;
           const value = profile?.username ? name(profile) : draft[field];
           return (
             <form
               key={field}
-              className="search-form"
+              className={`search-form friendship-account-${field}`}
               aria-label={label}
               onSubmit={(event) => {
                 event.preventDefault();
                 if (!profile && draft[field].trim()) apply(field, draft[field]);
               }}
             >
-              <div className="timeline-filter-label">
-                <label htmlFor={`${searchId}-input`}>{label}</label>
-              </div>
               <AccountSearch
                 searchId={searchId}
                 label={`${label} username or FID`}
+                placeholder={label}
                 value={value}
                 busy={committed && !lookup}
                 resolved={!!profile}
@@ -384,7 +379,7 @@ export function Friendship({
                 onChange={(value) => setDraft((previous) => ({ ...previous, [field]: value }))}
                 onSelect={(value) => apply(field, value)}
                 onReset={() => apply(field, "")}
-                onShowMe={isMiniApp && fid ? () => apply(field, fid) : undefined}
+                onShowMe={canSelectMe ? () => apply(field, fid) : undefined}
               />
               {committed && lookup?.error && (
                 <p className="timeline-note" role="alert">
@@ -403,8 +398,28 @@ export function Friendship({
           ts={ts}
           onShare={share}
         />
+      ) : first?.profile && !selected.second ? (
+        <EmbeddedInteractionRanking
+          key={`first:${first.profile.fid}`}
+          user={first.profile.fid}
+          side="first"
+          shareSlot={rankingShareSlot}
+          selection={rankingFilters}
+          onSelectionChange={setRankingFilters}
+          onSelect={(fid) => apply("second", fid)}
+        />
+      ) : second?.profile && !selected.first ? (
+        <EmbeddedInteractionRanking
+          key={`second:${second.profile.fid}`}
+          user={second.profile.fid}
+          side="second"
+          shareSlot={rankingShareSlot}
+          selection={rankingFilters}
+          onSelectionChange={setRankingFilters}
+          onSelect={(fid) => apply("first", fid)}
+        />
       ) : (
-        <p className="empty-note">Choose two accounts to see their interactions.</p>
+        <p className="empty-note">Choose one account for rankings or two for a Friendship timeline.</p>
       )}
       <footer>
         <AddMiniappButton meaningfulInteraction={meaningful} />
