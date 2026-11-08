@@ -4,8 +4,14 @@ import { join } from "node:path";
 import sharp from "sharp";
 import { OgLogo } from "~~/components/OgLogo";
 import { cloudHeight, cloudWidth, cloudWordColor, cloudWordSize, packWords } from "~~/lib/word-cloud-layout";
-import { readWordCloud } from "~~/lib/word-cloud-data";
-import { wordCloudPeriods, wordCloudRange, type WordCloudData, type WordCloudSelection } from "~~/lib/word-cloud";
+import { readGlobalWordCloud, readWordCloud } from "~~/lib/word-cloud-data";
+import {
+  wordCloudPeriods,
+  wordCloudRange,
+  type GlobalWordCloudSelection,
+  type WordCloudData,
+  type WordCloudSelection,
+} from "~~/lib/word-cloud";
 
 const face = join(process.cwd(), "assets/fonts/FaralyticsOG-Bold.ttf");
 
@@ -61,6 +67,17 @@ export const readWordCloudPng = unstable_cache(
   ["word-cloud-png-v2"],
   { revalidate: 300 },
 );
+
+const renderGlobalWordCloudPng = unstable_cache(
+  async (words: WordCloudData["words"]) => (await renderCloud(words, cloudHeight)).toString("base64"),
+  ["global-word-cloud-png-v1"],
+  { revalidate: 3600 },
+);
+
+export async function readGlobalWordCloudPng(selection: GlobalWordCloudSelection) {
+  const { words } = await readGlobalWordCloud(selection);
+  return renderGlobalWordCloudPng(words);
+}
 
 export async function prepareWordCloudArtwork(fid: string, selection: WordCloudSelection, height = 800) {
   const data = await readWordCloud(fid, selection);

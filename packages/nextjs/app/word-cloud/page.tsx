@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { WordCloudExplorer } from "~~/components/WordCloudExplorer";
-import { wordCloudPath, wordCloudPeriods, wordCloudSelection } from "~~/lib/word-cloud";
+import { globalWordCloudSelection, wordCloudPath, wordCloudPeriods, wordCloudSelection } from "~~/lib/word-cloud";
 
 type PageProps = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 const title = "Word Cloud — Faralytics";
@@ -47,11 +47,13 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
 
 export default async function WordCloudPage({ searchParams }: PageProps) {
   const { user, period, at } = await searchParams;
+  const initialUser = typeof user === "string" ? user.slice(0, 64) : "";
   return (
     <WordCloudExplorer
       key={JSON.stringify([user, period, at])}
-      initialUser={typeof user === "string" ? user.slice(0, 64) : ""}
-      initialSelection={wordCloudSelection(period, at)}
+      initialUser={initialUser}
+      initialSelection={wordCloudSelection(initialUser ? period : undefined, at)}
+      initialGlobalPeriod={globalWordCloudSelection(initialUser ? undefined : period).period}
     />
   );
 }

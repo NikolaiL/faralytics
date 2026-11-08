@@ -9,9 +9,7 @@ export type InteractionRanking = {
   rankings: Record<InteractionPeriod, Record<InteractionMetric, InteractionRank[]>>;
 };
 
-export const interactionRankingSql = `
-WITH {fid:UInt64} AS account,
-  toUnixTimestamp(now('UTC')) AS cutoff,
+export const interactionEventsSql = `
   events AS (
     SELECT arrayJoin(if(type = 1,
       arrayDistinct(arrayConcat(mentions, if(parent_fid != 0 AND notEmpty(parent_hash), [parent_fid], []))),
@@ -32,7 +30,12 @@ WITH {fid:UInt64} AS account,
     FROM snapchain.messages
     PREWHERE type = 1 AND has(mentions, account)
     WHERE operation != 'block_observed'
-  )
+  )`;
+
+export const interactionRankingSql = `
+WITH {fid:UInt64} AS account,
+  toUnixTimestamp(now('UTC')) AS cutoff,
+  ${interactionEventsSql}
 SELECT period, metric, fid, sent, received, total, least(sent, received) AS mutual
 FROM (
 SELECT period, toString(peer) AS fid,

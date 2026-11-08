@@ -20,7 +20,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
       origin,
     );
     const image = new URL(`/api/og/year-in-review/farcaster.png${url.search}`, origin).toString();
-    const description = "Four chapters of captured Farcaster activity in the New Year Edition.";
+    const description = "Five chapters of captured Farcaster activity in the New Year Edition.";
     return {
       ...metadata,
       description,

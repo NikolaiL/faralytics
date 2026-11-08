@@ -2,8 +2,8 @@ import { ImageResponse } from "next/og";
 import { InputError } from "~~/lib/activity";
 import { resolveAccount } from "~~/lib/data";
 import { OG_FONTS } from "~~/lib/og-fonts";
-import { wordCloudSelection } from "~~/lib/word-cloud";
-import { prepareWordCloudArtwork, readWordCloudPng } from "~~/lib/word-cloud-artwork";
+import { globalWordCloudSelection, wordCloudSelection } from "~~/lib/word-cloud";
+import { prepareWordCloudArtwork, readGlobalWordCloudPng, readWordCloudPng } from "~~/lib/word-cloud-artwork";
 import { reportServerError, withErrorReporting } from "~~/utils/reportServerError";
 
 export const runtime = "nodejs";
@@ -16,7 +16,14 @@ export const GET = withErrorReporting<{ params: Promise<{ format: string }> }>(
       return new Response("Image format not found", { status: 404 });
     try {
       const params = request.nextUrl.searchParams;
-      const fid = await resolveAccount(params.get("user") || "");
+      const user = params.get("user");
+      if (!user && format === "cloud.png") {
+        const image = await readGlobalWordCloudPng(globalWordCloudSelection(params.get("period"), params.get("at")));
+        return new Response(Uint8Array.from(Buffer.from(image, "base64")), {
+          headers: { "Content-Type": "image/png", "Cache-Control": "public, max-age=300, s-maxage=300" },
+        });
+      }
+      const fid = await resolveAccount(user || "");
       const selection = wordCloudSelection(params.get("period"), params.get("at"));
       const cache = params.has("at") ? "public, max-age=300, s-maxage=300" : "no-store";
       if (format === "cloud.png") {

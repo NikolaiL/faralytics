@@ -4,10 +4,14 @@ import { query } from "~~/lib/clickhouse";
 import { loadProfiles } from "~~/lib/profile-data";
 import {
   farcasterEpoch,
+  globalWordCloudSql,
   wordCloudActivitySql,
   wordCloudDaySeconds,
+  wordCloudPeriodSeconds,
   wordCloudTimelineDays,
   wordCloudSql,
+  type GlobalWordCloudData,
+  type GlobalWordCloudSelection,
   type WordCloudData,
   type WordCloudFrame,
   type WordCloudSelection,
@@ -15,12 +19,12 @@ import {
 } from "~~/lib/word-cloud";
 import { wordCloudTokens } from "~~/lib/word-cloud-tokens";
 
-export async function readWordCounts(fid: string, start: number, frames: number[]) {
+export async function readWordCounts(fid: string | null, start: number, frames: number[]) {
   const rows = await query<{ frame: number; term: string; occurrences: string | number }>(
-    wordCloudSql,
+    fid ? wordCloudSql : globalWordCloudSql,
     {
       ...wordCloudTokens,
-      fid,
+      ...(fid ? { fid } : {}),
       start: String(start),
       end: String(frames.at(-1)),
       frames: `[${frames.join(",")}]`,
@@ -51,6 +55,16 @@ export const readWordCloud = unstable_cache(
   },
   ["word-cloud-v2"],
   { revalidate: 300 },
+);
+
+export const readGlobalWordCloud = unstable_cache(
+  async (selection: GlobalWordCloudSelection): Promise<GlobalWordCloudData> => {
+    const end = Number(selection.at) - farcasterEpoch;
+    const [counts] = await readWordCounts(null, Math.max(0, end - wordCloudPeriodSeconds(selection.period)), [end]);
+    return { ...selection, ...counts, profile: null };
+  },
+  ["global-word-cloud-v1"],
+  { revalidate: 3600 },
 );
 
 const readTimelineActivity = unstable_cache(

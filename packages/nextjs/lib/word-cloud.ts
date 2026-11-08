@@ -9,8 +9,31 @@ export const wordCloudPeriods = {
 export type WordCloudPeriod = keyof typeof wordCloudPeriods;
 export type WordCloudSelection = { period: WordCloudPeriod; at: string };
 export type WordCloudData = WordCloudSelection & { profile: Profile; casts: number; words: [string, number][] };
+export const globalWordCloudPeriods = [
+  ["1h", "Last complete hour"],
+  ["24h", "Last 24 hours"],
+  ["7", "Last 7 days"],
+  ["30", "Last 30 days"],
+] as const;
+export type GlobalWordCloudPeriod = (typeof globalWordCloudPeriods)[number][0];
+export type GlobalWordCloudSelection = { period: GlobalWordCloudPeriod; at: string };
+export type GlobalWordCloudData = GlobalWordCloudSelection & Pick<WordCloudData, "casts" | "words"> & { profile: null };
 
 export const farcasterEpoch = 1609459200;
+export function globalWordCloudSelection(
+  period?: unknown,
+  at?: string | null,
+  now = Math.floor(Date.now() / 1000),
+): GlobalWordCloudSelection {
+  const hour = Math.floor(now / 3600) * 3600;
+  const selected = period === "1h" || period === "24h" || period === "30" ? period : "7";
+  return { period: selected, at: at === String(hour - 3600) ? at : String(hour) };
+}
+
+export function wordCloudPeriodSeconds(period: Exclude<WordCloudPeriod, "all"> | GlobalWordCloudPeriod) {
+  return period.endsWith("h") ? Number(period.slice(0, -1)) * 3600 : Number(period) * 86400;
+}
+
 export function wordCloudSelection(
   period: unknown,
   at: unknown,
@@ -29,7 +52,19 @@ export function wordCloudPath(user: string, selection: WordCloudSelection, ts?: 
   return `/word-cloud?${params}`;
 }
 
-export function wordCloudRange({ period, at }: WordCloudSelection) {
+export function wordCloudRange({ period, at }: WordCloudSelection | GlobalWordCloudSelection) {
+  if (period === "1h" || period === "24h") {
+    const end = Number(at);
+    const clock = new Intl.DateTimeFormat("en-US", {
+      timeZone: "UTC",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    });
+    return `${clock.formatRange((end - wordCloudPeriodSeconds(period)) * 1000, end * 1000)} UTC`;
+  }
   const date = (seconds: number) =>
     new Date(seconds * 1000).toLocaleDateString("en-US", {
       timeZone: "UTC",
@@ -39,7 +74,7 @@ export function wordCloudRange({ period, at }: WordCloudSelection) {
     });
   return period === "all"
     ? `Through ${date(Number(at))} UTC`
-    : `${date(Math.max(farcasterEpoch, Number(at) - Number(period) * 86400))} – ${date(Number(at))} UTC`;
+    : `${date(Math.max(farcasterEpoch, Number(at) - wordCloudPeriodSeconds(period)))} – ${date(Number(at))} UTC`;
 }
 
 export type WordCloudFrame = { at: string; casts: number; words: WordCloudData["words"] };
@@ -85,6 +120,19 @@ const capturedCasts = `
     )
 `;
 
+const globalCapturedCasts = `
+  FROM (
+    SELECT toUnixTimestamp(a.timestamp) - 1609459200 AS timestamp, a.text AS text
+    FROM snapchain.action_messages AS a FINAL
+    PREWHERE a.timestamp >= toDateTime({start:UInt32} + 1609459200, 'UTC')
+      AND a.timestamp < toDateTime({end:UInt32} + 1609459200, 'UTC')
+    WHERE a.action_type IN ('cast', 'reply') AND notEmpty(trimBoth(a.text))
+      AND (a.fid, substring(a.hash, 3)) NOT IN (
+        SELECT fid, target_hash FROM snapchain.cast_removals FINAL WHERE operation = 'merge'
+      )
+  ) AS m
+`;
+
 export const wordCloudActivitySql = `
 WITH {fid:UInt64} AS account
 SELECT intDiv(timestamp, 86400) AS day, count() AS casts
@@ -92,8 +140,9 @@ ${capturedCasts}
 GROUP BY day ORDER BY day
 `;
 
-export const wordCloudSql = `
-WITH {fid:UInt64} AS account,
+function wordCountsSql(global: boolean) {
+  return `
+WITH ${global ? "" : "{fid:UInt64} AS account,"}
   map('people','person','children','child','women','woman','men','man',
       'mice','mouse','geese','goose','teeth','tooth','feet','foot',
       'movies','movie','cookies','cookie','lies','lie','ties','tie','buses','bus') AS irregular,
@@ -108,7 +157,7 @@ WITH {fid:UInt64} AS account,
           replaceAll(replaceRegexpAll(m.text, {exclude:String}, ' '), '’', char(39))
         )), {tokenPattern:String})
       ) AS tokens
-      ${capturedCasts}
+      ${global ? globalCapturedCasts : capturedCasts}
     )
     ARRAY JOIN arrayPushFront(tokens, '') AS word
     GROUP BY bucket, word
@@ -143,3 +192,7 @@ ARRAY JOIN entries AS entry
 ORDER BY frame, (term = '') DESC, occurrences DESC, term
 LIMIT 61 BY frame
 `;
+}
+
+export const wordCloudSql = wordCountsSql(false);
+export const globalWordCloudSql = wordCountsSql(true);

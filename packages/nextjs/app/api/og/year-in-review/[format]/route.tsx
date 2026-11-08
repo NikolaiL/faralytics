@@ -1,12 +1,11 @@
 import { ImageResponse } from "next/og";
 import { YearReviewOg } from "~~/components/YearReviewOg";
 import { InputError } from "~~/lib/activity";
-import { loadAvatar } from "~~/lib/avatar";
 import { resolveAccount } from "~~/lib/data";
 import { OG_FONTS } from "~~/lib/og-fonts";
 import { yearReviewEnd } from "~~/lib/year-review";
 import { yearReviewAccess, yearReviewIsPublic } from "~~/lib/year-review-access";
-import { readYearReview } from "~~/lib/year-review-data";
+import { loadYearReviewAvatars, readYearReview } from "~~/lib/year-review-data";
 import { reportServerError, withErrorReporting } from "~~/utils/reportServerError";
 
 export const runtime = "nodejs";
@@ -23,10 +22,9 @@ export const GET = withErrorReporting<{ params: Promise<{ format: string }> }>(
       const end = yearReviewEnd(params.get("end"));
       const fid = await resolveAccount(params.get("user") || "");
       const data = await readYearReview(fid, end);
-      const bytes = await loadAvatar(data.profile.pfp_url);
-      const avatar = bytes ? `data:image/png;base64,${bytes.toString("base64")}` : null;
+      const avatars = await loadYearReviewAvatars(data);
       const height = format === "x.png" ? 600 : 800;
-      return new ImageResponse(<YearReviewOg data={data} avatar={avatar} height={height} />, {
+      return new ImageResponse(<YearReviewOg data={data} avatars={avatars} height={height} />, {
         width: 1200,
         height,
         fonts: OG_FONTS,

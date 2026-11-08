@@ -10,10 +10,13 @@ import { LOGO_PIXELS } from "~~/lib/brand";
 import { formatShareText, shareCredit, type ShareTarget } from "~~/lib/share-credit";
 import { cloudHeight, cloudWidth } from "~~/lib/word-cloud-layout";
 import {
+  globalWordCloudPeriods,
   wordCloudPath,
   wordCloudPeriods,
   wordCloudRange,
   wordCloudSelection,
+  type GlobalWordCloudData,
+  type GlobalWordCloudPeriod,
   type WordCloudData,
   type WordCloudPeriod,
   type WordCloudSelection,
@@ -33,14 +36,20 @@ const OnchainActions = dynamic(() => import("./OnchainActions"), { ssr: false })
 export function WordCloudExplorer({
   initialUser,
   initialSelection,
+  initialGlobalPeriod,
 }: {
   initialUser: string;
   initialSelection: WordCloudSelection;
+  initialGlobalPeriod: GlobalWordCloudPeriod;
 }) {
   const { isMiniApp, fid } = useMiniapp();
   const [draft, setDraft] = useState(initialUser);
-  const [request, setRequest] = useState({ user: initialUser, ...initialSelection });
-  const [result, setResult] = useState<{ request: typeof request; data?: WordCloudData; error?: string }>();
+  const [request, setRequest] = useState({ user: initialUser, ...initialSelection, globalPeriod: initialGlobalPeriod });
+  const [result, setResult] = useState<{
+    request: typeof request;
+    data?: WordCloudData | GlobalWordCloudData;
+    error?: string;
+  }>();
   const [meaningful, setMeaningful] = useState(false);
   const [copyCount, setCopyCount] = useState(0);
   const [shareError, setShareError] = useState("");
@@ -48,14 +57,16 @@ export function WordCloudExplorer({
   const [imageError, setImageError] = useState("");
   const current = result?.request === request ? result : undefined;
   const data = current?.data;
+  const account = data?.profile;
   const profile = result?.request.user === request.user ? result.data?.profile : undefined;
-  const busy = !!request.user && !current;
+  const loading = !current;
+  const busy = !!request.user && loading;
   const resolved = !!profile && draft === request.user;
   const resetLog = useLookupLog(
-    data
+    data && account
       ? {
           tool: "word-cloud",
-          fids: [data.profile.fid],
+          fids: [account.fid],
           period: data.period,
           end: new Date(Number(data.at) * 1000).toISOString().slice(0, 10),
         }
@@ -63,12 +74,14 @@ export function WordCloudExplorer({
   );
 
   useEffect(() => {
-    if (!request.user) return;
     const controller = new AbortController();
     async function lookup() {
       try {
-        const response = await fetch(`/api${wordCloudPath(request.user, { period: request.period, at: request.at })}`, {
-          signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]),
+        const url = request.user
+          ? `/api${wordCloudPath(request.user, { period: request.period, at: request.at })}`
+          : `/api/word-cloud?period=${request.globalPeriod}`;
+        const response = await fetch(url, {
+          signal: AbortSignal.any([controller.signal, AbortSignal.timeout(request.user ? 15000 : 20000)]),
         });
         const body = await response.json();
         if (!response.ok) throw new Error(body.error || "Could not load the word cloud.");
@@ -88,17 +101,26 @@ export function WordCloudExplorer({
     if (user !== request.user || !user) resetLog();
     setDraft(user);
     setShowTimeline(false);
-    setRequest({ user, ...selection });
+    setRequest({ user, ...selection, globalPeriod: request.globalPeriod });
     setShareError("");
     if (user) setMeaningful(true);
-    window.history.replaceState(null, "", user ? wordCloudPath(user, selection) : "/word-cloud");
+    window.history.replaceState(
+      null,
+      "",
+      user ? wordCloudPath(user, selection) : `/word-cloud?period=${request.globalPeriod}`,
+    );
+  }
+
+  function selectGlobalPeriod(period: GlobalWordCloudPeriod) {
+    setRequest({ ...request, globalPeriod: period });
+    window.history.replaceState(null, "", `/word-cloud?period=${period}`);
   }
 
   async function share(target: ShareTarget) {
-    if (!data) return;
+    if (!data || !account) return;
     setShareError("");
     const url = new URL(
-      wordCloudPath(data.profile.fid, { period: data.period, at: data.at }, String(Date.now())),
+      wordCloudPath(account.fid, { period: data.period, at: data.at }, String(Date.now())),
       process.env.NEXT_PUBLIC_URL || window.location.origin,
     ).toString();
     if (target === "copy") {
@@ -110,9 +132,9 @@ export function WordCloudExplorer({
       }
       return;
     }
-    const name = data.profile.username ? `@${data.profile.username}` : `FID ${data.profile.fid}`;
+    const name = account.username ? `@${account.username}` : `FID ${account.fid}`;
     const subject =
-      isMiniApp && fid === data.profile.fid ? "My most-used words on Farcaster" : `Most-used words for ${name}`;
+      isMiniApp && fid === account.fid ? "My most-used words on Farcaster" : `Most-used words for ${name}`;
     const text = formatShareText(
       `${subject} · ${wordCloudPeriods[data.period]}.\n\nCheck yours!\n\n${shareCredit(target)}`,
       target,
@@ -132,7 +154,7 @@ export function WordCloudExplorer({
   }
 
   const params = data
-    ? new URLSearchParams({ user: data.profile.fid, period: data.period, at: data.at }).toString()
+    ? new URLSearchParams({ ...(account ? { user: account.fid } : {}), period: data.period, at: data.at }).toString()
     : "";
   const image = `/api/og/word-cloud/cloud.png?${params}`;
   return (
@@ -149,7 +171,7 @@ export function WordCloudExplorer({
         <ShareActions
           placement="header"
           heading="a cloud worth sharing:"
-          disabled={!data || showTimeline}
+          disabled={!account || showTimeline}
           onShare={share}
         />
       </header>
@@ -158,7 +180,7 @@ export function WordCloudExplorer({
         <h1>
           Word Cloud<span>.</span>
         </h1>
-        <p>Discover the words a Farcaster account uses most often.</p>
+        <p>Explore what Farcaster is talking about, or look up an account’s most-used words.</p>
       </section>
       <form
         className="search-form"
@@ -179,102 +201,125 @@ export function WordCloudExplorer({
           busy={busy}
         />
       </form>
-      {request.user && (
-        <section className="timeline-feed word-cloud-panel" aria-label="Most-used words" aria-busy={busy}>
-          <div className="timeline-toolbar">
-            <label className="interaction-filter">
-              <span className="word-cloud-period-label">
-                Period <small id="word-cloud-range">{wordCloudRange(request)}</small>
-              </span>
-              <select
-                aria-label="Word cloud period"
-                aria-describedby="word-cloud-range"
-                value={request.period}
-                onChange={(event) => apply(request.user, event.target.value as WordCloudPeriod, request.at)}
-              >
-                {Object.entries(wordCloudPeriods).map(([period, label]) => (
-                  <option key={period} value={period}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button
-              type="button"
-              className="word-cloud-time-toggle"
-              disabled={!data}
-              aria-expanded={showTimeline}
-              aria-controls={showTimeline ? "word-cloud-time-machine" : undefined}
-              onClick={() => setShowTimeline((value) => !value)}
-            >
-              {showTimeline ? "Back to snapshot" : "Time Machine"}
-            </button>
-          </div>
-          {busy && (
-            <p className="timeline-empty" role="status">
-              Counting captured words…
-            </p>
-          )}
-          {current?.error && (
-            <p className="timeline-error" role="alert">
-              {current.error}{" "}
+      <section className="timeline-feed word-cloud-panel" aria-label="Most-used words" aria-busy={loading}>
+        <div className="timeline-toolbar">
+          {request.user ? (
+            <>
+              <label className="interaction-filter">
+                <span className="word-cloud-period-label">
+                  Period <small id="word-cloud-range">{wordCloudRange(request)}</small>
+                </span>
+                <select
+                  aria-label="Word cloud period"
+                  aria-describedby="word-cloud-range"
+                  value={request.period}
+                  onChange={(event) => apply(request.user, event.target.value as WordCloudPeriod, request.at)}
+                >
+                  {Object.entries(wordCloudPeriods).map(([period, label]) => (
+                    <option key={period} value={period}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <button
                 type="button"
-                className="text-button"
-                onClick={() => apply(request.user, request.period, request.at)}
+                className="word-cloud-time-toggle"
+                disabled={!data}
+                aria-expanded={showTimeline}
+                aria-controls={showTimeline ? "word-cloud-time-machine" : undefined}
+                onClick={() => setShowTimeline((value) => !value)}
               >
-                Try again
+                {showTimeline ? "Back to snapshot" : "Time Machine"}
               </button>
-            </p>
+            </>
+          ) : (
+            <div className="word-cloud-global-title">
+              <h2>Across Farcaster</h2>
+              <label className="interaction-filter">
+                <span className="word-cloud-period-label">
+                  Period <small id="word-cloud-global-range">{data ? wordCloudRange(data) : ""}</small>
+                </span>
+                <select
+                  aria-label="Global word cloud period"
+                  aria-describedby="word-cloud-global-range"
+                  value={request.globalPeriod}
+                  onChange={(event) => selectGlobalPeriod(event.target.value as GlobalWordCloudPeriod)}
+                >
+                  {globalWordCloudPeriods.map(([period, label]) => (
+                    <option key={period} value={period}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
           )}
-          {data && showTimeline && <WordCloudTimeMachine key={data.profile.fid} fid={data.profile.fid} />}
-          {data &&
-            !showTimeline &&
-            (data.words.length ? (
-              <>
-                {imageError === image ? (
-                  <p className="timeline-empty" role="status">
-                    Could not draw the cloud. Word counts are available below.
-                  </p>
-                ) : (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    key={image}
-                    className="word-cloud-image"
-                    src={image}
-                    width={cloudWidth}
-                    height={cloudHeight}
-                    alt="Word cloud sized by frequency. Exact counts are listed below."
-                    data-testid="word-cloud-image"
-                    onError={() => setImageError(image)}
-                  />
-                )}
-                <details className="word-cloud-words">
-                  <summary>View word counts</summary>
-                  <ol>
-                    {data.words.map(([word, count]) => (
-                      <li key={word}>
-                        <span>{word}</span>
-                        <strong>
-                          <NumberText>{count.toLocaleString("en-US")}</NumberText>
-                        </strong>
-                      </li>
-                    ))}
-                  </ol>
-                </details>
-              </>
-            ) : (
-              <p className="timeline-empty">No matching words in this period.</p>
-            ))}
-          {data && !showTimeline && (
-            <p className="timeline-note word-cloud-note">
-              <NumberText>{data.casts.toLocaleString("en-US")}</NumberText>
-              {" captured casts with text. Common plurals are combined. Older text may be missing."}
-            </p>
-          )}
-        </section>
-      )}
-      {data && !showTimeline && (
+        </div>
+        {loading && (
+          <p className="timeline-empty" role="status">
+            Counting captured words…
+          </p>
+        )}
+        {current?.error && (
+          <p className="timeline-error" role="alert">
+            {current.error}{" "}
+            <button
+              type="button"
+              className="text-button"
+              onClick={() => apply(request.user, request.period, request.at)}
+            >
+              Try again
+            </button>
+          </p>
+        )}
+        {account && showTimeline && <WordCloudTimeMachine key={account.fid} fid={account.fid} />}
+        {data &&
+          !showTimeline &&
+          (data.words.length ? (
+            <>
+              {imageError === image ? (
+                <p className="timeline-empty" role="status">
+                  Could not draw the cloud. Word counts are available below.
+                </p>
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={image}
+                  className="word-cloud-image"
+                  src={image}
+                  width={cloudWidth}
+                  height={cloudHeight}
+                  alt="Word cloud sized by frequency. Exact counts are listed below."
+                  data-testid="word-cloud-image"
+                  onError={() => setImageError(image)}
+                />
+              )}
+              <details className="word-cloud-words">
+                <summary>View word counts</summary>
+                <ol>
+                  {data.words.map(([word, count]) => (
+                    <li key={word}>
+                      <span>{word}</span>
+                      <strong>
+                        <NumberText>{count.toLocaleString("en-US")}</NumberText>
+                      </strong>
+                    </li>
+                  ))}
+                </ol>
+              </details>
+            </>
+          ) : (
+            <p className="timeline-empty">No matching words in this period.</p>
+          ))}
+        {data && !showTimeline && (
+          <p className="timeline-note word-cloud-note">
+            <NumberText>{data.casts.toLocaleString("en-US")}</NumberText>
+            {" captured casts with text. Common plurals are combined. Older text may be missing."}
+          </p>
+        )}
+      </section>
+      {data && account && !showTimeline && (
         <>
           <ShareActions placement="below" heading="a cloud worth sharing:" disabled={false} onShare={share} />
           <CopyToast count={copyCount} />
@@ -287,7 +332,7 @@ export function WordCloudExplorer({
             <OnchainActions
               snapshot={{
                 kind: "word-cloud",
-                user: data.profile.fid,
+                user: account.fid,
                 period: data.period,
                 at: data.at,
               }}

@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AccountSearch } from "~~/components/AccountSearch";
+import { AvatarImage } from "~~/components/AvatarImage";
 import { CopyToast } from "~~/components/CopyToast";
 import { useMiniapp } from "~~/components/MiniappProvider";
 import { NumberText } from "~~/components/NumberText";
@@ -12,8 +13,15 @@ import { ShareActions } from "~~/components/ShareActions";
 import { YearReviewFireworks } from "~~/components/YearReviewFireworks";
 import { PURPLES } from "~~/lib/activity";
 import { LOGO_PIXELS } from "~~/lib/brand";
-import { formatShareText, shareCredit, type ShareTarget } from "~~/lib/share-credit";
-import { yearReviewPath, yearReviewSections, yearReviewYear, type YearReview } from "~~/lib/year-review";
+import type { ShareTarget } from "~~/lib/share-credit";
+import {
+  formatYearReviewPostTime,
+  yearReviewPath,
+  yearReviewSections,
+  yearReviewShareText,
+  yearReviewYear,
+  type YearReview,
+} from "~~/lib/year-review";
 
 const OnchainActions = dynamic(() => import("./OnchainActions"), { ssr: false });
 
@@ -52,7 +60,7 @@ function RecapPreview({ snapshot }: { snapshot: { kind: "year-review"; user: str
         <div>
           <p className="eyebrow">The keepsake</p>
           <h2>One year. One NFT.</h2>
-          <p>All four chapters, together in one edition.</p>
+          <p>All five chapters, together in one edition.</p>
         </div>
         <button type="button" onClick={() => void prepare()} disabled={busy} aria-expanded={!!image}>
           {busy ? "Preparing recap NFT…" : image ? "Hide NFT preview" : "Preview full recap NFT"}
@@ -64,7 +72,7 @@ function RecapPreview({ snapshot }: { snapshot: { kind: "year-review"; user: str
         <img
           className="year-review-artwork"
           src={image}
-          alt="Combined Year in Review NFT artwork with all four sections"
+          alt="Combined Year in Review NFT artwork with all five chapters"
           width={1200}
           height={800}
         />
@@ -141,12 +149,7 @@ export function YearReviewExplorer({
       }
       return;
     }
-    const name = data.profile.username ? `@${data.profile.username}` : `FID ${data.profile.fid}`;
-    const subject = fid === data.profile.fid ? "My" : `${name}’s`;
-    const text = formatShareText(
-      `${subject} ${yearReviewYear} on Farcaster, in four chapters. ✦\n\n${shareCredit(target)}`,
-      target,
-    );
+    const text = yearReviewShareText(data, target, isMiniApp ? (fid ?? undefined) : undefined);
     if (target === "farcaster" && isMiniApp) {
       try {
         await sdk.actions.composeCast({ text, embeds: [url] });
@@ -232,13 +235,44 @@ export function YearReviewExplorer({
           </div>
           <h2 id="year-review-section">{section.title}</h2>
           <p>{section.description}</p>
-          {section.stats.length ? (
+          {section.people ? (
+            section.people.length ? (
+              <ol className="year-review-people">
+                {section.people.map(({ profile, sent, received, mutual }, index) => (
+                  <li key={profile.fid}>
+                    <span className="year-review-person-rank" aria-hidden="true">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <span className="result-avatar" aria-hidden="true">
+                      {(profile.username ?? "FC").slice(0, 2).toUpperCase()}
+                      <AvatarImage source={profile.pfp_url} size={42} />
+                    </span>
+                    <div className="year-review-person-name">
+                      <a href={`https://farcaster.xyz/~/profiles/${profile.fid}`} target="_blank" rel="noreferrer">
+                        {profile.username ? `@${profile.username}` : `FID ${profile.fid}`}
+                      </a>
+                      <small>
+                        <NumberText>{sent.toLocaleString("en-US")}</NumberText> sent ·{" "}
+                        <NumberText>{received.toLocaleString("en-US")}</NumberText> received
+                      </small>
+                    </div>
+                    <div className="year-review-person-score">
+                      <NumberText>{mutual.toLocaleString("en-US")}</NumberText>
+                      <small>mutual</small>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="timeline-empty">No mutual interactions captured this year.</p>
+            )
+          ) : section.stats.length ? (
             <dl className="year-review-stats">
-              {section.stats.map(([label, value]) => (
+              {section.stats.map(([label, value], index) => (
                 <div key={label}>
                   <dt>
                     <span className="year-review-stat-fireworks" aria-hidden="true">
-                      <YearReviewFireworks />
+                      <YearReviewFireworks variant={1 + index + page * 2} />
                     </span>
                     {label}
                   </dt>
@@ -250,6 +284,40 @@ export function YearReviewExplorer({
             </dl>
           ) : (
             <p className="timeline-empty">No matching words in this period.</p>
+          )}
+          {section.post && (
+            <aside className="year-review-top-post" aria-labelledby="year-review-top-post">
+              <div className="year-review-top-post-heading">
+                <div>
+                  <h3 id="year-review-top-post">Most engaged post</h3>
+                  {section.post.postedAt && (
+                    <time dateTime={section.post.postedAt}>
+                      Posted {formatYearReviewPostTime(section.post.postedAt)}
+                    </time>
+                  )}
+                </div>
+                <p>
+                  <NumberText>{section.post.interactions.toLocaleString("en-US")}</NumberText> interactions
+                </p>
+              </div>
+              {section.post.text && <blockquote>{section.post.text}</blockquote>}
+              <a
+                href={section.post.url}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(event) => {
+                  if (!isMiniApp || !section.post) return;
+                  event.preventDefault();
+                  const { hash, url } = section.post;
+                  void sdk.actions
+                    .viewCast({ hash })
+                    .catch(() => sdk.actions.openUrl(url))
+                    .catch(() => {});
+                }}
+              >
+                View post on Farcaster ↗
+              </a>
+            </aside>
           )}
           <nav className="year-review-pager" aria-label="Recap pages">
             <button type="button" disabled={page === 0} onClick={() => setPage(page - 1)}>

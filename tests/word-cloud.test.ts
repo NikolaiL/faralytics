@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { packWords, placeWord, cloudHeight, cloudWidth, type WordPlacement } from "../packages/nextjs/lib/word-cloud-layout.ts";
-import { nextWordCloudPlaybackDay, wordCloudDaysPerPage, wordCloudTimelineDays, wordCloudPath, wordCloudSelection } from "../packages/nextjs/lib/word-cloud.ts";
+import { globalWordCloudSelection, nextWordCloudPlaybackDay, wordCloudDaysPerPage, wordCloudPeriodSeconds, wordCloudRange, wordCloudTimelineDays, wordCloudPath, wordCloudSelection } from "../packages/nextjs/lib/word-cloud.ts";
 import { fitMovingWord, interpolateWord, type WordPose } from "../packages/nextjs/lib/word-cloud-motion.ts";
 
 test("word cloud shares preserve a valid UTC cutoff and default to 30 days", () => {
@@ -11,6 +11,18 @@ test("word cloud shares preserve a valid UTC cutoff and default to 30 days", () 
   const pinned = wordCloudSelection("365", "1794101940", now);
   assert.equal(wordCloudPath("366713", pinned, "1794102007000"),
     "/word-cloud?user=366713&period=365&at=1794101940&ts=1794102007000");
+});
+
+test("global word cloud pins the latest hourly snapshot and only accepts the prior hour for image loading", () => {
+  const now = Date.parse("2026-11-08T13:42:10Z") / 1000;
+  const hour = Date.parse("2026-11-08T13:00:00Z") / 1000;
+  const current = { period: "7", at: String(hour) };
+  assert.deepEqual(globalWordCloudSelection(null, null, now), current);
+  assert.deepEqual(globalWordCloudSelection("24h", String(hour - 3600), now), { period: "24h", at: String(hour - 3600) });
+  assert.deepEqual(globalWordCloudSelection("365", String(hour - 7200), now), current);
+  assert.deepEqual(globalWordCloudSelection("all", String(hour + 3600), now), current);
+  assert.deepEqual(["1h", "24h", "7", "30"].map((period) => wordCloudPeriodSeconds(globalWordCloudSelection(period).period)), [3600, 86400, 604800, 2592000]);
+  assert.match(wordCloudRange(globalWordCloudSelection("1h", null, now)), /12:00.*13:00 UTC/);
 });
 
 test("dense word clouds shrink to fit more terms while sparse clouds keep their original size", () => {

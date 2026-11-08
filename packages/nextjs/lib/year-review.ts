@@ -1,7 +1,9 @@
 import { dateKey, InputError, utcDate, type Profile } from "./activity.ts";
+import { formatShareText, shareCredit, type ShareTarget } from "./share-credit.ts";
 
 export const yearReviewYear = "2026";
 export const yearReviewStart = `${yearReviewYear}-01-01`;
+export const yearReviewMutualTitle = "The Magnificent Seven";
 export type YearReview = {
   profile: Profile;
   end: string;
@@ -14,6 +16,8 @@ export type YearReview = {
     longestStreak: number;
   };
   received: { replies: number; recasts: number; likes: number; people: number };
+  topPost: { hash: string; url: string; text: string; postedAt: string | null; interactions: number } | null;
+  mutual: { profile: Profile; sent: number; received: number; mutual: number }[];
   follows: { followed: number; unfollowed: number; followedYou: number; unfollowedYou: number };
   words: [string, number][];
   coverage: string;
@@ -39,6 +43,43 @@ export function yearReviewPath(user: string, end?: string, ts?: string) {
   return `/year-in-review?${new URLSearchParams({ user, ...(end ? { end } : {}), ...(ts ? { ts } : {}) })}`;
 }
 
+const postTime = new Intl.DateTimeFormat("en-US", {
+  timeZone: "UTC",
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+});
+
+export function formatYearReviewPostTime(postedAt: string) {
+  return `${postTime.format(new Date(postedAt))} UTC`;
+}
+
+export function yearReviewShareText(
+  data: Pick<YearReview, "profile" | "mutual">,
+  target: Exclude<ShareTarget, "copy">,
+  viewerFid?: string,
+) {
+  const own = viewerFid === data.profile.fid;
+  const name = data.profile.username ? `@${data.profile.username}` : `FID ${data.profile.fid}`;
+  const heading = `${own ? "My" : `${name}’s`} ${yearReviewYear} on Farcaster. ✦`;
+  const credit = shareCredit(target);
+  const tags: string[] = [];
+  if (own && target === "farcaster") {
+    const encoder = new TextEncoder();
+    for (const { profile } of data.mutual.slice(0, 7)) {
+      if (!profile.username || !/^[a-z0-9][a-z0-9.-]{0,62}$/i.test(profile.username)) continue;
+      const tag = `@${profile.username}`;
+      if (encoder.encode(`${heading}\n\nMy Magnificent Seven\n${[...tags, tag].join(" ")}\n\n${credit}`).length > 320)
+        break;
+      tags.push(tag);
+    }
+  }
+  const mentionLine = tags.length ? `\n\nMy Magnificent Seven\n${tags.join(" ")}` : "";
+  return formatShareText(`${heading}${mentionLine}\n\n${credit}`, target);
+}
+
 export function yearReviewSections(data: YearReview) {
   return [
     {
@@ -56,6 +97,7 @@ export function yearReviewSections(data: YearReview) {
     {
       title: "How people responded",
       description: "Interactions received this year on original casts you published this year.",
+      post: data.topPost,
       stats: [
         ["Replies received", data.received.replies],
         ["Recasts received", data.received.recasts],
@@ -78,6 +120,12 @@ export function yearReviewSections(data: YearReview) {
       description:
         "Most-used words in your captured casts and replies, after filtering common words and merging plurals.",
       stats: data.words,
+    },
+    {
+      title: yearReviewMutualTitle,
+      description: "Your most two-way connections, ranked by the smaller of interactions sent and received.",
+      stats: [],
+      people: data.mutual,
     },
   ];
 }

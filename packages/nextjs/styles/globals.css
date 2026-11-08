@@ -102,6 +102,9 @@
 @media(max-width:760px){.navigation-short-label{display:inline}.navigation-wide-label{display:none}}
 
 .word-cloud-panel .timeline-toolbar{gap:12px;align-items:end;flex-wrap:wrap}
+.word-cloud-panel .word-cloud-global-title{display:block;width:min(100%,390px)}
+.word-cloud-global-title h2{margin:0 0 12px;font-size:18px}
+.word-cloud-global-title .word-cloud-period-label small{white-space:normal}
 .word-cloud-panel .interaction-filter{min-width:min(100%,220px)}
 .word-cloud-time-toggle,.word-cloud-time-progress button{min-height:44px;padding:8px 14px;border:1px solid #4c3a5e;border-radius:9px;background:#21182b;color:#d1b7ff}
 .word-cloud-time-toggle{width:148px}
@@ -147,9 +150,27 @@
 .year-review-stats>div{position:relative;isolation:isolate;overflow:hidden;display:flex;flex-direction:column-reverse;justify-content:center;gap:6px;min-width:0;min-height:95px;padding:14px;border:1px solid #4b3862;border-radius:12px;background:radial-gradient(ellipse at 100% 0,#3b255b,#191122 73%)}
 .year-review-stats>div:first-child{border-color:#7a60a4;background:radial-gradient(ellipse at 100% 0,#51347b,#21132f 76%)}
 .year-review-stat-fireworks{position:absolute;z-index:-1;right:-10px;top:-14px;width:clamp(100px,56%,166px);opacity:.54;pointer-events:none}
+.year-review-stats>div:nth-child(2n) .year-review-stat-fireworks{top:auto;bottom:-20px;right:1%}
+.year-review-stats>div:nth-child(3n) .year-review-stat-fireworks{top:-28px;right:-22px;transform:rotate(-18deg)}
+.year-review-stats>div:nth-child(5n) .year-review-stat-fireworks{top:0;right:12%;transform:rotate(14deg)}
 .year-review-stat-fireworks svg{display:block;width:100%;height:auto}
 .year-review-stats dt{font-size:12px;color:#d1b7e6;overflow-wrap:anywhere}
 .year-review-stats dd{margin:0;font-size:clamp(21px,5vw,40px);color:var(--accent)}
+.year-review-top-post{margin:0 0 22px;padding:clamp(14px,4vw,22px);border:1px solid #6b508a;border-radius:12px;background:linear-gradient(125deg,#301d46,#1b1328 75%)}
+.year-review-top-post-heading{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 16px}
+.year-review-top-post h3{margin:0;color:var(--accent);font-size:15px}
+.year-review-top-post time{display:block;margin-top:4px;color:#c8b9da;font-size:12px}
+.year-review-top-post-heading p{margin:0;color:#dccde9}
+.year-review-top-post blockquote{margin:12px 0;padding-inline-start:12px;border-inline-start:2px solid #855dcd;color:var(--text);font-size:15px;line-height:1.55;overflow-wrap:anywhere;white-space:pre-wrap}
+.year-review-top-post a{display:inline-block;margin-top:8px;color:#d1b7ff;font-size:13px;font-weight:700}
+.year-review-people{display:grid;gap:8px;margin:18px 0 22px;padding:0;list-style:none}
+.year-review-people li{display:grid;grid-template-columns:auto 42px minmax(0,1fr) auto;gap:clamp(6px,2vw,13px);align-items:center;padding:9px clamp(8px,2vw,14px);border:1px solid #4b3862;border-radius:10px;background:linear-gradient(110deg,#211530,#171121)}
+.year-review-people .result-avatar{width:42px;height:42px}
+.year-review-person-rank,.year-review-person-name small,.year-review-person-score small{color:#c6b6d8;font-size:11px}
+.year-review-person-name{min-width:0}
+.year-review-person-name a{display:block;color:#dcc8ff;font-weight:700;font-size:14px;overflow-wrap:anywhere}
+.year-review-person-name small,.year-review-person-score small{display:block;margin-top:3px}
+.year-review-person-score{text-align:right;color:var(--accent);font-size:19px}
 .year-review-pager button{min-height:44px;padding:8px 10px;border:1px solid #4c3a5e;border-radius:9px;background:#21182b;color:#ede0ff;font-size:12px;white-space:nowrap}
 .year-review-pager button[aria-current=page]{color:var(--accent);border-color:#855dcd}
 .year-review-pager .button-primary:not(:disabled){background:#855dcd;color:#fff}
@@ -160,3 +181,4 @@
 .year-review-keepsake button{min-height:44px;padding:9px 15px;border:0;border-radius:9px;background:var(--accent);color:#191d0b;font:inherit;font-size:13px;font-weight:700}
 .year-review-artwork{display:block;width:100%;height:auto;margin-top:12px;border:1px solid var(--border);border-radius:12px}
 @media(max-width:570px){.year-review-fireworks{inset:12px -24px auto auto;width:64%;transform:none;opacity:.52}.year-review-hero h1{max-width:5em}.year-review-stats{grid-template-columns:repeat(2,minmax(0,1fr));min-height:240px}.year-review-pager button{padding-inline:7px}.year-review-pager,.year-review-pager>div{gap:4px}}
+@media(max-width:370px){.year-review-pager>div button{padding-inline:5px}}
