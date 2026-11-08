@@ -1,13 +1,18 @@
 "use client";
 
+import { sdk } from "@farcaster/miniapp-sdk";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AccountSearch } from "~~/components/AccountSearch";
+import { CopyToast } from "~~/components/CopyToast";
 import { useMiniapp } from "~~/components/MiniappProvider";
 import { NumberText } from "~~/components/NumberText";
+import { ShareActions } from "~~/components/ShareActions";
+import { YearReviewFireworks } from "~~/components/YearReviewFireworks";
 import { PURPLES } from "~~/lib/activity";
 import { LOGO_PIXELS } from "~~/lib/brand";
+import { formatShareText, shareCredit, type ShareTarget } from "~~/lib/share-credit";
 import { yearReviewPath, yearReviewSections, yearReviewYear, type YearReview } from "~~/lib/year-review";
 
 const OnchainActions = dynamic(() => import("./OnchainActions"), { ssr: false });
@@ -44,15 +49,16 @@ function RecapPreview({ snapshot }: { snapshot: { kind: "year-review"; user: str
 
   return (
     <div className="year-review-nft">
-      <button
-        type="button"
-        className="button-primary"
-        onClick={() => void prepare()}
-        disabled={busy}
-        aria-expanded={!!image}
-      >
-        {busy ? "Preparing recap NFT…" : image ? "Hide NFT preview" : "Preview full recap NFT"}
-      </button>
+      <div className="year-review-keepsake">
+        <div>
+          <p className="eyebrow">The keepsake</p>
+          <h2>One year. One NFT.</h2>
+          <p>All four chapters, together in one edition.</p>
+        </div>
+        <button type="button" onClick={() => void prepare()} disabled={busy} aria-expanded={!!image}>
+          {busy ? "Preparing recap NFT…" : image ? "Hide NFT preview" : "Preview full recap NFT"}
+        </button>
+      </div>
       {error && <p role="alert">{error}</p>}
       {image && (
         // eslint-disable-next-line @next/next/no-img-element
@@ -72,16 +78,20 @@ export function YearReviewExplorer({
   initialUser,
   initialEnd,
   previewOnly,
+  draft: draftEdition,
 }: {
   initialUser: string;
   initialEnd?: string;
   previewOnly: boolean;
+  draft: boolean;
 }) {
   const { isMiniApp, fid } = useMiniapp();
   const [draft, setDraft] = useState(initialUser);
   const [request, setRequest] = useState({ user: initialUser, end: initialEnd });
   const [result, setResult] = useState<{ request: typeof request; data?: YearReview; error?: string }>();
   const [page, setPage] = useState(0);
+  const [copyCount, setCopyCount] = useState(0);
+  const [shareError, setShareError] = useState("");
   const current = result?.request === request ? result : undefined;
   const data = current?.data;
   const busy = !!request.user && !current;
@@ -114,8 +124,42 @@ export function YearReviewExplorer({
     const user = value.trim();
     setDraft(user);
     setPage(0);
+    setShareError("");
     setRequest({ user, end: request.end });
     window.history.replaceState(null, "", user ? yearReviewPath(user, request.end) : "/year-in-review");
+  }
+
+  async function share(target: ShareTarget) {
+    if (!data) return;
+    setShareError("");
+    const url = new URL(yearReviewPath(data.profile.fid, data.end, String(Date.now())), window.location.origin).href;
+    if (target === "copy") {
+      try {
+        await navigator.clipboard.writeText(url);
+        setCopyCount((count) => count + 1);
+      } catch {
+        setShareError(`Copy this link: ${url}`);
+      }
+      return;
+    }
+    const name = data.profile.username ? `@${data.profile.username}` : `FID ${data.profile.fid}`;
+    const subject = fid === data.profile.fid ? "My" : `${name}’s`;
+    const text = formatShareText(
+      `${subject} ${yearReviewYear} on Farcaster, in four chapters. ✦\n\n${shareCredit(target)}`,
+      target,
+    );
+    if (target === "farcaster" && isMiniApp) {
+      try {
+        await sdk.actions.composeCast({ text, embeds: [url] });
+        return;
+      } catch {
+        /* Fall back to the web composer. */
+      }
+    }
+    const compose = new URL(target === "x" ? "https://x.com/intent/post" : "https://farcaster.xyz/~/compose");
+    compose.searchParams.set("text", text);
+    compose.searchParams.set(target === "x" ? "url" : "embeds[]", url);
+    window.open(compose.toString(), "_blank", "noopener,noreferrer");
   }
 
   const sections = data ? yearReviewSections(data) : [];
@@ -133,14 +177,17 @@ export function YearReviewExplorer({
           </span>
           faralytics<span className="wordmark-dot">.</span>
         </Link>
-        {previewOnly && <span className="year-review-badge">Draft preview</span>}
+        {draftEdition && <span className="year-review-badge">Draft preview</span>}
       </header>
-      <section className="timeline-intro">
-        <p className="eyebrow">Your Farcaster year</p>
+      <section className="year-review-hero">
+        <div className="year-review-fireworks">
+          <YearReviewFireworks />
+        </div>
+        <p className="eyebrow">Farcaster · The New Year Edition</p>
         <h1>
-          {yearReviewYear} in review<span>.</span>
+          <span>{yearReviewYear}</span> in review
         </h1>
-        <p>The things you posted, the conversations they started, and the people you connected with.</p>
+        <p>The casts, conversations, and connections that made your year.</p>
       </section>
       <form
         className="search-form"
@@ -174,10 +221,15 @@ export function YearReviewExplorer({
       {!request.user && <p className="empty-note">Look up an account to open its recap.</p>}
       {data && section && (
         <section className="year-review-panel" aria-labelledby="year-review-section">
+          <div className="year-review-progress" aria-hidden="true">
+            {sections.map(({ title }, index) => (
+              <span key={title} data-state={index === page ? "current" : index < page ? "past" : "future"} />
+            ))}
+          </div>
           <div className="year-review-meta">
             <span>Through {date.format(new Date(`${data.end}T00:00:00Z`))} UTC</span>
             <span>
-              Page {page + 1} of {sections.length}
+              Chapter {page + 1} of {sections.length}
             </span>
           </div>
           <h2 id="year-review-section">{section.title}</h2>
@@ -186,7 +238,12 @@ export function YearReviewExplorer({
             <dl className="year-review-stats">
               {section.stats.map(([label, value]) => (
                 <div key={label}>
-                  <dt>{label}</dt>
+                  <dt>
+                    <span className="year-review-stat-fireworks" aria-hidden="true">
+                      <YearReviewFireworks />
+                    </span>
+                    {label}
+                  </dt>
                   <dd>
                     <NumberText>{value.toLocaleString("en-US")}</NumberText>
                   </dd>
@@ -225,6 +282,17 @@ export function YearReviewExplorer({
         </section>
       )}
       {data && <p className="timeline-note">{data.coverage}</p>}
+      {data && (
+        <>
+          <ShareActions placement="below" disabled={false} onShare={share} heading="Share the New Year Edition" />
+          <CopyToast count={copyCount} />
+          {shareError && (
+            <p role="status" className="notice">
+              {shareError}
+            </p>
+          )}
+        </>
+      )}
       {snapshot &&
         hasActivity &&
         (previewOnly ? (

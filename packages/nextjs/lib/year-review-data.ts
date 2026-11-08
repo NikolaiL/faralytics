@@ -8,13 +8,6 @@ import { farcasterEpoch } from "~~/lib/word-cloud";
 import { yearReviewStart, type YearReview } from "~~/lib/year-review";
 import { yearReviewFollowsSql, yearReviewOutgoingSql, yearReviewReceivedSql } from "~~/lib/year-review-queries";
 
-export function yearReviewPublished() {
-  return process.env.YEAR_REVIEW_ENABLED === "1";
-}
-export function yearReviewAvailable() {
-  return (!process.env.VERCEL && !process.env.VERCEL_ENV) || yearReviewPublished();
-}
-
 type Counts = { casts: number; replies: number; recasts: number; likes: number };
 
 export const readYearReview = unstable_cache(
@@ -27,7 +20,7 @@ export const readYearReview = unstable_cache(
       query<YearReview["received"]>(yearReviewReceivedSql, params, { timeoutMs: 35000 }),
       query<{ direction: "in" | "out"; follows: number; unfollows: number }>(yearReviewFollowsSql, params),
       readWordCounts(fid, startSecond, [lastSecond]),
-      loadProfiles([fid], 4000).catch(() => [{ fid, username: null, display_name: null }]),
+      loadProfiles([fid], 10000).catch(() => [{ fid, username: null, display_name: null }]),
       query<{ coverage: string }>(
         "SELECT coverage FROM farcaster.dataset_status LIMIT 1",
         {},

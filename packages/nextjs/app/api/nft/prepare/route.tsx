@@ -1,6 +1,7 @@
 import { YearReviewOg } from "~~/components/YearReviewOg";
 import { yearReviewEnd, yearReviewPath, yearReviewSections, yearReviewYear } from "~~/lib/year-review";
-import { readYearReview, yearReviewAvailable, yearReviewPublished } from "~~/lib/year-review-data";
+import { yearReviewAccess, yearReviewCanMint } from "~~/lib/year-review-access";
+import { readYearReview } from "~~/lib/year-review-data";
 import { wordCloudPath, wordCloudPeriods, wordCloudSelection } from "~~/lib/word-cloud";
 import { prepareWordCloudArtwork } from "~~/lib/word-cloud-artwork";
 import { resolveAccount } from "~~/lib/data";
@@ -32,8 +33,11 @@ export const POST = withErrorReporting("/api/nft/prepare", async (request) => {
     if (text.length > 2048) return Response.json({ error: "Request too large." }, { status: 413 });
     const input = JSON.parse(text);
     const isYearReview = input?.kind === "year-review";
-    if (isYearReview && !yearReviewAvailable()) throw new InputError("Review not found.", 404);
-    const previewOnly = isYearReview && !yearReviewPublished();
+    if (isYearReview) {
+      const access = await yearReviewAccess();
+      if (access !== "allowed") throw new InputError("Review unavailable.", access === "locked" ? 401 : 404);
+    }
+    const previewOnly = isYearReview && !yearReviewCanMint();
     if (!previewOnly && (!process.env.PINATA_JWT || !process.env.PINATA_API_SECRET))
       return Response.json({ error: "NFT storage is not configured." }, { status: 503 });
     const { artwork, metadata } = await prepareSnapshot(input);

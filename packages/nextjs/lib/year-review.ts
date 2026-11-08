@@ -35,8 +35,8 @@ export function yearReviewEnd(input: unknown, now = new Date()) {
   return end;
 }
 
-export function yearReviewPath(user: string, end?: string) {
-  return `/year-in-review?${new URLSearchParams({ user, ...(end ? { end } : {}) })}`;
+export function yearReviewPath(user: string, end?: string, ts?: string) {
+  return `/year-in-review?${new URLSearchParams({ user, ...(end ? { end } : {}), ...(ts ? { ts } : {}) })}`;
 }
 
 export function yearReviewSections(data: YearReview) {
