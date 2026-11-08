@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { packWords, placeWord, cloudHeight, cloudWidth, type WordPlacement } from "../packages/nextjs/lib/word-cloud-layout.ts";
-import { wordCloudDaysPerPage, wordCloudTimelineDays, wordCloudPath, wordCloudSelection } from "../packages/nextjs/lib/word-cloud.ts";
+import { nextWordCloudPlaybackDay, wordCloudDaysPerPage, wordCloudTimelineDays, wordCloudPath, wordCloudSelection } from "../packages/nextjs/lib/word-cloud.ts";
 import { fitMovingWord, interpolateWord, type WordPose } from "../packages/nextjs/lib/word-cloud-motion.ts";
 
 test("word cloud shares preserve a valid UTC cutoff and default to 30 days", () => {
@@ -75,4 +75,24 @@ test("time machine interpolates a retained word's position, size and color", () 
   assert.ok(fit);
   assert.ok(fit.pose.width < middle.width);
   assert.ok(fit.bounds.x - fit.bounds.halfWidth >= obstacle.x + obstacle.halfWidth + 3);
+});
+
+test("time machine packs a growing word around its previous center without rotating it", () => {
+  const anchor = { x: 300, y: 170, angle: 90 as const };
+  const [box] = packWords([{ width: 140, height: 40, fontSize: 70 }], cloudHeight, [anchor]);
+  assert.deepEqual(box, { index: 0, left: 280, top: 100, width: 40, height: 140, angle: 90 });
+  const nearby = placeWord(140, 40, [{ left: 315, top: 110, width: 20, height: 100 }], false, cloudHeight, anchor);
+  assert.ok(nearby);
+  assert.equal(nearby.angle, 90);
+  assert.ok(nearby.left + nearby.width <= 305);
+  assert.ok(Math.abs(nearby.left + nearby.width / 2 - anchor.x) <= 32);
+});
+
+test("time machine playback groups new casts and still ends on the last UTC day", () => {
+  const activity = [1, 1, 3, 5, 5, 7, 9, 9];
+  assert.equal(nextWordCloudPlaybackDay(activity, 0), 5);
+  assert.equal(nextWordCloudPlaybackDay(activity, 5), 7);
+  assert.equal(nextWordCloudPlaybackDay(activity, 7), 7);
+  const dense = Array.from({ length: 200 }, (_, day) => (day + 1) * 100);
+  assert.equal(nextWordCloudPlaybackDay(dense, 0), 2);
 });

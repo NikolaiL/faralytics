@@ -51,6 +51,7 @@ export type WordCloudTimelinePage = {
   firstDay: number;
   days: number;
   frames: WordCloudFrame[];
+  activity?: number[];
 };
 
 export function wordCloudTimelineDays(first: number, end: number, page: number) {
@@ -61,6 +62,15 @@ export function wordCloudTimelineDays(first: number, end: number, page: number) 
     Math.min(end, firstDay + (offset + index + 1) * wordCloudDaySeconds - 1),
   );
   return { firstDay, days, frames };
+}
+
+export function nextWordCloudPlaybackDay(activity: number[], index: number) {
+  const last = activity.length - 1;
+  if (index >= last) return last;
+  const batch = Math.max(5, Math.ceil(activity[last] / 100));
+  const target = activity[index] + batch;
+  const next = activity.findIndex((casts, day) => day > index && casts >= target);
+  return next === -1 ? last : next;
 }
 
 const capturedCasts = `
@@ -75,9 +85,11 @@ const capturedCasts = `
     )
 `;
 
-export const firstWordCloudCastSql = `
+export const wordCloudActivitySql = `
 WITH {fid:UInt64} AS account
-SELECT minOrNull(timestamp) AS first ${capturedCasts}
+SELECT intDiv(timestamp, 86400) AS day, count() AS casts
+${capturedCasts}
+GROUP BY day ORDER BY day
 `;
 
 export const wordCloudSql = `

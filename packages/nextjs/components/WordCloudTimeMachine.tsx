@@ -1,9 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { cloudHeight, cloudWidth, cloudWordColor, cloudWordSize, packWords } from "~~/lib/word-cloud-layout";
+import {
+  cloudHeight,
+  cloudWidth,
+  cloudWordColor,
+  cloudWordSize,
+  packWords,
+  type WordAnchor,
+} from "~~/lib/word-cloud-layout";
 import { blendWordColor, fitMovingWord, interpolateWord, type WordPose } from "~~/lib/word-cloud-motion";
 import {
+  nextWordCloudPlaybackDay,
   wordCloudDaySeconds,
   wordCloudDaysPerPage,
   type WordCloudFrame,
@@ -15,8 +23,8 @@ const date = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", dateStyle: "med
 const referenceFontSize = 100;
 const timelineFont = `700 ${referenceFontSize}px Arial, sans-serif`;
 const basePurple = [133, 93, 205] as const;
-const activeDayMs = 180;
-const quietDayMs = 24;
+const playbackStepMs = 460;
+const animationMs = 390;
 
 type Ink = { width: number; height: number; bearing: number; ascent: number };
 type PaintedWord = { word: string; ink: Ink; pose: WordPose };
@@ -31,8 +39,9 @@ function faded(pose: WordPose): WordPose {
   return { ...pose, opacity: 0, width: pose.width * 0.65, height: pose.height * 0.65 };
 }
 
-function TimelineCloud({ words, playback }: { words?: WordCloudFrame["words"]; playback: boolean }) {
+function TimelineCloud({ words }: { words?: WordCloudFrame["words"] }) {
   const canvas = useRef<HTMLCanvasElement>(null);
+  const anchors = useRef(new Map<string, WordAnchor>());
   const visible = useRef(new Map<string, PaintedWord>());
   const initialized = useRef(false);
 
@@ -58,14 +67,23 @@ function TimelineCloud({ words, playback }: { words?: WordCloudFrame["words"]; p
         height: Math.ceil((ink.height * fontSize) / referenceFontSize),
       };
     });
-    const next = packWords(measured, cloudHeight).map(({ index, left, top, width, height, angle }) => {
+    const placements = packWords(
+      measured,
+      cloudHeight,
+      measured.map(({ word }) => anchors.current.get(word)),
+    );
+    const nextAnchors = new Map<string, WordAnchor>();
+    const next = placements.map(({ index, left, top, width, height, angle }) => {
       const { word, ink, count } = measured[index];
+      const x = left + width / 2;
+      const y = top + height / 2;
+      nextAnchors.set(word, { x, y, angle });
       return {
         word,
         ink,
         pose: {
-          x: left + width / 2,
-          y: top + height / 2,
+          x,
+          y,
           width: angle ? height : width,
           height: angle ? width : height,
           angle: (angle * Math.PI) / 180,
@@ -74,19 +92,19 @@ function TimelineCloud({ words, playback }: { words?: WordCloudFrame["words"]; p
         },
       };
     });
-    const incoming = new Set(next.map(({ word }) => word));
+    anchors.current = nextAnchors;
     const movements = [
       ...next.map((entry) => ({
         ...entry,
         from: visible.current.get(entry.word)?.pose ?? faded(entry.pose),
       })),
       ...Array.from(visible.current.values())
-        .filter((entry) => !incoming.has(entry.word))
+        .filter((entry) => !nextAnchors.has(entry.word))
         .map((entry) => ({ ...entry, from: entry.pose, pose: faded(entry.pose) })),
     ];
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const started = performance.now();
-    const duration = initialized.current ? (playback ? activeDayMs - 20 : 450) : 0;
+    const duration = initialized.current ? animationMs : 0;
     initialized.current = true;
     let handle = 0;
 
@@ -120,7 +138,7 @@ function TimelineCloud({ words, playback }: { words?: WordCloudFrame["words"]; p
 
     paint(started);
     return () => cancelAnimationFrame(handle);
-  }, [words, playback]);
+  }, [words]);
 
   return (
     <canvas
@@ -155,14 +173,12 @@ export function WordCloudTimeMachine({ fid }: { fid: string }) {
   const page = Math.floor(index / wordCloudDaysPerPage);
   const offset = index % wordCloudDaysPerPage;
   const frame = pages[page]?.frames[offset];
-  const previousFrame = offset ? pages[page]?.frames[offset - 1] : pages[page - 1]?.frames.at(-1);
-  const nextPage = Math.floor((index + 1) / wordCloudDaysPerPage);
+  const nextIndex = timeline?.activity?.length
+    ? nextWordCloudPlaybackDay(timeline.activity, index)
+    : Math.min(last, index + 1);
+  const nextPage = Math.floor(nextIndex / wordCloudDaysPerPage);
   const waitingForNext = playing && index < last && !pages[nextPage];
-  const requestedPage = !pages[page]
-    ? page
-    : playing && (page + 1) * wordCloudDaysPerPage <= last && !pages[page + 1]
-      ? page + 1
-      : null;
+  const requestedPage = !pages[page] ? page : waitingForNext ? nextPage : null;
   const waitingPage = !frame ? page : waitingForNext ? nextPage : null;
   const error = failure?.page === waitingPage ? failure?.message : undefined;
   const currentDay = timeline ? date.format((timeline.firstDay + index * wordCloudDaySeconds) * 1000) : "";
@@ -202,19 +218,18 @@ export function WordCloudTimeMachine({ fid }: { fid: string }) {
 
   useEffect(() => {
     if (!playing || !frame || index >= last || waitingForNext) return;
-    const delay = frame.casts === previousFrame?.casts ? quietDayMs : activeDayMs;
     const timer = window.setTimeout(() => {
-      setIndex(index + 1);
-      if (index + 1 >= last) setPlaying(false);
-    }, delay);
+      setIndex(nextIndex);
+      if (nextIndex >= last) setPlaying(false);
+    }, playbackStepMs);
     return () => window.clearTimeout(timer);
-  }, [frame, index, last, playing, previousFrame, waitingForNext]);
+  }, [frame, index, last, nextIndex, playing, waitingForNext]);
 
   return (
     <div className="word-cloud-time-machine" id="word-cloud-time-machine">
       <div className="word-cloud-time-heading">
         <h2>Word Cloud Time Machine</h2>
-        <p>One point per UTC day. Counts build from the first captured cast with text. Older text may be missing.</p>
+        <p>Playback groups new casts and replies. Scrub to any UTC day. Older text may be missing.</p>
       </div>
       {!timeline && !error && (
         <p role="status" className="timeline-empty">
@@ -240,7 +255,7 @@ export function WordCloudTimeMachine({ fid }: { fid: string }) {
       {last >= 0 && (
         <>
           <div className="word-cloud-time-canvas" data-testid="word-cloud-time-frame" aria-busy={!frame}>
-            <TimelineCloud words={frame?.words} playback={playing} />
+            <TimelineCloud words={frame?.words} />
             {!frame && !error && (
               <p role="status" className="timeline-empty word-cloud-time-empty">
                 <span className="search-spinner" aria-hidden="true" /> Loading this day…
@@ -288,7 +303,7 @@ export function WordCloudTimeMachine({ fid }: { fid: string }) {
             </div>
             {waitingForNext && !error && (
               <p role="status" className="word-cloud-time-leaders">
-                Loading the next days…
+                Loading the next group…
               </p>
             )}
             {frame && !!frame.words.length && (
