@@ -95,7 +95,11 @@ export function YearReviewExplorer({
   const { isMiniApp, fid } = useMiniapp();
   const [draft, setDraft] = useState(initialUser);
   const [request, setRequest] = useState({ user: initialUser, end: initialEnd });
-  const [result, setResult] = useState<{ request: typeof request; data?: YearReview; error?: string }>();
+  const [result, setResult] = useState<{
+    request: typeof request;
+    data?: YearReview & { sharePath?: string | null };
+    error?: string;
+  }>();
   const [page, setPage] = useState(0);
   const [copyCount, setCopyCount] = useState(0);
   const [shareError, setShareError] = useState("");
@@ -138,8 +142,13 @@ export function YearReviewExplorer({
 
   async function share(target: ShareTarget) {
     if (!data) return;
+    if (data.sharePath === null) {
+      setShareError("The share preview is temporarily unavailable.");
+      return;
+    }
     setShareError("");
-    const url = new URL(yearReviewPath(data.profile.fid, data.end, String(Date.now())), window.location.origin).href;
+    const path = data.sharePath ?? yearReviewPath(data.profile.fid, data.end, String(Date.now()));
+    const url = new URL(path, window.location.origin).href;
     if (target === "copy") {
       try {
         await navigator.clipboard.writeText(url);

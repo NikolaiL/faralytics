@@ -39,8 +39,8 @@ export function yearReviewEnd(input: unknown, now = new Date()) {
   return end;
 }
 
-export function yearReviewPath(user: string, end?: string, ts?: string) {
-  return `/year-in-review?${new URLSearchParams({ user, ...(end ? { end } : {}), ...(ts ? { ts } : {}) })}`;
+export function yearReviewPath(user: string, end?: string, ts?: string, share?: string) {
+  return `/year-in-review?${new URLSearchParams({ user, ...(end ? { end } : {}), ...(ts ? { ts } : {}), ...(share ? { share } : {}) })}`;
 }
 
 const postTime = new Intl.DateTimeFormat("en-US", {

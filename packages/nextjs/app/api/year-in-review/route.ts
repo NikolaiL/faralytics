@@ -3,6 +3,7 @@ import { resolveAccount } from "~~/lib/data";
 import { yearReviewEnd, yearReviewPath } from "~~/lib/year-review";
 import { unlockYearReview, yearReviewAccess } from "~~/lib/year-review-access";
 import { readYearReview } from "~~/lib/year-review-data";
+import { protectedYearReviewSharePath } from "~~/lib/year-review-share";
 import { reportServerError, withErrorReporting } from "~~/utils/reportServerError";
 
 export const runtime = "nodejs";
@@ -32,7 +33,11 @@ export const GET = withErrorReporting("/api/year-in-review", async (request) => 
     const params = request.nextUrl.searchParams;
     const end = yearReviewEnd(params.get("end"));
     const fid = await resolveAccount(params.get("user") || "");
-    return Response.json(await readYearReview(fid, end), { headers: { "Cache-Control": "private, no-store" } });
+    const data = await readYearReview(fid, end);
+    return Response.json(
+      { ...data, sharePath: protectedYearReviewSharePath(fid, end) },
+      { headers: { "Cache-Control": "private, no-store" } },
+    );
   } catch (error) {
     if (error instanceof InputError) return Response.json({ error: error.message }, { status: error.status });
     reportServerError(error, "/api/year-in-review");

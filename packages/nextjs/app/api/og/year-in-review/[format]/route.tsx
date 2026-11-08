@@ -6,6 +6,7 @@ import { OG_FONTS } from "~~/lib/og-fonts";
 import { yearReviewEnd } from "~~/lib/year-review";
 import { yearReviewAccess, yearReviewIsPublic } from "~~/lib/year-review-access";
 import { loadYearReviewAvatars, readYearReview } from "~~/lib/year-review-data";
+import { isProtectedYearReviewShare } from "~~/lib/year-review-share";
 import { reportServerError, withErrorReporting } from "~~/utils/reportServerError";
 
 export const runtime = "nodejs";
@@ -16,11 +17,14 @@ export const GET = withErrorReporting<{ params: Promise<{ format: string }> }>(
     const { format } = await context.params;
     if (format !== "farcaster.png" && format !== "x.png") return new Response(null, { status: 404 });
     const access = await yearReviewAccess();
-    if (access !== "allowed") return new Response(null, { status: access === "locked" ? 401 : 404 });
+    const params = request.nextUrl.searchParams;
+    const user = params.get("user") || "";
+    const anchor = params.get("end");
+    const shared = !!anchor && isProtectedYearReviewShare(user, anchor, params.get("ts"), params.get("share"));
+    if (access !== "allowed" && !shared) return new Response(null, { status: access === "locked" ? 401 : 404 });
     try {
-      const params = request.nextUrl.searchParams;
-      const end = yearReviewEnd(params.get("end"));
-      const fid = await resolveAccount(params.get("user") || "");
+      const end = yearReviewEnd(anchor);
+      const fid = shared ? user : await resolveAccount(user);
       const data = await readYearReview(fid, end);
       const avatars = await loadYearReviewAvatars(data);
       const height = format === "x.png" ? 600 : 800;
@@ -28,7 +32,9 @@ export const GET = withErrorReporting<{ params: Promise<{ format: string }> }>(
         width: 1200,
         height,
         fonts: OG_FONTS,
-        headers: { "Cache-Control": yearReviewIsPublic() ? "public, max-age=300, s-maxage=300" : "private, no-store" },
+        headers: {
+          "Cache-Control": shared || yearReviewIsPublic() ? "public, max-age=300, s-maxage=300" : "private, no-store",
+        },
       });
     } catch (error) {
       if (error instanceof InputError) return Response.json({ error: error.message }, { status: error.status });
