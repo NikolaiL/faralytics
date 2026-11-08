@@ -3,14 +3,20 @@
 import { useEffect, useRef, useState } from "react";
 import { cloudHeight, cloudWidth, cloudWordColor, cloudWordSize, packWords } from "~~/lib/word-cloud-layout";
 import { blendWordColor, fitMovingWord, interpolateWord, type WordPose } from "~~/lib/word-cloud-motion";
-import type { WordCloudFrame } from "~~/lib/word-cloud";
+import {
+  wordCloudDaySeconds,
+  wordCloudDaysPerPage,
+  type WordCloudFrame,
+  type WordCloudTimelinePage,
+} from "~~/lib/word-cloud";
 
 const date = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", dateStyle: "medium" });
 
 const referenceFontSize = 100;
 const timelineFont = `700 ${referenceFontSize}px Arial, sans-serif`;
 const basePurple = [133, 93, 205] as const;
-const animationMs = 800;
+const activeDayMs = 180;
+const quietDayMs = 24;
 
 type Ink = { width: number; height: number; bearing: number; ascent: number };
 type PaintedWord = { word: string; ink: Ink; pose: WordPose };
@@ -25,14 +31,14 @@ function faded(pose: WordPose): WordPose {
   return { ...pose, opacity: 0, width: pose.width * 0.65, height: pose.height * 0.65 };
 }
 
-function TimelineCloud({ words }: { words: WordCloudFrame["words"] }) {
+function TimelineCloud({ words, playback }: { words?: WordCloudFrame["words"]; playback: boolean }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const visible = useRef(new Map<string, PaintedWord>());
   const initialized = useRef(false);
 
   useEffect(() => {
     const context = canvas.current?.getContext("2d");
-    if (!context) return;
+    if (!context || !words) return;
     context.font = timelineFont;
     const measured = words.slice(0, 40).map(([word, count]) => {
       const fontSize = cloudWordSize(word, count, words[0][1]);
@@ -80,7 +86,7 @@ function TimelineCloud({ words }: { words: WordCloudFrame["words"] }) {
     ];
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const started = performance.now();
-    const duration = initialized.current ? animationMs : 0;
+    const duration = initialized.current ? (playback ? activeDayMs - 20 : 450) : 0;
     initialized.current = true;
     let handle = 0;
 
@@ -114,7 +120,7 @@ function TimelineCloud({ words }: { words: WordCloudFrame["words"] }) {
 
     paint(started);
     return () => cancelAnimationFrame(handle);
-  }, [words]);
+  }, [words, playback]);
 
   return (
     <canvas
@@ -124,73 +130,105 @@ function TimelineCloud({ words }: { words: WordCloudFrame["words"] }) {
       height={cloudHeight}
       role="img"
       aria-label={
-        words.length
+        words?.length
           ? `Word cloud. Most used: ${words
               .slice(0, 5)
               .map(([word]) => word)
               .join(", ")}`
-          : "No matching words yet."
+          : words
+            ? "No matching words yet."
+            : "Loading word counts."
       }
     />
   );
 }
 
 export function WordCloudTimeMachine({ fid }: { fid: string }) {
-  const [result, setResult] = useState<{ frames: WordCloudFrame[] } | { error: string }>();
+  const [pages, setPages] = useState<Partial<Record<number, WordCloudTimelinePage>>>({});
+  const [failure, setFailure] = useState<{ page: number; message: string }>();
   const [attempt, setAttempt] = useState(0);
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
-  const frames = result && "frames" in result ? result.frames : undefined;
-  const last = (frames?.length ?? 1) - 1;
-  const frame = frames?.[index];
+  const timeline = pages[0];
+  const at = timeline?.at;
+  const last = (timeline?.days ?? 0) - 1;
+  const page = Math.floor(index / wordCloudDaysPerPage);
+  const offset = index % wordCloudDaysPerPage;
+  const frame = pages[page]?.frames[offset];
+  const previousFrame = offset ? pages[page]?.frames[offset - 1] : pages[page - 1]?.frames.at(-1);
+  const nextPage = Math.floor((index + 1) / wordCloudDaysPerPage);
+  const waitingForNext = playing && index < last && !pages[nextPage];
+  const requestedPage = !pages[page]
+    ? page
+    : playing && (page + 1) * wordCloudDaysPerPage <= last && !pages[page + 1]
+      ? page + 1
+      : null;
+  const waitingPage = !frame ? page : waitingForNext ? nextPage : null;
+  const error = failure?.page === waitingPage ? failure?.message : undefined;
+  const currentDay = timeline ? date.format((timeline.firstDay + index * wordCloudDaySeconds) * 1000) : "";
 
   useEffect(() => {
+    if (requestedPage === null) return;
     const controller = new AbortController();
+    const pageNumber = requestedPage;
     async function load() {
       try {
-        const response = await fetch(`/api/word-cloud/timeline?${new URLSearchParams({ user: fid })}`, {
+        const params = new URLSearchParams({ user: fid, page: String(pageNumber) });
+        if (at) params.set("at", at);
+        const response = await fetch(`/api/word-cloud/timeline?${params}`, {
           signal: AbortSignal.any([controller.signal, AbortSignal.timeout(28000)]),
         });
         const body = await response.json();
         if (!response.ok) throw new Error(body.error || "Could not load the Time Machine.");
-        if (!controller.signal.aborted) setResult(body);
+        if (!controller.signal.aborted) {
+          const data = body as WordCloudTimelinePage;
+          for (let day = 1; day < data.frames.length; day++) {
+            if (data.frames[day].casts === data.frames[day - 1].casts)
+              data.frames[day].words = data.frames[day - 1].words;
+          }
+          setPages((previous) => ({ ...previous, [pageNumber]: data }));
+        }
       } catch (error) {
         if (!controller.signal.aborted)
-          setResult({ error: error instanceof Error ? error.message : "Could not load the Time Machine." });
+          setFailure({
+            page: pageNumber,
+            message: error instanceof Error ? error.message : "Could not load the Time Machine.",
+          });
       }
     }
     void load();
     return () => controller.abort();
-  }, [fid, attempt]);
+  }, [at, fid, requestedPage, attempt]);
 
   useEffect(() => {
-    if (!playing || index >= last) return;
+    if (!playing || !frame || index >= last || waitingForNext) return;
+    const delay = frame.casts === previousFrame?.casts ? quietDayMs : activeDayMs;
     const timer = window.setTimeout(() => {
       setIndex(index + 1);
       if (index + 1 >= last) setPlaying(false);
-    }, 1050);
+    }, delay);
     return () => window.clearTimeout(timer);
-  }, [index, last, playing]);
+  }, [frame, index, last, playing, previousFrame, waitingForNext]);
 
   return (
     <div className="word-cloud-time-machine" id="word-cloud-time-machine">
       <div className="word-cloud-time-heading">
         <h2>Word Cloud Time Machine</h2>
-        <p>Counts build up from the first captured cast with text. Older text may be missing. Dates are UTC.</p>
+        <p>One point per UTC day. Counts build from the first captured cast with text. Older text may be missing.</p>
       </div>
-      {!result && (
+      {!timeline && !error && (
         <p role="status" className="timeline-empty">
           <span className="search-spinner" aria-hidden="true" /> Building the timeline…
         </p>
       )}
-      {result && "error" in result && (
+      {error && (
         <p role="alert" className="timeline-error">
-          {result.error}{" "}
+          {error}{" "}
           <button
             type="button"
             className="text-button"
             onClick={() => {
-              setResult(undefined);
+              setFailure(undefined);
               setAttempt((value) => value + 1);
             }}
           >
@@ -198,12 +236,19 @@ export function WordCloudTimeMachine({ fid }: { fid: string }) {
           </button>
         </p>
       )}
-      {frames?.length === 0 && <p className="timeline-empty">No captured casts with text for this account.</p>}
-      {frame && (
+      {timeline?.days === 0 && <p className="timeline-empty">No captured casts with text for this account.</p>}
+      {last >= 0 && (
         <>
-          <div className="word-cloud-time-canvas" data-testid="word-cloud-time-frame">
-            <TimelineCloud words={frame.words} />
-            {!frame.words.length && <p className="timeline-empty word-cloud-time-empty">No matching words yet.</p>}
+          <div className="word-cloud-time-canvas" data-testid="word-cloud-time-frame" aria-busy={!frame}>
+            <TimelineCloud words={frame?.words} playback={playing} />
+            {!frame && !error && (
+              <p role="status" className="timeline-empty word-cloud-time-empty">
+                <span className="search-spinner" aria-hidden="true" /> Loading this day…
+              </p>
+            )}
+            {frame && !frame.words.length && (
+              <p className="timeline-empty word-cloud-time-empty">No matching words yet.</p>
+            )}
           </div>
           <div className="word-cloud-time-controls">
             <div className="word-cloud-time-progress">
@@ -228,7 +273,7 @@ export function WordCloudTimeMachine({ fid }: { fid: string }) {
                 value={index}
                 disabled={last < 1}
                 aria-label="Word cloud timeline"
-                aria-valuetext={date.format(Number(frame.at) * 1000)}
+                aria-valuetext={currentDay}
                 onChange={(event) => {
                   setPlaying(false);
                   setIndex(Number(event.target.value));
@@ -236,10 +281,17 @@ export function WordCloudTimeMachine({ fid }: { fid: string }) {
               />
             </div>
             <div className="word-cloud-time-caption">
-              <strong data-testid="word-cloud-time-date">{date.format(Number(frame.at) * 1000)}</strong>
-              <span>{frame.casts.toLocaleString("en-US")} captured casts with text</span>
+              <strong data-testid="word-cloud-time-date">{currentDay}</strong>
+              <span>
+                {frame ? `${frame.casts.toLocaleString("en-US")} captured casts with text` : "Loading word counts"}
+              </span>
             </div>
-            {!!frame.words.length && (
+            {waitingForNext && !error && (
+              <p role="status" className="word-cloud-time-leaders">
+                Loading the next days…
+              </p>
+            )}
+            {frame && !!frame.words.length && (
               <p className="word-cloud-time-leaders">
                 Top words:{" "}
                 {frame.words

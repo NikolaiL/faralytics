@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { packWords, placeWord, cloudHeight, cloudWidth, type WordPlacement } from "../packages/nextjs/lib/word-cloud-layout.ts";
-import { wordCloudFrameEnds, wordCloudPath, wordCloudSelection } from "../packages/nextjs/lib/word-cloud.ts";
+import { wordCloudDaysPerPage, wordCloudTimelineDays, wordCloudPath, wordCloudSelection } from "../packages/nextjs/lib/word-cloud.ts";
 import { fitMovingWord, interpolateWord, type WordPose } from "../packages/nextjs/lib/word-cloud-motion.ts";
 
 test("word cloud shares preserve a valid UTC cutoff and default to 30 days", () => {
@@ -48,16 +48,21 @@ test("word cloud packs rendered rectangles at 0 or clockwise 90 degrees without 
 });
 
 
-test("time machine starts with the first UTC day and ends at the exact cutoff", () => {
+test("time machine pages contain every UTC day and end at the exact cutoff", () => {
   const first = Date.parse("2024-02-21T18:13:55Z") / 1000;
   const cutoff = Date.parse("2026-11-08T04:02:00Z") / 1000;
-  const frames = wordCloudFrameEnds(first, cutoff);
-  assert.equal(frames.length, 14);
+  const start = wordCloudTimelineDays(first, cutoff, 0);
+  assert.equal(start.frames.length, wordCloudDaysPerPage);
+  const pages = Array.from({ length: Math.ceil(start.days / wordCloudDaysPerPage) }, (_, page) =>
+    wordCloudTimelineDays(first, cutoff, page),
+  );
+  const frames = pages.flatMap(page => page.frames);
+  assert.equal(frames.length, start.days);
   assert.equal(new Date(frames[0] * 1000).toISOString(), "2024-02-21T23:59:59.000Z");
   assert.equal(frames.at(-1), cutoff);
-  assert.ok(frames.every((frame, index) => !index || frame > frames[index - 1]));
-  assert.deepEqual(wordCloudFrameEnds(cutoff - 60, cutoff), [cutoff]);
-  assert.deepEqual(wordCloudFrameEnds(cutoff, cutoff - 86400), []);
+  assert.ok(frames.every((frame, index) => Math.floor(frame / 86400) === Math.floor(first / 86400) + index));
+  assert.deepEqual(wordCloudTimelineDays(cutoff - 60, cutoff, 0).frames, [cutoff]);
+  assert.deepEqual(wordCloudTimelineDays(first, cutoff, pages.length).frames, []);
 });
 
 test("time machine interpolates a retained word's position, size and color", () => {

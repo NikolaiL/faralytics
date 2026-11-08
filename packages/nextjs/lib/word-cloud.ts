@@ -44,17 +44,23 @@ export function wordCloudRange({ period, at }: WordCloudSelection) {
 
 export type WordCloudFrame = { at: string; casts: number; words: WordCloudData["words"] };
 
-export function wordCloudFrameEnds(first: number, end: number) {
-  if (first > end) return [];
-  const day = 86400;
-  const firstDay = Math.floor(first / day);
-  const lastDay = Math.floor(end / day);
-  const frames = Math.min(14, lastDay - firstDay + 1);
-  return Array.from({ length: frames }, (_, index) => {
-    if (index === frames - 1) return end;
-    const offset = Math.floor((index * (lastDay - firstDay)) / (frames - 1));
-    return (firstDay + offset + 1) * day - 1;
-  });
+export const wordCloudDaySeconds = 86400;
+export const wordCloudDaysPerPage = 32;
+export type WordCloudTimelinePage = {
+  at: string;
+  firstDay: number;
+  days: number;
+  frames: WordCloudFrame[];
+};
+
+export function wordCloudTimelineDays(first: number, end: number, page: number) {
+  const firstDay = Math.floor(first / wordCloudDaySeconds) * wordCloudDaySeconds;
+  const days = first > end ? 0 : Math.floor((end - firstDay) / wordCloudDaySeconds) + 1;
+  const offset = page * wordCloudDaysPerPage;
+  const frames = Array.from({ length: Math.max(0, Math.min(wordCloudDaysPerPage, days - offset)) }, (_, index) =>
+    Math.min(end, firstDay + (offset + index + 1) * wordCloudDaySeconds - 1),
+  );
+  return { firstDay, days, frames };
 }
 
 const capturedCasts = `

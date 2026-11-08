@@ -5,11 +5,12 @@ import { loadProfiles } from "~~/lib/profile-data";
 import {
   farcasterEpoch,
   firstWordCloudCastSql,
-  wordCloudFrameEnds,
+  wordCloudTimelineDays,
   wordCloudSql,
   type WordCloudData,
   type WordCloudFrame,
   type WordCloudSelection,
+  type WordCloudTimelinePage,
 } from "~~/lib/word-cloud";
 import { wordCloudTokens } from "~~/lib/word-cloud-tokens";
 
@@ -51,26 +52,36 @@ export const readWordCloud = unstable_cache(
   { revalidate: 300 },
 );
 
-export const readWordCloudTimeline = unstable_cache(
-  async (fid: string, at: string) => {
-    const end = Number(at) - farcasterEpoch;
+const firstCapturedCast = unstable_cache(
+  async (fid: string, end: number) => {
     const [{ first }] = await query<{ first: number | null }>(
       firstWordCloudCastSql,
-      {
-        fid,
-        start: "0",
-        end: String(end),
-      },
+      { fid, start: "0", end: String(end) },
       { timeoutMs: 10000 },
     );
-    if (first === null) return [];
-    const frames = wordCloudFrameEnds(Number(first) + farcasterEpoch, Number(at));
-    return readWordCounts(
-      fid,
-      Number(first),
-      frames.map((frame) => frame - farcasterEpoch),
-    );
+    return first === null ? null : Number(first);
   },
-  ["word-cloud-timeline-v1"],
+  ["word-cloud-first-cast-v1"],
   { revalidate: 300 },
 );
+
+const readDailyFrames = unstable_cache(readWordCounts, ["word-cloud-daily-v1"], { revalidate: 300 });
+
+export async function readWordCloudTimeline(fid: string, at: string, page: number): Promise<WordCloudTimelinePage> {
+  const end = Number(at) - farcasterEpoch;
+  const first = await firstCapturedCast(fid, end);
+  if (first === null) return { at, firstDay: Number(at), days: 0, frames: [] };
+  const { firstDay, days, frames } = wordCloudTimelineDays(first + farcasterEpoch, Number(at), page);
+  return {
+    at,
+    firstDay,
+    days,
+    frames: frames.length
+      ? await readDailyFrames(
+          fid,
+          first,
+          frames.map((frame) => frame - farcasterEpoch),
+        )
+      : [],
+  };
+}
