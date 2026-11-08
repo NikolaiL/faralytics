@@ -16,7 +16,6 @@ import { formatShareText, shareCredit, type ShareTarget } from "~~/lib/share-cre
 import { yearReviewPath, yearReviewSections, yearReviewYear, type YearReview } from "~~/lib/year-review";
 
 const OnchainActions = dynamic(() => import("./OnchainActions"), { ssr: false });
-const date = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "short", day: "numeric", year: "numeric" });
 
 function RecapPreview({ snapshot }: { snapshot: { kind: "year-review"; user: string; end: string } }) {
   const [image, setImage] = useState("");
@@ -227,7 +226,6 @@ export function YearReviewExplorer({
             ))}
           </div>
           <div className="year-review-meta">
-            <span>Through {date.format(new Date(`${data.end}T00:00:00Z`))} UTC</span>
             <span>
               Chapter {page + 1} of {sections.length}
             </span>

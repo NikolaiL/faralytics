@@ -139,7 +139,8 @@
 .year-review-progress [data-state=past]{background:#855dcd}
 .year-review-progress [data-state=current]{background:var(--accent);box-shadow:0 0 9px #d6ff3f55}
 .year-review-meta,.year-review-pager,.year-review-pager>div{display:flex;align-items:center;gap:6px}
-.year-review-meta,.year-review-pager{justify-content:space-between}
+.year-review-meta{justify-content:flex-end}
+.year-review-pager{justify-content:space-between}
 .year-review-panel h2{font-size:clamp(23px,5vw,40px);letter-spacing:-.03em;margin:12px 0 6px}
 .year-review-panel p{font-size:13px;color:var(--muted);line-height:1.5}
 .year-review-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:22px 0;min-height:200px}

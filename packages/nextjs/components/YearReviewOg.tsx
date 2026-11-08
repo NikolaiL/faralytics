@@ -1,9 +1,6 @@
 import { OgLogo } from "~~/components/OgLogo";
 import { YearReviewFireworks } from "~~/components/YearReviewFireworks";
-import { utcDate } from "~~/lib/activity";
 import { yearReviewSections, yearReviewYear, type YearReview } from "~~/lib/year-review";
-
-const monthDay = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 
 export function YearReviewOg({
   data,
@@ -76,7 +73,15 @@ export function YearReviewOg({
           )}
         </div>
       </div>
-      <div style={{ display: "flex", position: "relative", flexDirection: "column", paddingTop: compact ? 9 : 16 }}>
+      <div
+        style={{
+          display: "flex",
+          position: "relative",
+          flexDirection: "column",
+          paddingTop: compact ? 9 : 16,
+          paddingBottom: compact ? 15 : 19,
+        }}
+      >
         <div style={{ position: "absolute", right: 120, top: 4, display: "flex" }}>
           <YearReviewFireworks width={compact ? 182 : 250} height={compact ? 118 : 162} />
         </div>
@@ -86,9 +91,6 @@ export function YearReviewOg({
         <div style={{ display: "flex", gap: 20, fontWeight: 900, fontSize: compact ? 55 : 77 }}>
           <span style={{ color: "#d6ff3f" }}>{yearReviewYear}</span>
           <span>in review</span>
-        </div>
-        <div style={{ color: "#c8b9da", fontSize: compact ? 15 : 19 }}>
-          {`Jan 1 through ${monthDay.format(utcDate(data.end))} · UTC`}
         </div>
       </div>
       <div

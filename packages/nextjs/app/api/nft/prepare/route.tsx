@@ -294,12 +294,11 @@ async function prepareYearReview(input: { user?: unknown; end?: unknown }) {
     artwork: <YearReviewOg data={data} avatar={avatar} />,
     metadata: {
       name: `Faralytics · ${yearReviewYear} in Review · ${label}`,
-      description: `Captured Farcaster activity through ${end} UTC, including casts, received engagement, follows and most-used words.`,
+      description: `Captured Farcaster activity in ${yearReviewYear}, including casts, received engagement, follows and most-used words.`,
       external_url: `https://faralytics.vercel.app${yearReviewPath(fid, end)}`,
       attributes: [
         { trait_type: "FID", value: fid },
         { trait_type: "Year", value: Number(yearReviewYear) },
-        { trait_type: "Through", value: end },
         ...sections
           .slice(0, 3)
           .flatMap((section) => section.stats.map(([trait_type, value]) => ({ trait_type, value }))),
