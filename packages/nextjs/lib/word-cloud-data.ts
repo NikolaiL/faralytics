@@ -53,7 +53,7 @@ export const readWordCloud = unstable_cache(
     ]);
     return { ...selection, ...counts, profile };
   },
-  ["word-cloud-v2"],
+  ["word-cloud-v3"],
   { revalidate: 300 },
 );
 
@@ -63,7 +63,7 @@ export const readGlobalWordCloud = unstable_cache(
     const [counts] = await readWordCounts(null, Math.max(0, end - wordCloudPeriodSeconds(selection.period)), [end]);
     return { ...selection, ...counts, profile: null };
   },
-  ["global-word-cloud-v1"],
+  ["global-word-cloud-v2"],
   { revalidate: 3600 },
 );
 
@@ -78,7 +78,7 @@ const readTimelineActivity = unstable_cache(
   { revalidate: 300 },
 );
 
-const readDailyFrames = unstable_cache(readWordCounts, ["word-cloud-daily-v1"], { revalidate: 300 });
+const readDailyFrames = unstable_cache(readWordCounts, ["word-cloud-daily-v2"], { revalidate: 300 });
 
 export async function readWordCloudTimeline(fid: string, at: string, page: number): Promise<WordCloudTimelinePage> {
   const end = Number(at) - farcasterEpoch;

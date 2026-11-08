@@ -64,7 +64,7 @@ export const readWordCloudPng = unstable_cache(
     const { words } = await readWordCloud(fid, selection);
     return (await renderCloud(words, height)).toString("base64");
   },
-  ["word-cloud-png-v2"],
+  ["word-cloud-png-v3"],
   { revalidate: 300 },
 );
 

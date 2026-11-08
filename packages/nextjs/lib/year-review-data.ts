@@ -119,6 +119,6 @@ export const readYearReview = unstable_cache(
       coverage: status?.coverage ?? "Older pruned or deleted actions may be unavailable.",
     };
   },
-  ["year-review-2026-v4"],
+  ["year-review-2026-v5"],
   { revalidate: 900 },
 );

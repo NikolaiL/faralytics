@@ -141,6 +141,7 @@ GROUP BY day ORDER BY day
 `;
 
 function wordCountsSql(global: boolean) {
+  const shortGreetings = "('gm', 'gn')";
   return `
 WITH ${global ? "" : "{fid:UInt64} AS account,"}
   map('people','person','children','child','women','woman','men','man',
@@ -150,9 +151,10 @@ WITH ${global ? "" : "{fid:UInt64} AS account,"}
     SELECT arrayFirstIndex(cutoff -> timestamp <= cutoff, {frames:Array(UInt32)}) AS bucket,
       word, count() AS occurrences
     FROM (
-      SELECT timestamp, arrayFilter(token -> lengthUTF8(token) <= 32
-          AND lengthUTF8(replaceRegexpAll(token, {nonLetters:String}, '')) >= 3
-          AND NOT has({stopwords:Array(String)}, token),
+      SELECT timestamp, arrayFilter(token -> token IN ${shortGreetings}
+          OR (lengthUTF8(token) <= 32
+            AND lengthUTF8(replaceRegexpAll(token, {nonLetters:String}, '')) >= 3
+            AND NOT has({stopwords:Array(String)}, token)),
         extractAll(lowerUTF8(normalizeUTF8NFC(
           replaceAll(replaceRegexpAll(m.text, {exclude:String}, ' '), '’', char(39))
         )), {tokenPattern:String})
@@ -176,11 +178,11 @@ WITH ${global ? "" : "{fid:UInt64} AS account,"}
       mapContains(irregular, word), irregular[word],
       endsWith(word, 'ies'), concat(substring(word, 1, length(word) - 3), 'y'),
       match(word, '(ss|x|z|ch|sh|o)es$'), substring(word, 1, length(word) - 2),
-      match(word, '[^s]s$'), substring(word, 1, length(word) - 1), word
+      length(word) > 3 AND match(word, '[^s]s$'), substring(word, 1, length(word) - 1), word
     ) AS singular
     FROM frequencies
   )
-SELECT frame, entry.1 AS term, entry.2 AS occurrences
+SELECT frame, if(entry.1 IN ${shortGreetings}, upper(entry.1), entry.1) AS term, entry.2 AS occurrences
 FROM (
   SELECT frame, if(countIf(word = singular) > 0,
     [(singular, sum(occurrences))],
