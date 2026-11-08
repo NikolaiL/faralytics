@@ -115,4 +115,3 @@
 .word-cloud-time-caption{justify-content:space-between;flex-wrap:wrap;margin:10px 0 6px}
 .word-cloud-time-caption strong{color:var(--accent)}
 .word-cloud-time-empty{position:absolute;inset:0;display:grid;place-items:center;margin:0}
-.word-cloud-time-canvas[aria-busy=true] .word-cloud-time-frame{visibility:hidden}

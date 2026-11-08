@@ -155,7 +155,7 @@ function TimelineCloud({ words }: { words?: WordCloudFrame["words"] }) {
               .join(", ")}`
           : words
             ? "No matching words yet."
-            : "Loading word counts."
+            : "Previous word cloud."
       }
     />
   );
@@ -256,11 +256,6 @@ export function WordCloudTimeMachine({ fid }: { fid: string }) {
         <>
           <div className="word-cloud-time-canvas" data-testid="word-cloud-time-frame" aria-busy={!frame}>
             <TimelineCloud words={frame?.words} />
-            {!frame && !error && (
-              <p role="status" className="timeline-empty word-cloud-time-empty">
-                <span className="search-spinner" aria-hidden="true" /> Loading this day…
-              </p>
-            )}
             {frame && !frame.words.length && (
               <p className="timeline-empty word-cloud-time-empty">No matching words yet.</p>
             )}
@@ -297,9 +292,13 @@ export function WordCloudTimeMachine({ fid }: { fid: string }) {
             </div>
             <div className="word-cloud-time-caption">
               <strong data-testid="word-cloud-time-date">{currentDay}</strong>
-              <span>
-                {frame ? `${frame.casts.toLocaleString("en-US")} captured casts with text` : "Loading word counts"}
-              </span>
+              {frame ? (
+                <span>{frame.casts.toLocaleString("en-US")} captured casts with text</span>
+              ) : error ? (
+                <span>Showing the previous snapshot</span>
+              ) : (
+                <span role="status">Loading selected day…</span>
+              )}
             </div>
             {waitingForNext && !error && (
               <p role="status" className="word-cloud-time-leaders">
