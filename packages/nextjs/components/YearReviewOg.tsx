@@ -173,7 +173,7 @@ export function YearReviewOg({
             rowGap: compact ? 10 : 14,
           }}
         >
-          {sections.slice(0, 4).map(({ title, stats }, index) => (
+          {sections.slice(0, 4).map(({ title, stats, kind }, index) => (
             <div
               key={title}
               style={{
@@ -199,7 +199,7 @@ export function YearReviewOg({
                 <span style={{ fontSize: compact ? 19 : 23, fontWeight: 700, color: "#c6a9f4" }}>{title}</span>
               </div>
               {stats.length ? (
-                stats.map(([name, value]) => (
+                (kind === "words" ? stats.slice(0, 5) : stats).map(([name, value]) => (
                   <div
                     key={name}
                     style={{

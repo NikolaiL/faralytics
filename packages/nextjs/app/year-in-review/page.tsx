@@ -25,7 +25,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
     );
     const image = new URL(`/api/og/year-in-review/farcaster.png${url.search}`, origin).toString();
     const launchUrl = new URL(yearReviewPath(user, anchor, timestamp), origin).toString();
-    const description = "Five chapters of captured Farcaster activity in the New Year Edition.";
+    const description = `Your ${yearReviewYear} Farcaster stats, top post, most-used words and Magnificent Seven.`;
     const button = {
       title: "Check My Year in Review",
       action: { type: "launch_miniapp", name: "Faralytics", url: launchUrl, splashBackgroundColor: "#0d0b12" },

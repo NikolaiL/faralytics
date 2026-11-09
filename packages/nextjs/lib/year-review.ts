@@ -84,7 +84,6 @@ export function yearReviewSections(data: YearReview) {
   return [
     {
       title: "What you did",
-      description: "Your captured actions, from original casts to the likes you sent.",
       stats: [
         ["Original casts", data.activity.casts],
         ["Replies sent", data.activity.replies],
@@ -96,7 +95,6 @@ export function yearReviewSections(data: YearReview) {
     },
     {
       title: "How people responded",
-      description: "Interactions received this year on original casts you published this year.",
       post: data.topPost,
       stats: [
         ["Replies received", data.received.replies],
@@ -107,7 +105,6 @@ export function yearReviewSections(data: YearReview) {
     },
     {
       title: "Who connected",
-      description: "Distinct accounts per action. The same person can appear in both a follow and an unfollow count.",
       stats: [
         ["People you followed", data.follows.followed],
         ["People you unfollowed", data.follows.unfollowed],
@@ -117,13 +114,12 @@ export function yearReviewSections(data: YearReview) {
     },
     {
       title: "Your words",
-      description:
-        "Most-used words in your captured casts and replies, after filtering common words and merging plurals.",
+      kind: "words" as const,
       stats: data.words,
     },
     {
       title: yearReviewMutualTitle,
-      description: "Your most two-way connections, ranked by the smaller of interactions sent and received.",
+      description: "Ranked by mutual interactions: the smaller of sent and received.",
       stats: [],
       people: data.mutual,
     },

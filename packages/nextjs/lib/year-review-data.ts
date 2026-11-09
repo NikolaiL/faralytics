@@ -115,10 +115,10 @@ export const readYearReview = unstable_cache(
         followedYou: Number(incoming?.follows ?? 0),
         unfollowedYou: Number(incoming?.unfollows ?? 0),
       },
-      words: words.words.slice(0, 5),
+      words: words.words,
       coverage: status?.coverage ?? "Older pruned or deleted actions may be unavailable.",
     };
   },
-  ["year-review-2026-v5"],
+  ["year-review-2026-v6"],
   { revalidate: 900 },
 );

@@ -3,13 +3,14 @@
 import { sdk } from "@farcaster/miniapp-sdk";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AccountSearch } from "~~/components/AccountSearch";
 import { AvatarImage } from "~~/components/AvatarImage";
 import { CopyToast } from "~~/components/CopyToast";
 import { useMiniapp } from "~~/components/MiniappProvider";
 import { NumberText } from "~~/components/NumberText";
 import { ShareActions } from "~~/components/ShareActions";
+import { WordCloudCanvas } from "~~/components/WordCloudTimeMachine";
 import { YearReviewFireworks } from "~~/components/YearReviewFireworks";
 import { PURPLES } from "~~/lib/activity";
 import { LOGO_PIXELS } from "~~/lib/brand";
@@ -24,6 +25,7 @@ import {
 } from "~~/lib/year-review";
 
 const OnchainActions = dynamic(() => import("./OnchainActions"), { ssr: false });
+const finaleTitle = `Here’s to ${Number(yearReviewYear) + 1}!`;
 
 function RecapPreview({ snapshot }: { snapshot: { kind: "year-review"; user: string; end: string } }) {
   const [image, setImage] = useState("");
@@ -57,11 +59,7 @@ function RecapPreview({ snapshot }: { snapshot: { kind: "year-review"; user: str
   return (
     <div className="year-review-nft">
       <div className="year-review-keepsake">
-        <div>
-          <p className="eyebrow">The keepsake</p>
-          <h2>One year. One NFT.</h2>
-          <p>All five chapters, together in one edition.</p>
-        </div>
+        <h3>Recap NFT</h3>
         <button type="button" onClick={() => void prepare()} disabled={busy} aria-expanded={!!image}>
           {busy ? "Preparing recap NFT…" : image ? "Hide NFT preview" : "Preview full recap NFT"}
         </button>
@@ -101,6 +99,7 @@ export function YearReviewExplorer({
     error?: string;
   }>();
   const [page, setPage] = useState(0);
+  const chapterHeading = useRef<HTMLHeadingElement>(null);
   const [copyCount, setCopyCount] = useState(0);
   const [shareError, setShareError] = useState("");
   const current = result?.request === request ? result : undefined;
@@ -175,8 +174,40 @@ export function YearReviewExplorer({
 
   const sections = data ? yearReviewSections(data) : [];
   const section = sections[page];
+  const chapterTitles = [...sections.map(({ title }) => title), finaleTitle];
+  const isFinale = page === sections.length;
   const hasActivity = sections.some(({ stats }) => stats.some(([, value]) => value > 0));
   const snapshot = data ? { kind: "year-review" as const, user: data.profile.fid, end: data.end } : null;
+
+  function goToChapter(index: number) {
+    setPage(index);
+    requestAnimationFrame(() => chapterHeading.current?.focus());
+  }
+
+  const pager = (
+    <nav className="year-review-pager" aria-label="Recap pages">
+      <button type="button" disabled={page === 0} onClick={() => goToChapter(page - 1)}>
+        ‹ Previous
+      </button>
+      <div>
+        {chapterTitles.map((title, index) => (
+          <button
+            type="button"
+            key={title}
+            aria-current={index === page ? "page" : undefined}
+            aria-label={title}
+            onClick={() => goToChapter(index)}
+          >
+            {index + 1}
+          </button>
+        ))}
+      </div>
+      <button type="button" className="button-primary" disabled={isFinale} onClick={() => goToChapter(page + 1)}>
+        Next ›
+      </button>
+    </nav>
+  );
+
   return (
     <main className="year-review-page">
       <header className="topbar">
@@ -198,7 +229,6 @@ export function YearReviewExplorer({
         <h1>
           <span>{yearReviewYear}</span> in review
         </h1>
-        <p>The casts, conversations, and connections that made your year.</p>
       </section>
       <form
         className="search-form"
@@ -229,22 +259,39 @@ export function YearReviewExplorer({
           {current.error}
         </p>
       )}
-      {!request.user && <p className="empty-note">Look up an account to open its recap.</p>}
-      {data && section && (
-        <section className="year-review-panel" aria-labelledby="year-review-section">
+      {data && (
+        <section
+          className={isFinale ? "year-review-panel year-review-finale" : "year-review-panel"}
+          aria-labelledby="year-review-section"
+        >
           <div className="year-review-progress" aria-hidden="true">
-            {sections.map(({ title }, index) => (
+            {chapterTitles.map((title, index) => (
               <span key={title} data-state={index === page ? "current" : index < page ? "past" : "future"} />
             ))}
           </div>
           <div className="year-review-meta">
             <span>
-              Chapter {page + 1} of {sections.length}
+              Chapter {page + 1} of {chapterTitles.length}
             </span>
           </div>
-          <h2 id="year-review-section">{section.title}</h2>
-          <p>{section.description}</p>
-          {section.people ? (
+          {isFinale && (
+            <div className="year-review-finale-fireworks" aria-hidden="true">
+              <YearReviewFireworks variant={6} />
+            </div>
+          )}
+          <h2 id="year-review-section" ref={chapterHeading} tabIndex={-1}>
+            {chapterTitles[page]}
+          </h2>
+          {section?.description && <p>{section.description}</p>}
+          {section?.kind === "words" ? (
+            section.stats.length ? (
+              <div className="year-review-cloud">
+                <WordCloudCanvas words={section.stats} />
+              </div>
+            ) : (
+              <p className="timeline-empty">No matching words this year.</p>
+            )
+          ) : section?.people ? (
             section.people.length ? (
               <ol className="year-review-people">
                 {section.people.map(({ profile, sent, received, mutual }, index) => (
@@ -275,7 +322,7 @@ export function YearReviewExplorer({
             ) : (
               <p className="timeline-empty">No mutual interactions captured this year.</p>
             )
-          ) : section.stats.length ? (
+          ) : section ? (
             <dl className="year-review-stats">
               {section.stats.map(([label, value], index) => (
                 <div key={label}>
@@ -291,10 +338,8 @@ export function YearReviewExplorer({
                 </div>
               ))}
             </dl>
-          ) : (
-            <p className="timeline-empty">No matching words in this period.</p>
-          )}
-          {section.post && (
+          ) : null}
+          {section?.post && (
             <aside className="year-review-top-post" aria-labelledby="year-review-top-post">
               <div className="year-review-top-post-heading">
                 <div>
@@ -328,53 +373,27 @@ export function YearReviewExplorer({
               </a>
             </aside>
           )}
-          <nav className="year-review-pager" aria-label="Recap pages">
-            <button type="button" disabled={page === 0} onClick={() => setPage(page - 1)}>
-              ‹ Previous
-            </button>
-            <div>
-              {sections.map(({ title }, index) => (
-                <button
-                  type="button"
-                  key={title}
-                  aria-current={index === page ? "page" : undefined}
-                  aria-label={title}
-                  onClick={() => setPage(index)}
-                >
-                  {index + 1}
-                </button>
+          {!isFinale && pager}
+          <div className="year-review-actions">
+            <ShareActions placement="below" disabled={false} onShare={share} heading="Share recap" />
+            {shareError && (
+              <p role="status" className="notice">
+                {shareError}
+              </p>
+            )}
+            {snapshot &&
+              hasActivity &&
+              (previewOnly ? (
+                <RecapPreview key={`${snapshot.user}:${snapshot.end}`} snapshot={snapshot} />
+              ) : (
+                <OnchainActions snapshot={snapshot} />
               ))}
-            </div>
-            <button
-              type="button"
-              className="button-primary"
-              disabled={page === sections.length - 1}
-              onClick={() => setPage(page + 1)}
-            >
-              Next ›
-            </button>
-          </nav>
+          </div>
+          {isFinale && pager}
         </section>
       )}
       {data && <p className="timeline-note">{data.coverage}</p>}
-      {data && (
-        <>
-          <ShareActions placement="below" disabled={false} onShare={share} heading="Share the New Year Edition" />
-          <CopyToast count={copyCount} />
-          {shareError && (
-            <p role="status" className="notice">
-              {shareError}
-            </p>
-          )}
-        </>
-      )}
-      {snapshot &&
-        hasActivity &&
-        (previewOnly ? (
-          <RecapPreview key={`${snapshot.user}:${snapshot.end}`} snapshot={snapshot} />
-        ) : (
-          <OnchainActions snapshot={snapshot} />
-        ))}
+      <CopyToast count={copyCount} />
     </main>
   );
 }

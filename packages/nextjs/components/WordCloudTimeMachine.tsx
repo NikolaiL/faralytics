@@ -39,7 +39,7 @@ function faded(pose: WordPose): WordPose {
   return { ...pose, opacity: 0, width: pose.width * 0.65, height: pose.height * 0.65 };
 }
 
-function TimelineCloud({ words }: { words?: WordCloudFrame["words"] }) {
+export function WordCloudCanvas({ words }: { words?: WordCloudFrame["words"] }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const anchors = useRef(new Map<string, WordAnchor>());
   const visible = useRef(new Map<string, PaintedWord>());
@@ -255,7 +255,7 @@ export function WordCloudTimeMachine({ fid }: { fid: string }) {
       {last >= 0 && (
         <>
           <div className="word-cloud-time-canvas" data-testid="word-cloud-time-frame" aria-busy={!frame}>
-            <TimelineCloud words={frame?.words} />
+            <WordCloudCanvas words={frame?.words} />
             {frame && !frame.words.length && (
               <p className="timeline-empty word-cloud-time-empty">No matching words yet.</p>
             )}
