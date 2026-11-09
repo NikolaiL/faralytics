@@ -27,20 +27,24 @@ const scenes = [
   ],
 ];
 
+const confettiColors = ["#b596f2", "#855dcd", "#d6ff3f"];
+
 export function YearReviewFireworks({
   width,
   height,
   variant = 0,
+  confetti = 0,
 }: {
   width?: number;
   height?: number;
   variant?: number;
+  confetti?: number;
 }) {
   return (
     <svg viewBox="0 0 340 220" width={width} height={height} fill="none" aria-hidden="true">
-      {scenes[variant % scenes.length].map(({ x, y, size, color, rays }) => (
-        <g key={x} transform={`translate(${x} ${y}) scale(${size})`}>
-          <g className="year-review-firework-burst">
+      <g opacity={confetti ? 0.42 : 1}>
+        {scenes[variant % scenes.length].map(({ x, y, size, color, rays }) => (
+          <g key={x} transform={`translate(${x} ${y}) scale(${size})`}>
             <circle r="38" stroke={color} strokeOpacity=".24" strokeDasharray="2 6" />
             <circle r="67" stroke={color} strokeOpacity=".17" />
             <path d="M-7 0H7M0-7V7" stroke={color} strokeWidth="2" />
@@ -52,10 +56,27 @@ export function YearReviewFireworks({
               </g>
             ))}
           </g>
+        ))}
+        <path d="M64 63h12m-6-6v12m217-33h12m-6-6v12M49 169h8m-4-4v8m108 25h8m-4-4v8" stroke="#d6ff3f" />
+        <path d="M85 102h4m44-63h4m174 43h4M222 195h4" stroke="#b596f2" strokeWidth="4" />
+      </g>
+      {confetti > 0 && (
+        <g className="year-review-confetti">
+          {Array.from({ length: confetti }, (_, index) => (
+            <rect
+              key={index}
+              x={18 + ((index * 73 + variant * 13) % 298)}
+              y={12 + ((index * 47 + variant * 19) % 147)}
+              width={4 + (index % 3)}
+              height={index % 3 === 0 ? 8 : 4}
+              rx="1"
+              fill={confettiColors[index % confettiColors.length]}
+              opacity=".38"
+              style={{ animationDelay: `-${(index * 3.7 + variant * 1.9) % 19}s` }}
+            />
+          ))}
         </g>
-      ))}
-      <path d="M64 63h12m-6-6v12m217-33h12m-6-6v12M49 169h8m-4-4v8m108 25h8m-4-4v8" stroke="#d6ff3f" />
-      <path d="M85 102h4m44-63h4m174 43h4M222 195h4" stroke="#b596f2" strokeWidth="4" />
+      )}
     </svg>
   );
 }

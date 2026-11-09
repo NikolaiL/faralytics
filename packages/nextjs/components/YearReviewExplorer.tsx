@@ -87,7 +87,7 @@ function ReviewStat({
     <div ref={ref}>
       <dt>
         <span className="year-review-stat-fireworks" aria-hidden="true">
-          <YearReviewFireworks variant={variant} />
+          <YearReviewFireworks variant={variant} confetti={8} />
         </span>
         {label}
       </dt>
@@ -276,7 +276,7 @@ export function YearReviewExplorer({
       </header>
       <section className="year-review-hero">
         <div className="year-review-fireworks">
-          <YearReviewFireworks />
+          <YearReviewFireworks confetti={16} />
         </div>
         <p className="eyebrow">Farcaster · The New Year Edition</p>
         <h1>
@@ -330,7 +330,7 @@ export function YearReviewExplorer({
           {pager}
           {isFinale && (
             <div className="year-review-finale-fireworks" aria-hidden="true">
-              <YearReviewFireworks variant={6} />
+              <YearReviewFireworks variant={6} confetti={16} />
             </div>
           )}
           <h2 id="year-review-section" ref={chapterHeading} tabIndex={-1}>

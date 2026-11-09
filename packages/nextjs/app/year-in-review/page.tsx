@@ -65,7 +65,7 @@ export default async function YearReviewPage({ searchParams }: PageProps) {
       <main className="year-review-page">
         <section className="year-review-hero">
           <div className="year-review-fireworks">
-            <YearReviewFireworks />
+            <YearReviewFireworks confetti={16} />
           </div>
           <p className="eyebrow">Faralytics · The New Year Edition</p>
           <h1>
