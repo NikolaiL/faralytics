@@ -1,6 +1,7 @@
 "use client";
 
 import { sdk } from "@farcaster/miniapp-sdk";
+import NumberFlow from "@number-flow/react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -22,58 +23,104 @@ import {
   yearReviewShareText,
   yearReviewYear,
   type YearReview,
+  type YearReviewRating,
 } from "~~/lib/year-review";
 
 const OnchainActions = dynamic(() => import("./OnchainActions"), { ssr: false });
 const finaleTitle = `Here’s to ${Number(yearReviewYear) + 1}!`;
+const topPercentFormat = { style: "percent", maximumSignificantDigits: 1 } as const;
+const formatTopPercent = new Intl.NumberFormat("en-US", topPercentFormat);
 
-function RecapPreview({ snapshot }: { snapshot: { kind: "year-review"; user: string; end: string } }) {
-  const [image, setImage] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+function RecapArtwork({ src }: { src: string }) {
+  const [state, setState] = useState<"loading" | "ready" | "error">("loading");
+  return (
+    <figure className="year-review-artwork" data-state={state}>
+      {state !== "ready" && (
+        <p role="status">{state === "loading" ? "Generating recap image…" : "Recap image is unavailable."}</p>
+      )}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt="Year in Review artwork for Farcaster sharing and the recap NFT"
+        width={1200}
+        height={800}
+        onLoad={() => setState("ready")}
+        onError={() => setState("error")}
+      />
+    </figure>
+  );
+}
 
-  async function prepare() {
-    if (image) {
-      setImage("");
-      return;
-    }
-    setBusy(true);
-    setError("");
-    try {
-      const response = await fetch("/api/nft/prepare", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(snapshot),
-        signal: AbortSignal.timeout(60000),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Could not prepare the NFT preview.");
-      setImage(`data:image/png;base64,${data.imageBase64}`);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "Could not prepare the NFT preview.");
-    } finally {
-      setBusy(false);
-    }
-  }
+function ReviewStat({
+  label,
+  value,
+  variant,
+  rating,
+}: {
+  label: string;
+  value: number;
+  variant: number;
+  rating?: YearReviewRating;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [entered, setEntered] = useState(false);
+
+  useEffect(() => {
+    const card = ref.current;
+    if (!card) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setEntered(true);
+        observer.disconnect();
+      },
+      { threshold: 0.1 },
+    );
+    observer.observe(card);
+    return () => observer.disconnect();
+  }, []);
+
+  const topShare = rating ? rating.topPercent / 100 : 1;
+  const rank = rating?.rank.toLocaleString("en-US");
 
   return (
-    <div className="year-review-nft">
-      <div className="year-review-keepsake">
-        <h3>Recap NFT</h3>
-        <button type="button" onClick={() => void prepare()} disabled={busy} aria-expanded={!!image}>
-          {busy ? "Preparing recap NFT…" : image ? "Hide NFT preview" : "Preview full recap NFT"}
-        </button>
-      </div>
-      {error && <p role="alert">{error}</p>}
-      {image && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          className="year-review-artwork"
-          src={image}
-          alt="Combined Year in Review NFT artwork with all five chapters"
-          width={1200}
-          height={800}
-        />
+    <div ref={ref}>
+      <dt>
+        <span className="year-review-stat-fireworks" aria-hidden="true">
+          <YearReviewFireworks variant={variant} />
+        </span>
+        {label}
+      </dt>
+      <dd className="year-review-stat-value">
+        <NumberFlow className="numeric-value" value={entered ? value : 0} locales="en-US" />
+      </dd>
+      {rating && (
+        <dd className="year-review-rating">
+          <div
+            className="year-review-percentile"
+            role="meter"
+            aria-label={`${label} percentile`}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={rating.percentile}
+            aria-valuetext={`Rank ${rank}, top ${formatTopPercent.format(topShare)} of active accounts`}
+          >
+            <span
+              className="year-review-percentile-fill"
+              aria-hidden="true"
+              style={{ transform: `scaleX(${entered ? rating.percentile / 100 : 0})` }}
+            />
+            <span>#{rank}</span>
+            <NumberFlow
+              className="year-review-percentile-value"
+              value={entered ? topShare : 1}
+              format={topPercentFormat}
+              locales="en-US"
+              prefix="Top "
+              trend={-1}
+            />
+          </div>
+        </dd>
       )}
     </div>
   );
@@ -95,7 +142,7 @@ export function YearReviewExplorer({
   const [request, setRequest] = useState({ user: initialUser, end: initialEnd });
   const [result, setResult] = useState<{
     request: typeof request;
-    data?: YearReview & { sharePath?: string | null };
+    data?: YearReview & { ratings?: Record<string, YearReviewRating>; sharePath?: string | null };
     error?: string;
   }>();
   const [page, setPage] = useState(0);
@@ -178,6 +225,12 @@ export function YearReviewExplorer({
   const isFinale = page === sections.length;
   const hasActivity = sections.some(({ stats }) => stats.some(([, value]) => value > 0));
   const snapshot = data ? { kind: "year-review" as const, user: data.profile.fid, end: data.end } : null;
+  const artwork = data
+    ? (data.sharePath || yearReviewPath(data.profile.fid, data.end)).replace(
+        "/year-in-review?",
+        "/api/og/year-in-review/farcaster.png?",
+      )
+    : "";
 
   function goToChapter(index: number) {
     setPage(index);
@@ -274,6 +327,7 @@ export function YearReviewExplorer({
               Chapter {page + 1} of {chapterTitles.length}
             </span>
           </div>
+          {pager}
           {isFinale && (
             <div className="year-review-finale-fireworks" aria-hidden="true">
               <YearReviewFireworks variant={6} />
@@ -323,19 +377,15 @@ export function YearReviewExplorer({
               <p className="timeline-empty">No mutual interactions captured this year.</p>
             )
           ) : section ? (
-            <dl className="year-review-stats">
+            <dl className="year-review-stats" key={section.title}>
               {section.stats.map(([label, value], index) => (
-                <div key={label}>
-                  <dt>
-                    <span className="year-review-stat-fireworks" aria-hidden="true">
-                      <YearReviewFireworks variant={1 + index + page * 2} />
-                    </span>
-                    {label}
-                  </dt>
-                  <dd>
-                    <NumberText>{value.toLocaleString("en-US")}</NumberText>
-                  </dd>
-                </div>
+                <ReviewStat
+                  key={label}
+                  label={label}
+                  value={value}
+                  variant={1 + index + page * 2}
+                  rating={data.ratings?.[label]}
+                />
               ))}
             </dl>
           ) : null}
@@ -373,7 +423,7 @@ export function YearReviewExplorer({
               </a>
             </aside>
           )}
-          {!isFinale && pager}
+          {isFinale && artwork && <RecapArtwork key={artwork} src={artwork} />}
           <div className="year-review-actions">
             <ShareActions placement="below" disabled={false} onShare={share} heading="Share recap" />
             {shareError && (
@@ -381,15 +431,8 @@ export function YearReviewExplorer({
                 {shareError}
               </p>
             )}
-            {snapshot &&
-              hasActivity &&
-              (previewOnly ? (
-                <RecapPreview key={`${snapshot.user}:${snapshot.end}`} snapshot={snapshot} />
-              ) : (
-                <OnchainActions snapshot={snapshot} />
-              ))}
+            {snapshot && hasActivity && !previewOnly && <OnchainActions snapshot={snapshot} />}
           </div>
-          {isFinale && pager}
         </section>
       )}
       {data && <p className="timeline-note">{data.coverage}</p>}

@@ -1,11 +1,11 @@
 import { ImageResponse } from "next/og";
-import { YearReviewOg } from "~~/components/YearReviewOg";
+import { prepareYearReviewOg } from "~~/components/YearReviewOg";
 import { InputError } from "~~/lib/activity";
 import { resolveAccount } from "~~/lib/data";
 import { OG_FONTS } from "~~/lib/og-fonts";
 import { yearReviewEnd } from "~~/lib/year-review";
 import { yearReviewAccess, yearReviewIsPublic } from "~~/lib/year-review-access";
-import { loadYearReviewAvatars, readYearReview } from "~~/lib/year-review-data";
+import { readYearReview } from "~~/lib/year-review-data";
 import { isProtectedYearReviewShare } from "~~/lib/year-review-share";
 import { reportServerError, withErrorReporting } from "~~/utils/reportServerError";
 
@@ -26,9 +26,8 @@ export const GET = withErrorReporting<{ params: Promise<{ format: string }> }>(
       const end = yearReviewEnd(anchor);
       const fid = shared ? user : await resolveAccount(user);
       const data = await readYearReview(fid, end);
-      const avatars = await loadYearReviewAvatars(data);
       const height = format === "x.png" ? 600 : 800;
-      return new ImageResponse(<YearReviewOg data={data} avatars={avatars} height={height} />, {
+      return new ImageResponse(await prepareYearReviewOg(data, height), {
         width: 1200,
         height,
         fonts: OG_FONTS,

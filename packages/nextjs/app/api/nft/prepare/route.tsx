@@ -1,7 +1,7 @@
-import { YearReviewOg } from "~~/components/YearReviewOg";
+import { prepareYearReviewOg } from "~~/components/YearReviewOg";
 import { yearReviewEnd, yearReviewPath, yearReviewSections, yearReviewYear } from "~~/lib/year-review";
 import { yearReviewAccess, yearReviewCanMint } from "~~/lib/year-review-access";
-import { loadYearReviewAvatars, readYearReview } from "~~/lib/year-review-data";
+import { readYearReview } from "~~/lib/year-review-data";
 import { wordCloudPath, wordCloudPeriods, wordCloudSelection } from "~~/lib/word-cloud";
 import { prepareWordCloudArtwork } from "~~/lib/word-cloud-artwork";
 import { resolveAccount } from "~~/lib/data";
@@ -288,10 +288,9 @@ async function prepareYearReview(input: { user?: unknown; end?: unknown }) {
   const sections = yearReviewSections(data);
   if (!sections.some((section) => section.stats.some(([, count]) => count > 0)))
     throw new InputError("This account has no captured activity in the selected year.");
-  const avatars = await loadYearReviewAvatars(data);
   const label = data.profile.username ? `@${data.profile.username}` : `FID ${fid}`;
   return {
-    artwork: <YearReviewOg data={data} avatars={avatars} />,
+    artwork: await prepareYearReviewOg(data),
     metadata: {
       name: `Faralytics · ${yearReviewYear} in Review · ${label}`,
       description: `Captured Farcaster activity in ${yearReviewYear}, including top posts, follows, words, and the Magnificent Seven.`,

@@ -27,8 +27,8 @@ export const interactionEventsSql = `
     WHERE action_type IN ('reply', 'like', 'unlike', 'recast', 'unrecast', 'follow', 'unfollow')
     UNION ALL
     SELECT fid AS peer, timestamp + 1609459200 AS ts, hash, 0 AS outgoing
-    FROM snapchain.messages
-    PREWHERE type = 1 AND has(mentions, account)
+    FROM snapchain.mention_messages
+    PREWHERE has(mentions, account)
     WHERE operation != 'block_observed'
   )`;
 

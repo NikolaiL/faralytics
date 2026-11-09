@@ -15,7 +15,7 @@ import {
 
 const face = join(process.cwd(), "assets/fonts/FaralyticsOG-Bold.ttf");
 
-async function renderCloud(words: WordCloudData["words"], height: number) {
+export async function renderWordCloud(words: WordCloudData["words"], height: number) {
   const top = words[0]?.[1] || 1;
   const rasters = await Promise.all(
     words.slice(0, 52).map(async ([word, count], index) => {
@@ -62,14 +62,14 @@ async function renderCloud(words: WordCloudData["words"], height: number) {
 export const readWordCloudPng = unstable_cache(
   async (fid: string, selection: WordCloudSelection, height = cloudHeight) => {
     const { words } = await readWordCloud(fid, selection);
-    return (await renderCloud(words, height)).toString("base64");
+    return (await renderWordCloud(words, height)).toString("base64");
   },
   ["word-cloud-png-v3"],
   { revalidate: 300 },
 );
 
 const renderGlobalWordCloudPng = unstable_cache(
-  async (words: WordCloudData["words"]) => (await renderCloud(words, cloudHeight)).toString("base64"),
+  async (words: WordCloudData["words"]) => (await renderWordCloud(words, cloudHeight)).toString("base64"),
   ["global-word-cloud-png-v1"],
   { revalidate: 3600 },
 );

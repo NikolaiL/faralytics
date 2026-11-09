@@ -227,6 +227,7 @@ __metadata:
     "@farcaster/miniapp-wagmi-connector": "npm:^2.0.0"
     "@farcaster/quick-auth": "npm:^0.0.8"
     "@neondatabase/serverless": "npm:^1.2.0"
+    "@number-flow/react": "npm:^0.6.2"
     "@tanstack/react-query": "npm:^5.90.0"
     "@types/node": "npm:~18.19.130"
     "@types/react": "npm:~19.2.14"
@@ -1913,6 +1914,19 @@ __metadata:
     "@nomicfoundation/solidity-analyzer-win32-x64-msvc":
       optional: true
   checksum: 10c0/e4f503e9287e18967535af669ca7e26e2682203c45a34ea85da53122da1dee1278f2b8c76c20c67fadd7c1b1a98eeecffd2cbc136860665e3afa133817c0de54
+  languageName: node
+  linkType: hard
+
+"@number-flow/react@npm:^0.6.2":
+  version: 0.6.2
+  resolution: "@number-flow/react@npm:0.6.2"
+  dependencies:
+    esm-env: "npm:^1.1.4"
+    number-flow: "npm:0.6.2"
+  peerDependencies:
+    react: ^18 || ^19
+    react-dom: ^18 || ^19
+  checksum: 10c0/adef080579505663cfc918edfd443f010f9ee9b645987f15285b82c5fef9039b93ced060bf02dcd3392c86822dddf469d50f169f9e49623f24686e8f8475bc4d
   languageName: node
   linkType: hard
 
@@ -6018,6 +6032,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"esm-env@npm:^1.1.4":
+  version: 1.2.2
+  resolution: "esm-env@npm:1.2.2"
+  checksum: 10c0/3d25c973f2fd69c25ffff29c964399cea573fe10795ecc1d26f6f957ce0483d3254e1cceddb34bf3296a0d7b0f1d53a28992f064ba509dfe6366751e752c4166
+  languageName: node
+  linkType: hard
+
 "espree@npm:^10.0.1, espree@npm:^10.4.0":
   version: 10.4.0
   resolution: "espree@npm:10.4.0"
@@ -8101,6 +8122,15 @@ __metadata:
   version: 3.0.0
   resolution: "normalize-path@npm:3.0.0"
   checksum: 10c0/e008c8142bcc335b5e38cf0d63cfd39d6cf2d97480af9abdbe9a439221fd4d749763bab492a8ee708ce7a194bb00c9da6d0a115018672310850489137b3da046
+  languageName: node
+  linkType: hard
+
+"number-flow@npm:0.6.2":
+  version: 0.6.2
+  resolution: "number-flow@npm:0.6.2"
+  dependencies:
+    esm-env: "npm:^1.1.4"
+  checksum: 10c0/5d741e853ddbbc8432e649033adf12d86442ca9a423ced2913fbf58aa33c2ba0d46087369df4c8a14d9d4e251e5615af25e2e90d2ab6820c736f4015e5769f36
   languageName: node
   linkType: hard
 

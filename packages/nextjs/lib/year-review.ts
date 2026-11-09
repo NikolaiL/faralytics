@@ -4,6 +4,7 @@ import { formatShareText, shareCredit, type ShareTarget } from "./share-credit.t
 export const yearReviewYear = "2026";
 export const yearReviewStart = `${yearReviewYear}-01-01`;
 export const yearReviewMutualTitle = "The Magnificent Seven";
+export type YearReviewRating = { rank: number; percentile: number; topPercent: number };
 export type YearReview = {
   profile: Profile;
   end: string;

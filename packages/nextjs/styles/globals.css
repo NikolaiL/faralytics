@@ -142,19 +142,25 @@
 .year-review-progress [data-state=current]{background:var(--accent);box-shadow:0 0 9px #d6ff3f55}
 .year-review-meta,.year-review-pager,.year-review-pager>div{display:flex;align-items:center;gap:6px}
 .year-review-meta{justify-content:flex-end}
-.year-review-pager{justify-content:space-between}
+.year-review-pager{justify-content:space-between;margin:10px 0 18px}
 .year-review-panel h2{font-size:clamp(23px,5vw,40px);letter-spacing:-.03em;margin:12px 0 6px}
 .year-review-panel p{font-size:13px;color:var(--muted);line-height:1.5}
 .year-review-cloud{margin:18px 0 22px;padding:clamp(6px,2vw,16px);border:1px solid #4b3862;border-radius:12px;background:#14101c}
 .year-review-finale{position:relative;isolation:isolate;background:radial-gradient(ellipse at 50% 12%,#3a225d,#15101c 72%)}
 .year-review-finale-fireworks{position:absolute;inset:0 0 auto;z-index:-1;display:grid;justify-items:center;pointer-events:none;opacity:.46}
 .year-review-finale-fireworks svg{display:block;width:min(85%,480px);height:auto}
+@media(prefers-reduced-motion:no-preference){
+  :is(.year-review-fireworks,.year-review-finale-fireworks) svg>g{animation:year-review-firework-glow 14s ease-in-out infinite alternate}
+  :is(.year-review-fireworks,.year-review-finale-fireworks) svg>g:nth-of-type(2){animation-delay:-5s}
+  :is(.year-review-fireworks,.year-review-finale-fireworks) svg>g:nth-of-type(3){animation-delay:-9s}
+}
+@keyframes year-review-firework-glow{from{opacity:.72}to{opacity:1}}
 .year-review-finale h2{margin:clamp(28px,6vw,64px) 0 clamp(24px,5vw,48px);text-align:center;color:var(--accent);font-size:clamp(29px,7vw,64px);font-weight:900}
 .year-review-finale .year-review-actions{width:min(100%,540px);margin:0 auto 22px}
 .year-review-finale .share-actions-below{margin-top:0}
 .year-review-finale .share-buttons{display:grid;grid-template-columns:1.4fr 1fr 1fr;width:100%}
 .year-review-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:22px 0;min-height:200px}
-.year-review-stats>div{position:relative;isolation:isolate;overflow:hidden;display:flex;flex-direction:column-reverse;justify-content:center;gap:6px;min-width:0;min-height:95px;padding:14px;border:1px solid #4b3862;border-radius:12px;background:radial-gradient(ellipse at 100% 0,#3b255b,#191122 73%)}
+.year-review-stats>div{position:relative;isolation:isolate;overflow:hidden;display:flex;flex-direction:column;gap:6px;min-width:0;min-height:95px;padding:14px;border:1px solid #4b3862;border-radius:12px;background:radial-gradient(ellipse at 100% 0,#3b255b,#191122 73%)}
 .year-review-stats>div:first-child{border-color:#7a60a4;background:radial-gradient(ellipse at 100% 0,#51347b,#21132f 76%)}
 .year-review-stat-fireworks{position:absolute;z-index:-1;right:-10px;top:-14px;width:clamp(100px,56%,166px);opacity:.54;pointer-events:none}
 .year-review-stats>div:nth-child(2n) .year-review-stat-fireworks{top:auto;bottom:-20px;right:1%}
@@ -162,7 +168,11 @@
 .year-review-stats>div:nth-child(5n) .year-review-stat-fireworks{top:0;right:12%;transform:rotate(14deg)}
 .year-review-stat-fireworks svg{display:block;width:100%;height:auto}
 .year-review-stats dt{font-size:12px;color:#d1b7e6;overflow-wrap:anywhere}
-.year-review-stats dd{margin:0;font-size:clamp(21px,5vw,40px);color:var(--accent)}
+.year-review-stat-value{display:grid;flex:1;place-items:center;min-height:1.25em;margin:0;text-align:center;font-size:clamp(21px,5vw,40px);color:var(--accent)}
+.year-review-rating{margin:4px -14px -14px}
+.year-review-percentile{position:relative;isolation:isolate;display:flex;align-items:center;justify-content:space-between;gap:3px;min-height:26px;padding:4px clamp(5px,1.6vw,14px);background:#2a1d38;color:var(--text);font-size:clamp(10px,2.6vw,12px);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.year-review-percentile-fill{position:absolute;inset:0;z-index:-1;background:#694894;transform-origin:left;transition:transform .8s ease-out}
+.year-review-percentile-value{color:var(--accent)}
 .year-review-top-post{margin:0 0 22px;padding:clamp(14px,4vw,22px);border:1px solid #6b508a;border-radius:12px;background:linear-gradient(125deg,#301d46,#1b1328 75%)}
 .year-review-top-post-heading{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 16px}
 .year-review-top-post h3{margin:0;color:var(--accent);font-size:15px}
@@ -181,11 +191,10 @@
 .year-review-pager button{min-height:44px;padding:8px 10px;border:1px solid #4c3a5e;border-radius:9px;background:#21182b;color:#ede0ff;font-size:12px;white-space:nowrap}
 .year-review-pager button[aria-current=page]{color:var(--accent);border-color:#855dcd}
 .year-review-pager .button-primary:not(:disabled){background:#855dcd;color:#fff}
-.year-review-nft{margin-top:20px}
-.year-review-keepsake{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;padding:clamp(18px,4vw,28px);border:1px dashed #775b9b;border-radius:16px;background:#1b1226}
-.year-review-keepsake h3{margin:0;font-size:clamp(17px,4vw,23px)}
-.year-review-keepsake button{min-height:44px;padding:9px 15px;border:0;border-radius:9px;background:var(--accent);color:#191d0b;font:inherit;font-size:13px;font-weight:700}
-.year-review-artwork{display:block;width:100%;height:auto;margin-top:12px;border:1px solid var(--border);border-radius:12px}
+.year-review-artwork{position:relative;width:min(100%,720px);aspect-ratio:3/2;margin:0 auto 22px;overflow:hidden;border:1px solid var(--border);border-radius:12px;background:var(--bg)}
+.year-review-artwork img{display:block;width:100%;height:auto}
+.year-review-artwork:not([data-state=ready]) img{visibility:hidden}
+.year-review-artwork p{position:absolute;inset:0;display:grid;place-items:center;margin:0;padding:12px;text-align:center}
 @media(max-width:570px){.year-review-fireworks{inset:12px -24px auto auto;width:64%;transform:none;opacity:.52}.year-review-hero h1{max-width:5em}.year-review-stats{grid-template-columns:repeat(2,minmax(0,1fr));min-height:240px}.year-review-pager button{padding-inline:7px}.year-review-pager,.year-review-pager>div{gap:4px}}
 @media(max-width:370px){.year-review-pager>div button{padding-inline:5px}}
 @media(max-width:350px){.year-review-pager{display:grid;grid-template-columns:1fr 1fr;gap:8px}.year-review-pager>div{grid-area:1/1/2/-1;justify-content:center}.year-review-pager>div button{flex:1}}

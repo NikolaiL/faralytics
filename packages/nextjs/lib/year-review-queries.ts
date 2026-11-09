@@ -68,3 +68,24 @@ GROUP BY peer
 HAVING mutual > 0
 ORDER BY mutual DESC, peer
 LIMIT 7`;
+
+export const yearReviewRatingsSql = `
+SELECT subject.metric AS metric, any(subject.score) AS score,
+  1 + sumIf(histogram.accounts, histogram.score > subject.score) AS rank,
+  100.0 * sumIf(histogram.accounts, histogram.score < subject.score)
+    / greatest(sum(histogram.accounts) - 1, 1) AS percentile,
+  100.0 * sumIf(histogram.accounts, histogram.score >= subject.score)
+    / sum(histogram.accounts) AS topPercent
+FROM (
+  SELECT end, generated_at, metric, score
+  FROM snapchain.year_review_metric_scores
+  ARRAY JOIN arrayEnumerate(scores) AS metric, scores AS score
+  WHERE fid = {fid:UInt64} AND end = {end:Date}
+) AS subject
+ALL INNER JOIN (
+  SELECT end, generated_at, metric, score, accounts
+  FROM snapchain.year_review_metric_histogram WHERE end = {end:Date}
+) AS histogram
+ON subject.end = histogram.end AND subject.generated_at = histogram.generated_at
+  AND subject.metric = histogram.metric
+GROUP BY subject.metric`;

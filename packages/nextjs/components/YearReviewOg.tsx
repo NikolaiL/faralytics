@@ -1,5 +1,8 @@
 import { OgLogo } from "~~/components/OgLogo";
 import { YearReviewFireworks } from "~~/components/YearReviewFireworks";
+import { renderWordCloud } from "~~/lib/word-cloud-artwork";
+import { cloudHeight, cloudWidth } from "~~/lib/word-cloud-layout";
+import { loadYearReviewAvatars } from "~~/lib/year-review-data";
 import {
   formatYearReviewPostTime,
   yearReviewMutualTitle,
@@ -38,14 +41,31 @@ function RecapAvatar({ image, size, name }: { image: string | null; size: number
   );
 }
 
-export function YearReviewOg({
+export async function prepareYearReviewOg(data: YearReview, height: 600 | 800 = 800) {
+  const rasterHeight = height === 600 ? 336 : cloudHeight;
+  const [avatars, cloud] = await Promise.all([
+    loadYearReviewAvatars(data),
+    data.words.length ? renderWordCloud(data.words.slice(0, 18), rasterHeight) : null,
+  ]);
+  const width = 324;
+  const wordCloud = cloud && {
+    src: `data:image/png;base64,${cloud.toString("base64")}`,
+    width,
+    height: Math.round((rasterHeight / cloudWidth) * width),
+  };
+  return <YearReviewOg data={data} avatars={avatars} wordCloud={wordCloud} height={height} />;
+}
+
+function YearReviewOg({
   data,
   avatars,
-  height = 800,
+  wordCloud,
+  height,
 }: {
   data: YearReview;
   avatars: (string | null)[];
-  height?: 600 | 800;
+  wordCloud: { src: string; width: number; height: number } | null;
+  height: 600 | 800;
 }) {
   const [avatar, ...peerAvatars] = avatars;
   const label = data.profile.username ? `@${data.profile.username}` : `FID ${data.profile.fid}`;
@@ -198,8 +218,15 @@ export function YearReviewOg({
                 >{`0${index + 1}`}</span>
                 <span style={{ fontSize: compact ? 19 : 23, fontWeight: 700, color: "#c6a9f4" }}>{title}</span>
               </div>
-              {stats.length ? (
-                (kind === "words" ? stats.slice(0, 5) : stats).map(([name, value]) => (
+              {kind === "words" ? (
+                wordCloud ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img {...wordCloud} alt="" style={{ alignSelf: "center" }} />
+                ) : (
+                  <div style={{ color: "#b9aacb", fontSize: 20 }}>No matching words</div>
+                )
+              ) : (
+                stats.map(([name, value]) => (
                   <div
                     key={name}
                     style={{
@@ -226,8 +253,6 @@ export function YearReviewOg({
                     </span>
                   </div>
                 ))
-              ) : (
-                <div style={{ color: "#b9aacb", fontSize: 20 }}>No matching words</div>
               )}
             </div>
           ))}

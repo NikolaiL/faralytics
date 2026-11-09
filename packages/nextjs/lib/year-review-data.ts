@@ -6,18 +6,30 @@ import { query } from "~~/lib/clickhouse";
 import { loadProfiles } from "~~/lib/profile-data";
 import { readWordCounts } from "~~/lib/word-cloud-data";
 import { farcasterEpoch } from "~~/lib/word-cloud";
-import { yearReviewStart, type YearReview } from "~~/lib/year-review";
+import { yearReviewStart, type YearReview, type YearReviewRating } from "~~/lib/year-review";
 import {
   yearReviewFollowsSql,
   yearReviewMutualSql,
   yearReviewOutgoingSql,
   yearReviewPostSql,
+  yearReviewRatingsSql,
   yearReviewReceivedSql,
 } from "~~/lib/year-review-queries";
 
 type Counts = { casts: number; replies: number; recasts: number; likes: number };
 type Received = YearReview["received"] & { cast_hash: string; all_casts: number };
 type Mutual = { fid: string; sent: number; received: number; mutual: number };
+
+export const readYearReviewRatings = unstable_cache(
+  (fid: string, end: string) =>
+    query<YearReviewRating & { metric: number; score: number }>(
+      yearReviewRatingsSql,
+      { fid, end },
+      { timeoutMs: 4000 },
+    ),
+  ["year-review-ratings-active-v2"],
+  { revalidate: 300 },
+);
 
 export function loadYearReviewAvatars(data: YearReview) {
   return Promise.all(
