@@ -149,15 +149,14 @@
 .year-review-finale{position:relative;isolation:isolate;background:radial-gradient(ellipse at 50% 12%,#3a225d,#15101c 72%)}
 .year-review-finale-fireworks{position:absolute;inset:0 0 auto;z-index:-1;display:grid;justify-items:center;pointer-events:none;opacity:.46}
 .year-review-finale-fireworks svg{display:block;width:min(85%,480px);height:auto}
+.year-review-confetti rect{opacity:.28;transform-box:fill-box;transform-origin:center;transform:translate(var(--confetti-x),var(--confetti-y)) rotate(var(--confetti-turn))}
 @media(prefers-reduced-motion:no-preference){
-  .year-review-confetti rect{transform-box:fill-box;transform-origin:center;animation:year-review-confetti-drift 16s linear infinite}
-  .year-review-confetti rect:nth-child(even){--confetti-drift:-14px;animation-duration:19s}
-  .year-review-confetti rect:nth-child(3n){animation-duration:22s}
+  .year-review-confetti rect{animation:year-review-confetti-burst 13s infinite}
 }
-@keyframes year-review-confetti-drift{
-  0%{opacity:0;transform:translate(0,-12px) rotate(-35deg)}
-  20%,68%{opacity:.58}
-  100%{opacity:0;transform:translate(var(--confetti-drift,16px),52px) rotate(155deg)}
+@keyframes year-review-confetti-burst{
+  0%{opacity:0;transform:translate(0,0) rotate(0);animation-timing-function:cubic-bezier(.15,.7,.25,1)}
+  12%{opacity:.58;transform:translate(calc(var(--confetti-x)*.72),calc(var(--confetti-y)*.72)) rotate(calc(var(--confetti-turn)*.6));animation-timing-function:ease-out}
+  60%,100%{opacity:0;transform:translate(var(--confetti-x),var(--confetti-y)) rotate(var(--confetti-turn))}
 }
 .year-review-finale h2{margin:clamp(28px,6vw,64px) 0 clamp(24px,5vw,48px);text-align:center;color:var(--accent);font-size:clamp(29px,7vw,64px);font-weight:900}
 .year-review-finale .year-review-actions{width:min(100%,540px);margin:0 auto 22px}

@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 const scenes = [
   [
     { x: 205, y: 94, size: 1, color: "#b596f2", rays: 12 },
@@ -40,10 +42,11 @@ export function YearReviewFireworks({
   variant?: number;
   confetti?: number;
 }) {
+  const bursts = scenes[variant % scenes.length];
   return (
     <svg viewBox="0 0 340 220" width={width} height={height} fill="none" aria-hidden="true">
       <g opacity={confetti ? 0.42 : 1}>
-        {scenes[variant % scenes.length].map(({ x, y, size, color, rays }) => (
+        {bursts.map(({ x, y, size, color, rays }) => (
           <g key={x} transform={`translate(${x} ${y}) scale(${size})`}>
             <circle r="38" stroke={color} strokeOpacity=".24" strokeDasharray="2 6" />
             <circle r="67" stroke={color} strokeOpacity=".17" />
@@ -62,18 +65,32 @@ export function YearReviewFireworks({
       </g>
       {confetti > 0 && (
         <g className="year-review-confetti">
-          {Array.from({ length: confetti }, (_, index) => (
-            <rect
-              key={index}
-              x={18 + ((index * 73 + variant * 13) % 298)}
-              y={12 + ((index * 47 + variant * 19) % 147)}
-              width={4 + (index % 3)}
-              height={index % 3 === 0 ? 8 : 4}
-              rx="1"
-              fill={confettiColors[index % confettiColors.length]}
-              opacity=".38"
-              style={{ animationDelay: `-${(index * 3.7 + variant * 1.9) % 19}s` }}
-            />
+          {bursts.slice(0, Math.ceil(confetti / 8)).map(({ x, y }, burst) => (
+            <g key={x} transform={`translate(${x} ${y})`}>
+              {Array.from({ length: Math.min(8, confetti - burst * 8) }, (_, index) => {
+                const angle = ((index * 45 + variant * 13 + burst * 25) * Math.PI) / 180;
+                const distance = 54 + ((index * 17 + variant * 9) % 34);
+                return (
+                  <rect
+                    key={index}
+                    x="-2"
+                    y="-2"
+                    width={4 + (index % 3)}
+                    height={index % 3 === 0 ? 8 : 4}
+                    rx="1"
+                    fill={confettiColors[index % confettiColors.length]}
+                    style={
+                      {
+                        "--confetti-x": `${Math.round(Math.cos(angle) * distance)}px`,
+                        "--confetti-y": `${Math.round(Math.sin(angle) * distance)}px`,
+                        "--confetti-turn": `${index % 2 ? -105 : 125}deg`,
+                        animationDelay: `-${(variant * 2.1 + burst * 5.5) % 13}s`,
+                      } as CSSProperties
+                    }
+                  />
+                );
+              })}
+            </g>
           ))}
         </g>
       )}
