@@ -225,3 +225,18 @@ Anonymous visitors see ten positive-score accounts in each category. Farcaster h
 Each category has Farcaster/X/copy sharing. Share text and image titles use `Top Casters · <category> · <timeframe>`. Share text omits the cutoff date; the URL and image retain it. Sharing your own signed-in account adds `I am ranked #<position>. How about you?` (or `I am unranked. How about you?` when appropriate). Sharing another account never claims its position as your own. Links preserve `metric`, `period`, UTC `end`, optional subject FID `user`, and a cache-busting `ts`. Shared links render the selected list as real HTML; recipients retain the shared subject's position. `/api/og/top-casters/farcaster.png` (1200×800) and `x.png` (1200×600) show the same category/selection with the source caveat and refresh time. Links preserve filters, not immutable ranking snapshots; later summary refreshes can change positions.
 
 The SELECT-only `/api/top-casters` reads the hourly `farcaster.top_casters_daily` snapshot, with five-minute rank caching. It exposes the summary generation time and source check/catch-up/coverage from `dataset_status`. See [db/clickhouse/README.md](db/clickhouse/README.md) for installation, source semantics, resource bounds and SQL fixtures. Ranking query/route changes are isolated from the hidden Year in Review feature. Potential follow-up categories available from captured actions include follows given, follows received and active days; distinct people require distinct-set aggregation rather than summing daily unique counts.
+
+### Ranking performance (November 12, 2026)
+
+Ranking queries cache for five minutes per account/start/end; dataset status caches for one minute. API responses use a one-minute private browser cache. Profile enrichment runs outside the ranking cache.
+
+Measured live production using global rankings and FID 366713, with November 10 as a fresh UTC anchor. SQL figures are medians of three direct reads, with ClickHouse query caching disabled and warm storage. API first requests use fresh application cache keys; repeat figures are medians of three further requests, bypassing browser caching. Ranges below cover both subjects. The summary had 64,203,042 rows; 365-day queries read about 11.6 million, all-time queries about 64.2 million.
+
+| Window | Direct ranking SQL | First API request | Repeated API request |
+| --- | --- | --- | --- |
+| 7 days | 14–22 ms | 0.93–1.41 s | 0.57–0.69 s |
+| 30 days | 25–35 ms | 0.74–0.82 s | 0.57–0.58 s |
+| 365 days | 0.77–1.10 s | 3.36–3.85 s | 1.97–2.37 s |
+| All time | 3.03 s | 5.35–5.42 s | 2.06–2.22 s |
+
+Profile-only diagnostics found about 0.14 seconds of database execution for the profile batch. Longer-window lists also needed missing-username proofs: three accounts for 365 days, one for all time. Those uncached registry queries took 1.13–1.18 seconds inside ClickHouse, accounting for much of the remaining repeat-request cost. These are observations under the live workload, not latency guarantees. No cache policy changed during the measurement. Full samples are kept locally in ignored `artifacts/top-casters-performance.json`.
