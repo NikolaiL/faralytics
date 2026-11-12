@@ -139,6 +139,33 @@
           "test_id": "tab-word-cloud"
         }
       ]
+    },
+    {
+      "name": "top-casters-lists",
+      "path": "/",
+      "viewport": "mobile",
+      "steps": [
+        {
+          "probe": "/api/top-casters?period=days7",
+          "expect": 200
+        },
+        {
+          "action": "click",
+          "test_id": "tab-top-casters"
+        },
+        {
+          "assert": "visible",
+          "test_id": "top-casters-lists"
+        },
+        {
+          "assert": "fits",
+          "test_id": "caster-timeframe"
+        },
+        {
+          "assert": "fits",
+          "test_id": "tab-top-casters"
+        }
+      ]
     }
   ]
 }

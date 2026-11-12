@@ -1,4 +1,5 @@
 "use client";
+import { useId } from "react";
 export function ShareActions({
   disabled,
   onShare,
@@ -10,13 +11,14 @@ export function ShareActions({
   placement: "header" | "below";
   heading?: string;
 }) {
+  const headingId = useId();
   return (
     <div
       className={`share-actions ${placement === "below" ? "share-actions-below" : ""}`}
       role="group"
-      aria-labelledby={`share-heading-${placement}`}
+      aria-labelledby={headingId}
     >
-      <p id={`share-heading-${placement}`}>{heading}</p>
+      <p id={headingId}>{heading}</p>
       <div className="share-buttons">
         <button
           data-testid={placement === "header" ? "share-farcaster" : "share-farcaster-bottom"}

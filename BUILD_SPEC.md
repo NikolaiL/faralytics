@@ -27,3 +27,7 @@ Add interactive follower-action curves, up to ten selected accounts and a Top 10
 ## Follow timeline section
 
 Add `/follow-timeline` as the third desktop tab/mobile bottom-navigation item. Display captured follow/unfollow events (not current relationships), with optional actor and target filters using shared username/FID search. Support an unfiltered global feed, 20 initial events, cursor-based lazy loading, five-second live refresh, per-second relative times, PFPs, different action colors and short insertion animations. Preserve reading position for visitors browsing older events, provide Pause/Resume and reduced-motion support, and reuse existing actor/target/time-indexed action tables without a schema migration. Include filtered lookups in the existing logging system.
+
+## Top Casters section
+
+Add the public `/top-casters` desktop/mobile tab with Today / Yesterday / 7 / 30 / 365 UTC days / All time. Show separate original-cast, replies/recasts/likes/mentions given, and replies/recasts/likes/mentions received leaderboards. Default to Top 10; personalize using the Farcaster host FID: Top 10 if in it, otherwise Top 5 plus two positions on either side. An account without positive activity is unranked. Give every list its own Farcaster/X/copy controls and real-HTML share URL preserving category, subject, period and UTC anchor, with 1200×800/1200×600 PNG metadata. Use the new hourly replacement daily summary without changing recap metrics or ingestion. Disclose incomplete captured history, partial today, source catch-up and summary/source timestamps.
