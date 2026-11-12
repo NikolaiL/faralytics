@@ -245,30 +245,18 @@ export function TopCastersExplorer({
         </div>
       )}
       {data && (
-        <>
-          <p className="timeline-note">
-            {data.start} – {data.through} UTC · {data.partialDay ? "Includes today’s partial UTC day. " : ""}Summary
-            refreshed {data.updatedAt} UTC.{data.checkedAt ? ` Source checked ${data.checkedAt} UTC.` : ""}
-            {data.catchingUp ? " Source is catching up." : ""}
-          </p>
-          <p className="timeline-note">
-            Casts exclude replies. Positive captured actions count even if later undone. Mentions use corrected tags.
-            Received actions include responses to older posts and exclude self-actions. Equal counts are ordered by FID.{" "}
-            {data.coverage}
-          </p>
-          <div className="caster-grid" data-testid="top-casters-lists">
-            {data.lists.map((list) => (
-              <TopCasterList key={list.metric} list={list} profiles={data.profiles} user={user} viewerFid={fid}>
-                <ShareActions
-                  placement="below"
-                  heading={`share ${casterMetrics[list.metric].toLowerCase()}:`}
-                  disabled={false}
-                  onShare={(target) => void handleShare(list.metric, target, Date.now())}
-                />
-              </TopCasterList>
-            ))}
-          </div>
-        </>
+        <div className="caster-grid" data-testid="top-casters-lists">
+          {data.lists.map((list) => (
+            <TopCasterList key={list.metric} list={list} profiles={data.profiles} user={user} viewerFid={fid}>
+              <ShareActions
+                placement="below"
+                heading={`share ${casterMetrics[list.metric].toLowerCase()}:`}
+                disabled={false}
+                onShare={(target) => void handleShare(list.metric, target, Date.now())}
+              />
+            </TopCasterList>
+          ))}
+        </div>
       )}
       {shareError && (
         <p className="error-box" role="alert">
