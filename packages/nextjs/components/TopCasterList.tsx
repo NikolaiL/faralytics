@@ -1,5 +1,7 @@
-import Link from "next/link";
+"use client";
+import { sdk } from "@farcaster/miniapp-sdk";
 import { AvatarImage } from "./AvatarImage";
+import { useMiniapp } from "./MiniappProvider";
 import { NumberText } from "./NumberText";
 import { casterMetrics, type CasterList, type TopCasters } from "~~/lib/top-casters";
 
@@ -8,14 +10,17 @@ export function TopCasterList({
   profiles,
   user,
   viewerFid,
+  onSelect,
   children,
 }: {
   list: CasterList;
   profiles: TopCasters["profiles"];
   user?: string;
   viewerFid?: string;
+  onSelect: (fid: string) => void;
   children?: React.ReactNode;
 }) {
+  const { isMiniApp } = useMiniapp();
   const userProfile = profiles.find((profile) => profile.fid === user);
   const own = !!user && user === viewerFid;
   return (
@@ -34,6 +39,7 @@ export function TopCasterList({
         {list.rows.map((row, index) => {
           const profile = profiles.find((profile) => profile.fid === row.fid);
           const name = profile?.username ? `@${profile.username}` : `FID ${row.fid}`;
+          const profileUrl = `https://farcaster.xyz/${profile?.username || `~/profiles/${row.fid}`}`;
           return (
             <li
               key={row.fid}
@@ -44,15 +50,54 @@ export function TopCasterList({
               <span className="interaction-rank">
                 <NumberText>{String(row.position)}</NumberText>
               </span>
-              <Link className="timeline-account" href={`/?user=${row.fid}`}>
-                <span className="result-avatar timeline-avatar" aria-hidden="true">
-                  <AvatarImage source={profile?.pfp_url} size={32} />
-                </span>
-                <span className="caster-name">
-                  {name}
-                  {row.fid === user && <small>{own ? "You" : "Selected account"}</small>}
-                </span>
-              </Link>
+              <span className="caster-account">
+                <button
+                  type="button"
+                  className="timeline-account"
+                  aria-label={`Show rankings for ${name}`}
+                  onClick={() => onSelect(row.fid)}
+                >
+                  <span className="result-avatar timeline-avatar" aria-hidden="true">
+                    <AvatarImage source={profile?.pfp_url} size={32} />
+                  </span>
+                  <span className="caster-name">
+                    {name}
+                    {row.fid === user && <small>{own ? "You" : "Selected account"}</small>}
+                  </span>
+                </button>
+                <a
+                  className="caster-profile-link"
+                  href={profileUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={`Open ${name} on Farcaster`}
+                  title="Open Farcaster profile"
+                  onClick={(event) => {
+                    if (!isMiniApp) return;
+                    event.preventDefault();
+                    const fid = Number(row.fid);
+                    void (
+                      Number.isSafeInteger(fid) ? sdk.actions.viewProfile({ fid }) : sdk.actions.openUrl(profileUrl)
+                    )
+                      .catch(() => sdk.actions.openUrl(profileUrl))
+                      .catch(() => {});
+                  }}
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M14 3h7v7m0-7L10 14M10 3H6a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3v-4" />
+                  </svg>
+                </a>
+              </span>
               <strong>
                 <NumberText>{row.score.toLocaleString("en-US")}</NumberText>
               </strong>

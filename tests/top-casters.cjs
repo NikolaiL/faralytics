@@ -24,6 +24,34 @@ const origin = process.env.TEST_ORIGIN || 'http://localhost:3100';
       await expect(page.locator('.caster-card')).toHaveCount(9);
       assert.equal(await page.locator('.caster-card .interaction-ranking li').count(), data.lists.reduce((sum, list) => sum + list.rows.length, 0));
     }
+    // Selecting a ranked name loads that account into the search and every leaderboard.
+    const rankedAccount = page.locator('.caster-card').first().locator('button.timeline-account').first();
+    const rankedName = (await rankedAccount.innerText()).trim();
+    const rankingLoaded = page.waitForResponse(r => r.url().includes('/api/top-casters?') && new URL(r.url()).searchParams.has('user'));
+    const anchor = new URL(page.url()).searchParams.get('end');
+    await rankedAccount.click();
+    const rankedResponse = await rankingLoaded;
+    assert.equal(rankedResponse.status(), 200);
+    const rankedFid = new URL(rankedResponse.url()).searchParams.get('user');
+    await expect(page.getByTestId('caster-account-input')).toHaveValue(rankedName.replace(/^FID /, ''));
+    assert.equal(new URL(page.url()).pathname, '/top-casters');
+    assert.equal(new URL(page.url()).searchParams.get('user'), rankedFid);
+    assert.equal(new URL(page.url()).searchParams.get('period'), 'days7');
+    assert.equal(new URL(page.url()).searchParams.get('end'), anchor);
+    await expect(page.locator('.caster-card')).toHaveCount(9);
+    await expect(page.locator('.caster-card').first().locator('.caster-self small')).toHaveText('Selected account');
+    const profileLink = page.locator('.caster-card').first().locator('.caster-self .caster-profile-link');
+    await expect(profileLink).toHaveAttribute('href', `https://farcaster.xyz/${rankedName.startsWith('@') ? rankedName.slice(1) : `~/profiles/${rankedFid}`}`);
+    await expect(profileLink).toHaveAttribute('target', '_blank');
+    await context.route('https://farcaster.xyz/**', route => route.fulfill({ body: 'Profile page fixture' }));
+    const beforeExternal = page.url();
+    const popupOpened = page.waitForEvent('popup');
+    await profileLink.click();
+    const popup = await popupOpened;
+    await popup.waitForLoadState('domcontentloaded');
+    assert.equal(popup.url(), await profileLink.getAttribute('href'));
+    assert.equal(page.url(), beforeExternal);
+    await popup.close();
     // Reuse exact username/FID lookup and keep the selected UTC window.
     await page.getByTestId('caster-account-input').fill('!');
     await page.getByTestId('caster-account-submit').click();
@@ -84,6 +112,7 @@ const origin = process.env.TEST_ORIGIN || 'http://localhost:3100';
       const nav = await page.getByTestId('tab-top-casters').boundingBox();
       assert.ok(nav.x >= 0 && nav.x + nav.width <= width, `navigation at ${width}`);
       if (width === 390 || width === 1280) await page.screenshot({ path: `artifacts/top-casters-${width}.png`, fullPage: true });
+      if (width === 390) await page.locator('.caster-card').first().screenshot({ path: 'artifacts/top-casters-profile-links.png' });
     }
     // A failed period request must surface an error and a working retry, with no stale rows.
     await page.route('**/api/top-casters?*', route => route.fulfill({ status: 502, json: { error: 'Fixture unavailable' } }));
@@ -107,18 +136,21 @@ const origin = process.env.TEST_ORIGIN || 'http://localhost:3100';
     const host = await context.newPage();
     host.on('pageerror', error => errors.push(error.message));
     let nativeShare;
+    let nativeProfile;
     await host.route('https://faralytics.vercel.app/**', async route => {
       const url = new URL(route.request().url());
       const response = await fetch(origin + url.pathname + url.search);
       await route.fulfill({ status: response.status, headers: Object.fromEntries([...response.headers].filter(([key]) => !['content-encoding', 'content-length', 'transfer-encoding'].includes(key))), body: Buffer.from(await response.arrayBuffer()) });
     });
     await host.exposeFunction('recordShare', value => { nativeShare = value; });
+    await host.exposeFunction('recordProfile', value => { nativeProfile = value; });
     await host.addInitScript(() => {
       window.ReactNativeWebView = { postMessage: raw => {
         const request = JSON.parse(raw); let value;
         if (request.path?.[0] === 'context') value = { user: { fid: 366713 }, client: { clientFid: 9152, added: true, safeAreaInsets: { top: 0, bottom: 22, left: 0, right: 0 } } };
         else if (request.path?.[0] === 'getCapabilities') value = ['actions.composeCast'];
         else if (request.path?.[0] === 'composeCast') { window.recordShare(request.argumentList[0].value); value = { cast: null }; }
+        else if (request.path?.[0] === 'viewProfile') { window.recordProfile(request.argumentList[0].value); }
         setTimeout(() => document.dispatchEvent(new MessageEvent('FarcasterFrameCallback', { data: { id: request.id, type: 'RAW', value } })), 20);
       } };
     });
@@ -151,6 +183,10 @@ const origin = process.env.TEST_ORIGIN || 'http://localhost:3100';
     assert.equal((await otherResponse).status(), 200);
     await expect(host.getByTestId('caster-account-clear')).toBeVisible();
     await expect(host.locator('.caster-self small').first()).toHaveText('Selected account');
+    const beforeProfile = host.url();
+    await host.locator('.caster-self .caster-profile-link').first().click();
+    await expect.poll(() => nativeProfile).toEqual({ fid: 3 });
+    assert.equal(host.url(), beforeProfile, 'profile icon does not change selected rankings');
     nativeShare = undefined;
     await host.locator('.caster-card').first().getByRole('button', { name: 'Share on Farcaster', exact: true }).click();
     await expect.poll(() => nativeShare).toBeTruthy();
@@ -192,7 +228,8 @@ const origin = process.env.TEST_ORIGIN || 'http://localhost:3100';
     await expect(host.locator('.caster-card .timeline-note').first()).toHaveText('@unranked-caster.eth is unranked: no captured activity in this category for the selected period.');
     await expect(host.locator('.caster-card').first().locator('li')).toHaveCount(10);
     await expect(host.locator('.caster-card').first().locator('.captured-badge')).toHaveText('Top 10 · unranked');
+    await expect(host.locator('.caster-card').first().locator('.caster-profile-link').first()).toHaveAttribute('href', 'https://farcaster.xyz/~/profiles/1');
     assert.deepEqual(errors, []);
-    console.log('PASS Top Casters browser: six timeframes, nine lists, shared-category scrolling on desktop/mobile, HTML metadata, native viewer/composer, username/FID search, direct Me/reset, retry, responsive layout and 1200×800/600 PNGs. No social post sent.');
+    console.log('PASS Top Casters browser: six timeframes, nine lists, ranked-name selection, separate web/native profile links, shared-category scrolling on desktop/mobile, HTML metadata, native viewer/composer, username/FID search, direct Me/reset, retry, responsive layout and 1200×800/600 PNGs. No social post sent.');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exit(1); });

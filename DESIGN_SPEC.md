@@ -63,3 +63,5 @@ Place the shared account search above Top Casters timeframe controls. Show the s
 Top Casters selected-account highlights span the full inner card width with square edges. Put horizontal content gutters on each row rather than the list container; apply the same full-row treatment to shared images.
 
 Shared Top Casters links show all nine categories and scroll to the shared category once the account rankings are ready. When viewing another account in a Farcaster host, show a purple Me button inside the search field alongside the × clear button to restore the viewer's rankings.
+
+In Top Casters rows, clicking the username or PFP selects that account in the ranking search and loads all its positions for the current timeframe. A separate external-link icon beside the username opens its Farcaster profile (native profile in Farcaster, new tab on the web).

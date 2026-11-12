@@ -247,7 +247,14 @@ export function TopCastersExplorer({
       {data && (
         <div className="caster-grid" data-testid="top-casters-lists">
           {data.lists.map((list) => (
-            <TopCasterList key={list.metric} list={list} profiles={data.profiles} user={user} viewerFid={fid}>
+            <TopCasterList
+              key={list.metric}
+              list={list}
+              profiles={data.profiles}
+              user={user}
+              viewerFid={fid}
+              onSelect={(value) => void apply(value)}
+            >
               <ShareActions
                 placement="below"
                 heading={`share ${casterMetrics[list.metric].toLowerCase()}:`}

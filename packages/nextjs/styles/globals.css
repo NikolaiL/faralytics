@@ -203,6 +203,7 @@
 @media(max-width:350px){.year-review-pager{display:grid;grid-template-columns:1fr 1fr;gap:8px}.year-review-pager>div{grid-area:1/1/2/-1;justify-content:center}.year-review-pager>div button{flex:1}}
 
 /* Top Casters */
+.caster-account{display:flex;align-items:center;gap:4px;min-width:0}.caster-card button.timeline-account{border:0;background:none;padding:0;text-align:left;min-height:44px}.caster-profile-link{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:32px;min-height:44px;color:var(--muted)}.caster-profile-link:hover{color:var(--accent)}
 .caster-card{scroll-margin-top:calc(16px + var(--safe-area-inset-top))}
 .top-casters-page .result-avatar{border-radius:50%}
 .top-casters-page .error-box{overflow-wrap:anywhere}.top-casters-page .error-box button{min-height:44px;padding:10px 14px;border-radius:7px}
