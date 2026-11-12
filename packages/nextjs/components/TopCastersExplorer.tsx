@@ -13,12 +13,13 @@ import {
   casterMetrics,
   casterPath,
   casterPeriods,
+  casterShareText,
   type CasterMetric,
   type CasterPeriod,
   type CasterSelection,
   type TopCasters,
 } from "~~/lib/top-casters";
-import { formatShareText, shareCredit, type ShareTarget } from "~~/lib/share-credit";
+import type { ShareTarget } from "~~/lib/share-credit";
 
 export function TopCastersExplorer({
   selection: initial,
@@ -72,6 +73,7 @@ export function TopCastersExplorer({
   }
 
   async function handleShare(metric: CasterMetric, target: ShareTarget, timestamp: number) {
+    if (!data) return;
     setShareError("");
     const url = new URL(
       casterPath({ ...current, metric }, String(timestamp)),
@@ -83,10 +85,7 @@ export function TopCastersExplorer({
         setCopyCount((count) => count + 1);
         return;
       }
-      const text = formatShareText(
-        `Top casters on Farcaster · ${casterMetrics[metric]} · ${casterPeriods[current.period]} · through ${data?.through} UTC.\n\n${shareCredit(target)}`,
-        target,
-      );
+      const text = casterShareText({ ...current, metric }, data, target, fid);
       if (target === "farcaster" && isMiniApp) {
         try {
           await sdk.actions.composeCast({ text, embeds: [url] });

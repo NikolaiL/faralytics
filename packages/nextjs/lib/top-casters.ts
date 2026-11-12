@@ -1,4 +1,5 @@
 import { dateKey, getRange, InputError, utcDate, validFid, type Profile } from "./activity.ts";
+import { formatShareText, shareCredit, type ShareTarget } from "./share-credit.ts";
 
 export const casterPeriods = {
   today: "Today",
@@ -76,6 +77,27 @@ export function casterPath(selection: CasterSelection, ts?: string) {
   return `/top-casters?${params}`;
 }
 
+export function casterTitle(metric: CasterMetric, period: CasterPeriod) {
+  return `Top Casters | ${casterMetrics[metric]} | ${casterPeriods[period]}`;
+}
+
+export function casterShareText(
+  selection: CasterSelection & { metric: CasterMetric },
+  data: Pick<TopCasters, "lists" | "through">,
+  target: Exclude<ShareTarget, "copy">,
+  viewerFid?: string,
+) {
+  const position = data.lists.find((list) => list.metric === selection.metric)?.userPosition;
+  const own = !!viewerFid && viewerFid === selection.user;
+  const ranking = own
+    ? `\n\nI am ${position ? `ranked #${position.toLocaleString("en-US")}` : "unranked"}. How about you?`
+    : "";
+  return formatShareText(
+    `${casterTitle(selection.metric, selection.period)}\nThrough ${data.through} UTC.${ranking}\n\n${shareCredit(target)}`,
+    target,
+  );
+}
+
 // Positive captured actions remain historical events even if later undone; mention totals use corrected tags.
 export const casterRankingSql = `
 WITH scores AS (
@@ -99,6 +121,6 @@ FROM positioned
 WHERE ({user:UInt64} = 0 AND position <= 10)
   OR ({user:UInt64} > 0 AND ((user_position BETWEEN 1 AND 10 AND position <= 10)
     OR (user_position > 10 AND (position <= 5 OR abs(toInt64(position) - toInt64(user_position)) <= 2))
-    OR (user_position = 0 AND position <= 5)))
+    OR (user_position = 0 AND position <= 10)))
 ORDER BY metric, position
 `;

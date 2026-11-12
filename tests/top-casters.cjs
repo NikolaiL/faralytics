@@ -108,6 +108,24 @@ const origin = process.env.TEST_ORIGIN || 'http://localhost:3100';
     await host.locator('.caster-card').first().getByRole('button', { name: 'Share on Farcaster', exact: true }).click();
     await expect.poll(() => nativeShare).toBeTruthy();
     assert.ok(JSON.stringify(nativeShare).includes('user=366713'));
+    assert.ok(nativeShare.text.startsWith('Top Casters | Casts | 365 days\nThrough '));
+    assert.ok(nativeShare.text.includes(`I am ranked #${data.lists[0].userPosition.toLocaleString('en-US')}. How about you?`));
+    const nativeLink = new URL(nativeShare.embeds[0]);
+    assert.equal(nativeLink.searchParams.get('metric'), 'casts');
+    assert.equal(nativeLink.searchParams.get('period'), 'days365');
+    await page.goto(origin + nativeLink.pathname + nativeLink.search, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('.caster-card')).toHaveCount(1);
+    await expect(page.locator('#caster-casts')).toBeVisible();
+    await expect(page.getByLabel('Caster timeframe')).toHaveValue('days365');
+    await host.route('**/api/top-casters?*', route => route.fulfill({ json: {
+      ...data, profiles: [{ fid: '366713', username: 'unranked-caster.eth', display_name: null }],
+      lists: data.lists.map(list => ({ ...list, userPosition: null, rows: Array.from({ length: 10 }, (_, i) => ({ fid: String(i + 1), position: i + 1, score: 100 - i })) })),
+    } }));
+    await host.getByLabel('Caster timeframe').selectOption('today');
+    await expect(host.locator('.caster-card .timeline-note')).toHaveCount(9);
+    await expect(host.locator('.caster-card .timeline-note').first()).toHaveText('@unranked-caster.eth is unranked: no captured activity in this category for the selected period.');
+    await expect(host.locator('.caster-card').first().locator('li')).toHaveCount(10);
+    await expect(host.locator('.caster-card').first().locator('.captured-badge')).toHaveText('Top 10 · unranked');
     assert.deepEqual(errors, []);
     console.log('PASS Top Casters browser: six timeframes, nine lists, list sharing/HTML metadata, native viewer/composer, retry, responsive layout and 1200×800/600 PNGs. No social post sent.');
   } finally { await browser.close(); }

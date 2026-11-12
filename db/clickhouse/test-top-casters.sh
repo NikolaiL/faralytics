@@ -68,10 +68,9 @@ const {casterRankingSql}=await import(pathToFileURL(process.argv[2]+'/../../pack
 console.log(casterRankingSql.replaceAll('{start:Date}',"toDate('2026-01-01')").replaceAll('{through:Date}',"toDate('2026-01-02')").replaceAll('{user:UInt64}',process.argv[3])+';');
 JS
   case "$user" in
-    0|1) expected="[1,2,3,4,5,6,7,8,9,10]";;
+    0|1|999) expected="[1,2,3,4,5,6,7,8,9,10]";;
     11) expected="[1,2,3,4,5,9,10,11,12,13]";;
     20) expected="[1,2,3,4,5,18,19,20]";;
-    999) expected="[1,2,3,4,5]";;
   esac
   printf "SELECT throwIf((SELECT arraySort(groupArray(toUInt64(position))) FROM farcaster.fixture_ranks) != %s, 'Incorrect personalized positions for FID %s');\n" "$expected" "$user"
 done

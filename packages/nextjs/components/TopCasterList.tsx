@@ -14,13 +14,14 @@ export function TopCasterList({
   user?: string;
   children?: React.ReactNode;
 }) {
+  const userProfile = profiles.find((profile) => profile.fid === user);
   return (
     <section className="timeline-feed caster-card" aria-labelledby={`caster-${list.metric}`}>
       <div className="caster-card-heading">
         <h2 id={`caster-${list.metric}`}>{casterMetrics[list.metric]}</h2>
         <span className="captured-badge">
           {user && list.userPosition === null
-            ? "Top 5 · unranked"
+            ? "Top 10 · unranked"
             : user && list.userPosition! > 10
               ? "Top 5 + your position"
               : "Top 10"}
@@ -60,7 +61,8 @@ export function TopCasterList({
       {!list.rows.length && <p className="empty-note">No captured activity in this category.</p>}
       {user && list.userPosition === null && (
         <p className="timeline-note">
-          This account is unranked: no captured activity in this category for the selected period.
+          {userProfile?.username ? `@${userProfile.username}` : `FID ${user}`} is unranked: no captured activity in this
+          category for the selected period.
         </p>
       )}
       {children}

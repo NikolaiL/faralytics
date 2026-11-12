@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { TopCastersExplorer } from "~~/components/TopCastersExplorer";
-import { casterMetrics, casterPath, casterPeriods, casterSelection } from "~~/lib/top-casters";
+import { casterPath, casterSelection, casterTitle } from "~~/lib/top-casters";
 import { loadTopCasters } from "~~/lib/top-casters-data";
 import { reportServerError } from "~~/utils/reportServerError";
 
@@ -19,7 +19,7 @@ async function selectionFrom(searchParams: PageProps["searchParams"]) {
 
 export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
   const { selection, ts } = await selectionFrom(searchParams);
-  const title = `Top casters · ${casterMetrics[selection.metric || "casts"]} · ${casterPeriods[selection.period]} — Faralytics`;
+  const title = `${casterTitle(selection.metric || "casts", selection.period)} — Faralytics`;
   const description = `Captured Farcaster activity rankings through ${selection.end} UTC${selection.user ? `, including FID ${selection.user}’s position` : ""}.`;
   const origin = process.env.NEXT_PUBLIC_URL || "http://localhost:3100";
   const path = casterPath(selection, ts);

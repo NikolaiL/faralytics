@@ -22,7 +22,7 @@ const readRanks = unstable_cache(
       generated_at: string;
     }>(casterRankingSql, { start, through, user });
   },
-  ["top-casters-ranks-v3"],
+  ["top-casters-ranks-v4"],
   { revalidate: 300 },
 );
 
@@ -51,7 +51,7 @@ export async function loadTopCasters(selection: CasterSelection): Promise<TopCas
   const range = casterRange(selection);
   const status = await readStatus();
   const rows = await readRanks(range.start, range.through, selection.user || "0");
-  const ids = [...new Set(rows.map((row) => row.fid))];
+  const ids = [...new Set([...(selection.user ? [selection.user] : []), ...rows.map((row) => row.fid)])];
   const profiles = await loadProfiles(ids, 4000).catch(() => []);
   return {
     ...range,

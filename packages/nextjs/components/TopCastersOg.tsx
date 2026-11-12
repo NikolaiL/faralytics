@@ -2,7 +2,7 @@
 import "server-only";
 import { OgLogo } from "~~/components/OgLogo";
 import { loadAvatar } from "~~/lib/avatar";
-import { casterMetrics, casterPeriods, type CasterSelection } from "~~/lib/top-casters";
+import { casterTitle, type CasterSelection } from "~~/lib/top-casters";
 import { loadTopCasters } from "~~/lib/top-casters-data";
 
 export async function prepareTopCastersOg(selection: CasterSelection, height: number) {
@@ -32,10 +32,9 @@ export async function prepareTopCastersOg(selection: CasterSelection, height: nu
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <OgLogo />
-        <span style={{ color: "#cbb7e7", fontSize: 22 }}>{casterPeriods[selection.period]}</span>
       </div>
       <div style={{ display: "flex", flexDirection: "column", margin: "18px 0", gap: 8 }}>
-        <span style={{ color: "#d6ff3f", fontSize: 38, fontWeight: 700 }}>Top casters · {casterMetrics[metric]}</span>
+        <span style={{ color: "#d6ff3f", fontSize: 38, fontWeight: 700 }}>{casterTitle(metric, selection.period)}</span>
         <span style={{ color: "#ac9bbb", fontSize: 17 }}>
           {data.start} – {data.through} UTC
           {selection.user
