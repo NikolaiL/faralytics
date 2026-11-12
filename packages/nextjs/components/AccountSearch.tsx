@@ -13,6 +13,7 @@ export function AccountSearch({
   profile,
   onReset,
   onShowMe,
+  showMeWhenResolved = false,
   searchId = "lookup",
   label = "Username or FID",
   placeholder = "Username or FID",
@@ -25,6 +26,7 @@ export function AccountSearch({
   profile?: Profile;
   onReset: () => void;
   onShowMe?: () => void;
+  showMeWhenResolved?: boolean;
   searchId?: string;
   label?: string;
   placeholder?: string;
@@ -158,7 +160,7 @@ export function AccountSearch({
           maxLength={64}
           required
         />
-        {resolved ? (
+        {resolved && (
           <button
             key="clear"
             type="button"
@@ -189,7 +191,8 @@ export function AccountSearch({
               <path d="m6 6 12 12M18 6 6 18" />
             </svg>
           </button>
-        ) : !value.trim() && onShowMe ? (
+        )}
+        {onShowMe && (resolved ? showMeWhenResolved : !value.trim()) ? (
           <button
             key="show-me"
             data-testid="show-me"
@@ -203,7 +206,7 @@ export function AccountSearch({
             {busy ? "Looking up…" : "Me"}
             <span aria-hidden="true">↗</span>
           </button>
-        ) : (
+        ) : !resolved ? (
           <button
             key="submit"
             data-testid={`${searchId}-submit`}
@@ -214,7 +217,7 @@ export function AccountSearch({
             {busy ? "Looking up…" : "Look up"}
             <span aria-hidden="true">↗</span>
           </button>
-        )}
+        ) : null}
       </div>
       {open && (
         <div

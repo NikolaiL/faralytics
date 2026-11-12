@@ -156,7 +156,20 @@ const origin = process.env.TEST_ORIGIN || 'http://localhost:3100';
     await expect.poll(() => nativeShare).toBeTruthy();
     assert.ok(!nativeShare.text.includes('I am'));
     assert.equal(new URL(nativeShare.embeds[0]).searchParams.get('user'), '3');
-    await expect(host.getByTestId('show-me')).toHaveText('Me');
+    const field = host.locator('.search-field');
+    await expect(field.getByTestId('show-me')).toContainText('Me');
+    await expect(field.getByTestId('caster-account-clear')).toBeVisible();
+    for (const width of [1280, 390, 320]) {
+      await host.setViewportSize({ width, height: 1000 });
+      const bounds = await field.evaluate(field => {
+        const container = field.getBoundingClientRect();
+        const clear = field.querySelector('.search-clear').getBoundingClientRect();
+        const me = field.querySelector('[data-testid="show-me"]').getBoundingClientRect();
+        return { fits: clear.left >= container.left && clear.right <= me.left && me.right <= container.right, inputWidth: field.querySelector('input').getBoundingClientRect().width, overflow: document.documentElement.scrollWidth > innerWidth };
+      });
+      assert.ok(bounds.fits && bounds.inputWidth > 0 && !bounds.overflow, `inline clear/Me at ${width}: ${JSON.stringify(bounds)}`);
+      if (width === 390) await field.screenshot({ path: 'artifacts/top-casters-inline-me.png' });
+    }
     const directMe = host.waitForResponse(r => r.url().includes('/api/top-casters?') && new URL(r.url()).searchParams.get('user') === '366713');
     await host.getByTestId('show-me').click();
     assert.equal((await directMe).status(), 200);

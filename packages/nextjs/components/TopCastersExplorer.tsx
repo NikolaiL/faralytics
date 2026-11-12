@@ -197,6 +197,7 @@ export function TopCastersExplorer({
           onSelect={(value) => void apply(value)}
           onReset={() => void apply("")}
           onShowMe={isMiniApp && fid ? () => void apply(fid) : undefined}
+          showMeWhenResolved={!!user && user !== fid}
           resolved={resolved}
           profile={resolved ? profile : undefined}
           busy={lookupBusy || (!!user && busy)}
@@ -223,11 +224,6 @@ export function TopCastersExplorer({
             ))}
           </select>
         </label>
-        {isMiniApp && fid && user && user !== fid && (
-          <button className="text-button" data-testid="show-me" disabled={lookupBusy} onClick={() => void apply(fid)}>
-            Me
-          </button>
-        )}
       </div>
       {busy && (
         <p role="status" className="notice">
