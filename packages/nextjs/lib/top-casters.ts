@@ -10,15 +10,15 @@ export const casterPeriods = {
   all: "All time",
 } as const;
 export const casterMetrics = {
-  casts: "Casts",
-  replies_sent: "Replies given",
-  recasts_sent: "Recasts given",
-  likes_sent: "Likes given",
-  mentions_sent: "Mentions given",
-  replies_received: "Replies received",
-  recasts_received: "Recasts received",
-  likes_received: "Likes received",
-  mentions_received: "Mentions received",
+  casts: "Most original casts",
+  replies_sent: "Most replies sent",
+  recasts_sent: "Top recasters",
+  likes_sent: "Top Likers",
+  mentions_sent: "Most mentions made",
+  replies_received: "Most replied to",
+  recasts_received: "Most recasts received",
+  likes_received: "Most liked",
+  mentions_received: "Most mentioned",
 } as const;
 export type CasterPeriod = keyof typeof casterPeriods;
 export type CasterMetric = keyof typeof casterMetrics;
