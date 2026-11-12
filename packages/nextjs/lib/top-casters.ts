@@ -83,7 +83,7 @@ export function casterTitle(metric: CasterMetric, period: CasterPeriod) {
 
 export function casterShareText(
   selection: CasterSelection & { metric: CasterMetric },
-  data: Pick<TopCasters, "lists" | "through">,
+  data: Pick<TopCasters, "lists">,
   target: Exclude<ShareTarget, "copy">,
   viewerFid?: string,
 ) {
@@ -93,7 +93,7 @@ export function casterShareText(
     ? `\n\nI am ${position ? `ranked #${position.toLocaleString("en-US")}` : "unranked"}. How about you?`
     : "";
   return formatShareText(
-    `${casterTitle(selection.metric, selection.period)}\nThrough ${data.through} UTC.${ranking}\n\n${shareCredit(target)}`,
+    `${casterTitle(selection.metric, selection.period)}${ranking}\n\n${shareCredit(target)}`,
     target,
   );
 }

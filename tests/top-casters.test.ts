@@ -42,13 +42,14 @@ test("caster self-shares use the selected title, actual rank and platform credit
   );
   assert.equal(
     casterShareText(selection, review, "farcaster", "366713"),
-    "Top Casters · Likes received · All time\nThrough 2026-11-12 UTC.\n\nI am ranked #276. How about you?\n\nfaralytics - created by @nikolaii.eth with @viniapp",
+    "Top Casters · Likes received · All time\n\nI am ranked #276. How about you?\n\nfaralytics - created by @nikolaii.eth with @viniapp",
   );
   assert.ok(
     casterShareText(selection, review, "x", "366713").endsWith(
       "I am ranked #276. How about you?\n\nfaralytics - created by @NikolaiLeb with @viniapp_xyz",
     ),
   );
+  assert.doesNotMatch(casterShareText(selection, review, "x", "366713"), /Through|UTC/);
   for (const viewer of [undefined, "3"])
     assert.ok(
       !casterShareText(selection, review, "farcaster", viewer).includes("I am"),
