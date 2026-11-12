@@ -64,4 +64,4 @@ Top Casters selected-account highlights span the full inner card width with squa
 
 Shared Top Casters links show all nine categories and scroll to the shared category once the account rankings are ready. When viewing another account in a Farcaster host, show a purple Me button inside the search field alongside the × clear button to restore the viewer's rankings.
 
-In Top Casters rows, clicking the username or PFP selects that account in the ranking search and loads all its positions for the current timeframe. A separate external-link icon beside the username opens its Farcaster profile (native profile in Farcaster, new tab on the web).
+In Top Casters rows, clicking the username or PFP selects that account in the ranking search and loads all its positions for the current timeframe. A separate external-link icon beside the username opens its Farcaster profile (native profile in Farcaster, new tab on the web). Use purple (#855dcd) for this icon and brighter purple (#b596f2) on hover.
