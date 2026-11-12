@@ -59,3 +59,5 @@ Top Casters adds a sixth shared navigation item, using a trophy icon and the exi
 Top Casters profile pictures use the existing positioned/clipped avatar wrapper, with circular 32px images and no initials. Missing images leave a neutral circle.
 
 Place the shared account search above Top Casters timeframe controls. Show the selected profile in the search field; distinguish Selected account from You when looking up someone else.
+
+Top Casters selected-account highlights span the full inner card width with square edges. Put horizontal content gutters on each row rather than the list container; apply the same full-row treatment to shared images.

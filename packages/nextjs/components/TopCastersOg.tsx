@@ -52,7 +52,7 @@ export async function prepareTopCastersOg(selection: CasterSelection, height: nu
               flex: 1,
               minWidth: 0,
               borderRadius: 14,
-              padding: "8px 14px",
+              padding: "8px 0",
               background: "#17121e",
               border: "1px solid #332840",
             }}
@@ -68,6 +68,7 @@ export async function prepareTopCastersOg(selection: CasterSelection, height: nu
                     alignItems: "center",
                     gap: 12,
                     height: compact ? 66 : 102,
+                    padding: "0 14px",
                     borderBottom: offset < 4 ? "1px solid #2d2338" : "1px solid transparent",
                     background: row.fid === selection.user ? "#30243d" : "transparent",
                   }}
