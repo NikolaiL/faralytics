@@ -78,7 +78,7 @@ export function casterPath(selection: CasterSelection, ts?: string) {
 }
 
 export function casterTitle(metric: CasterMetric, period: CasterPeriod) {
-  return `Top Casters | ${casterMetrics[metric]} | ${casterPeriods[period]}`;
+  return `Top Casters · ${casterMetrics[metric]} · ${casterPeriods[period]}`;
 }
 
 export function casterShareText(

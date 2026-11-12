@@ -42,8 +42,7 @@ export function TopCasterList({
                 <NumberText>{String(row.position)}</NumberText>
               </span>
               <Link className="timeline-account" href={`/?user=${row.fid}`}>
-                <span className="timeline-avatar">
-                  {name.replace("@", "").slice(0, 2).toUpperCase()}
+                <span className="result-avatar timeline-avatar" aria-hidden="true">
                   <AvatarImage source={profile?.pfp_url} size={32} />
                 </span>
                 <span className="caster-name">

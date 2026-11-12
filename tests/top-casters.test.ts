@@ -38,11 +38,11 @@ test("caster self-shares use the selected title, actual rank and platform credit
   };
   assert.equal(
     casterTitle(selection.metric, selection.period),
-    "Top Casters | Likes received | All time",
+    "Top Casters · Likes received · All time",
   );
   assert.equal(
     casterShareText(selection, review, "farcaster", "366713"),
-    "Top Casters | Likes received | All time\nThrough 2026-11-12 UTC.\n\nI am ranked #276. How about you?\n\nfaralytics - created by @nikolaii.eth with @viniapp",
+    "Top Casters · Likes received · All time\nThrough 2026-11-12 UTC.\n\nI am ranked #276. How about you?\n\nfaralytics - created by @nikolaii.eth with @viniapp",
   );
   assert.ok(
     casterShareText(selection, review, "x", "366713").endsWith(
