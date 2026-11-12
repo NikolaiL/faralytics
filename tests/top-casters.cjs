@@ -66,11 +66,17 @@ const origin = process.env.TEST_ORIGIN || 'http://localhost:3100';
     assert.ok(html.includes('fc:miniapp'));
     assert.ok(html.includes('/api/og/top-casters/farcaster.png?'));
     assert.ok(html.includes('/api/og/top-casters/x.png?'));
-    assert.ok(!html.includes('caster-casts"'));
+    assert.ok(html.includes('caster-casts"'));
     await page.goto(origin + sharedPath, { waitUntil: 'networkidle' });
-    await expect(page.locator('.caster-card')).toHaveCount(1);
-    await page.getByRole('button', { name: 'Show all categories' }).click();
     await expect(page.locator('.caster-card')).toHaveCount(9);
+    await expect(page.locator('#caster-mentions_received')).toBeInViewport();
+    assert.ok(await page.evaluate(() => window.scrollY > 0), 'shared category is scrolled into view');
+    // Direct shared links also scroll to the category on mobile without hiding any lists.
+    await page.setViewportSize({ width: 390, height: 1000 });
+    await page.goto(origin + sharedPath, { waitUntil: 'networkidle' });
+    await expect(page.locator('.caster-card')).toHaveCount(9);
+    await expect(page.locator('#caster-mentions_received')).toBeInViewport();
+    assert.ok(await page.evaluate(() => window.scrollY > 0), 'mobile shared category is scrolled into view');
     mkdirSync('artifacts', { recursive: true });
     for (const width of [1280, 820, 761, 760, 390, 320]) {
       await page.setViewportSize({ width, height: 1000 });
@@ -135,10 +141,10 @@ const origin = process.env.TEST_ORIGIN || 'http://localhost:3100';
     assert.equal(nativeLink.searchParams.get('metric'), 'casts');
     assert.equal(nativeLink.searchParams.get('period'), 'days365');
     await page.goto(origin + nativeLink.pathname + nativeLink.search, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('.caster-card')).toHaveCount(1);
+    await expect(page.locator('.caster-card')).toHaveCount(9);
     await expect(page.locator('#caster-casts')).toBeVisible();
     await expect(page.getByLabel('Caster timeframe')).toHaveValue('days365');
-    // A manual subject overrides host identity, and Me restores it after reset.
+    // A manual subject overrides host identity, and Me restores it directly or after reset.
     const otherResponse = host.waitForResponse(r => r.url().includes('/api/top-casters?') && new URL(r.url()).searchParams.get('user') === '3');
     await host.getByTestId('caster-account-input').fill('3');
     await host.getByTestId('caster-account-submit').click();
@@ -150,6 +156,13 @@ const origin = process.env.TEST_ORIGIN || 'http://localhost:3100';
     await expect.poll(() => nativeShare).toBeTruthy();
     assert.ok(!nativeShare.text.includes('I am'));
     assert.equal(new URL(nativeShare.embeds[0]).searchParams.get('user'), '3');
+    await expect(host.getByTestId('show-me')).toHaveText('Me');
+    const directMe = host.waitForResponse(r => r.url().includes('/api/top-casters?') && new URL(r.url()).searchParams.get('user') === '366713');
+    await host.getByTestId('show-me').click();
+    assert.equal((await directMe).status(), 200);
+    await expect(host.locator('.caster-self small').first()).toHaveText('You');
+    await expect(host.getByTestId('show-me')).toHaveCount(0);
+    assert.equal(new URL(host.url()).searchParams.get('period'), 'days365');
     const globalResponse = host.waitForResponse(r => r.url().includes('/api/top-casters?') && !new URL(r.url()).searchParams.has('user'));
     await host.getByTestId('caster-account-clear').click();
     assert.equal((await globalResponse).status(), 200);
@@ -167,6 +180,6 @@ const origin = process.env.TEST_ORIGIN || 'http://localhost:3100';
     await expect(host.locator('.caster-card').first().locator('li')).toHaveCount(10);
     await expect(host.locator('.caster-card').first().locator('.captured-badge')).toHaveText('Top 10 · unranked');
     assert.deepEqual(errors, []);
-    console.log('PASS Top Casters browser: six timeframes, nine lists, list sharing/HTML metadata, native viewer/composer, username/FID search, reset/Me, retry, responsive layout and 1200×800/600 PNGs. No social post sent.');
+    console.log('PASS Top Casters browser: six timeframes, nine lists, shared-category scrolling on desktop/mobile, HTML metadata, native viewer/composer, username/FID search, direct Me/reset, retry, responsive layout and 1200×800/600 PNGs. No social post sent.');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exit(1); });

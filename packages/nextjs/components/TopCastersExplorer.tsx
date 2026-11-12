@@ -46,6 +46,7 @@ export function TopCastersExplorer({
   const [retry, setRetry] = useState(0);
   const [copyCount, setCopyCount] = useState(0);
   const [shareError, setShareError] = useState("");
+  const scrolledToMetric = useRef(false);
   const user = selectedUser === null ? (ready ? fid : undefined) : selectedUser || undefined;
   const current = { ...selection, user };
   const key = JSON.stringify(current);
@@ -56,6 +57,14 @@ export function TopCastersExplorer({
   const resolved = !!profile && (selectedUser === null || draft === user);
 
   useEffect(() => () => lookupAbort.current?.abort(), []);
+
+  useEffect(() => {
+    if (!data || !ready || !initial.metric || scrolledToMetric.current) return;
+    const card = document.getElementById(`caster-${initial.metric}`)?.closest(".caster-card");
+    if (!card) return;
+    card.scrollIntoView({ block: "start" });
+    scrolledToMetric.current = true;
+  }, [data, ready, initial.metric]);
 
   async function apply(value: string) {
     lookupAbort.current?.abort();
@@ -214,16 +223,9 @@ export function TopCastersExplorer({
             ))}
           </select>
         </label>
-        {current.metric && (
-          <button
-            className="text-button"
-            onClick={() => {
-              const next = { ...current, metric: undefined };
-              setSelection(next);
-              window.history.replaceState(null, "", casterPath(next));
-            }}
-          >
-            Show all categories
+        {isMiniApp && fid && user && user !== fid && (
+          <button className="text-button" data-testid="show-me" disabled={lookupBusy} onClick={() => void apply(fid)}>
+            Me
           </button>
         )}
       </div>
@@ -259,18 +261,16 @@ export function TopCastersExplorer({
             {data.coverage}
           </p>
           <div className="caster-grid" data-testid="top-casters-lists">
-            {data.lists
-              .filter((list) => !current.metric || list.metric === current.metric)
-              .map((list) => (
-                <TopCasterList key={list.metric} list={list} profiles={data.profiles} user={user} viewerFid={fid}>
-                  <ShareActions
-                    placement="below"
-                    heading={`share ${casterMetrics[list.metric].toLowerCase()}:`}
-                    disabled={false}
-                    onShare={(target) => void handleShare(list.metric, target, Date.now())}
-                  />
-                </TopCasterList>
-              ))}
+            {data.lists.map((list) => (
+              <TopCasterList key={list.metric} list={list} profiles={data.profiles} user={user} viewerFid={fid}>
+                <ShareActions
+                  placement="below"
+                  heading={`share ${casterMetrics[list.metric].toLowerCase()}:`}
+                  disabled={false}
+                  onShare={(target) => void handleShare(list.metric, target, Date.now())}
+                />
+              </TopCasterList>
+            ))}
           </div>
         </>
       )}
