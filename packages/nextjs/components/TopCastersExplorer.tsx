@@ -1,13 +1,14 @@
 "use client";
 import { sdk } from "@farcaster/miniapp-sdk";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { AccountSearch } from "./AccountSearch";
 import { AppNavigation } from "./AppNavigation";
 import { CopyToast } from "./CopyToast";
 import { useMiniapp } from "./MiniappProvider";
 import { ShareActions } from "./ShareActions";
 import { TopCasterList } from "./TopCasterList";
-import { PURPLES } from "~~/lib/activity";
+import { PURPLES, validFid } from "~~/lib/activity";
 import { LOGO_PIXELS } from "~~/lib/brand";
 import {
   casterMetrics,
@@ -32,6 +33,11 @@ export function TopCastersExplorer({
 }) {
   const { fid, isMiniApp, ready } = useMiniapp();
   const [selection, setSelection] = useState(initial);
+  const [selectedUser, setSelectedUser] = useState<string | null>(initial.user ?? null);
+  const [draft, setDraft] = useState(initial.user || "");
+  const [lookupBusy, setLookupBusy] = useState(false);
+  const [lookupError, setLookupError] = useState("");
+  const lookupAbort = useRef<AbortController | null>(null);
   const [result, setResult] = useState<{ key: string; data?: TopCasters; error?: string }>({
     key: JSON.stringify(initial),
     data: initialData,
@@ -40,12 +46,53 @@ export function TopCastersExplorer({
   const [retry, setRetry] = useState(0);
   const [copyCount, setCopyCount] = useState(0);
   const [shareError, setShareError] = useState("");
-  const viewer = initial.user || (ready ? fid : undefined);
-  const current = { ...selection, user: viewer };
+  const user = selectedUser === null ? (ready ? fid : undefined) : selectedUser || undefined;
+  const current = { ...selection, user };
   const key = JSON.stringify(current);
   const data = result.key === key ? result.data : undefined;
   const error = result.key === key ? result.error : undefined;
   const busy = !data && !error;
+  const profile = data?.profiles.find((profile) => profile.fid === user);
+  const resolved = !!profile && (selectedUser === null || draft === user);
+
+  useEffect(() => () => lookupAbort.current?.abort(), []);
+
+  async function apply(value: string) {
+    lookupAbort.current?.abort();
+    const controller = new AbortController();
+    lookupAbort.current = controller;
+    let account = value.trim();
+    setDraft(account);
+    setLookupError("");
+    setLookupBusy(!!account && !validFid(account));
+    try {
+      if (account && !validFid(account)) {
+        const response = await fetch(`/api/search?${new URLSearchParams({ q: account, exact: "1" })}`, {
+          signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]),
+        });
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.error || "Could not find this account.");
+        if (typeof body[0]?.fid !== "string" || !validFid(body[0].fid))
+          throw new Error("Could not resolve this account. Try their FID.");
+        account = body[0].fid;
+      }
+      if (controller.signal.aborted) return;
+      setSelectedUser(account);
+      setDraft(account);
+      setRetry((count) => count + 1);
+      const params = new URLSearchParams(window.location.search);
+      params.set("period", params.get("period") || current.period);
+      params.set("end", current.end);
+      if (account) params.set("user", account);
+      else params.delete("user");
+      window.history.replaceState(null, "", `/top-casters?${params}`);
+    } catch (error) {
+      if (!controller.signal.aborted)
+        setLookupError(error instanceof Error ? error.message : "Could not find this account.");
+    } finally {
+      if (!controller.signal.aborted) setLookupBusy(false);
+    }
+  }
 
   useEffect(() => {
     const parsed: CasterSelection = JSON.parse(key);
@@ -122,6 +169,35 @@ export function TopCastersExplorer({
         </h1>
         <p>The people behind the captured Farcaster activity.</p>
       </section>
+      <form
+        className="search-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!lookupBusy && !resolved && draft.trim()) void apply(draft);
+        }}
+      >
+        <AccountSearch
+          searchId="caster-account"
+          label="Ranking account"
+          value={resolved ? (profile.username ? `@${profile.username}` : profile.fid) : draft}
+          onChange={(value) => {
+            setDraft(value);
+            setLookupError("");
+            if (selectedUser === null) setSelectedUser(user || "");
+          }}
+          onSelect={(value) => void apply(value)}
+          onReset={() => void apply("")}
+          onShowMe={isMiniApp && fid ? () => void apply(fid) : undefined}
+          resolved={resolved}
+          profile={resolved ? profile : undefined}
+          busy={lookupBusy || (!!user && busy)}
+        />
+      </form>
+      {lookupError && (
+        <p className="error-box" role="alert">
+          {lookupError}
+        </p>
+      )}
       <div className="caster-controls">
         <label className="interaction-filter">
           <span>Timeframe · UTC</span>
@@ -186,7 +262,7 @@ export function TopCastersExplorer({
             {data.lists
               .filter((list) => !current.metric || list.metric === current.metric)
               .map((list) => (
-                <TopCasterList key={list.metric} list={list} profiles={data.profiles} user={viewer}>
+                <TopCasterList key={list.metric} list={list} profiles={data.profiles} user={user} viewerFid={fid}>
                   <ShareActions
                     placement="below"
                     heading={`share ${casterMetrics[list.metric].toLowerCase()}:`}

@@ -7,14 +7,17 @@ export function TopCasterList({
   list,
   profiles,
   user,
+  viewerFid,
   children,
 }: {
   list: CasterList;
   profiles: TopCasters["profiles"];
   user?: string;
+  viewerFid?: string;
   children?: React.ReactNode;
 }) {
   const userProfile = profiles.find((profile) => profile.fid === user);
+  const own = !!user && user === viewerFid;
   return (
     <section className="timeline-feed caster-card" aria-labelledby={`caster-${list.metric}`}>
       <div className="caster-card-heading">
@@ -23,7 +26,7 @@ export function TopCasterList({
           {user && list.userPosition === null
             ? "Top 10 · unranked"
             : user && list.userPosition! > 10
-              ? "Top 5 + your position"
+              ? `Top 5 + ${own ? "your" : "their"} position`
               : "Top 10"}
         </span>
       </div>
@@ -36,7 +39,7 @@ export function TopCasterList({
               key={row.fid}
               value={row.position}
               className={`${row.fid === user ? "caster-self" : ""} ${index > 0 && row.position > list.rows[index - 1].position + 1 ? "caster-gap" : ""}`}
-              aria-label={`Position ${row.position}, ${name}, ${row.score.toLocaleString("en-US")}${row.fid === user ? ", you" : ""}`}
+              aria-label={`Position ${row.position}, ${name}, ${row.score.toLocaleString("en-US")}${row.fid === user ? (own ? ", you" : ", selected account") : ""}`}
             >
               <span className="interaction-rank">
                 <NumberText>{String(row.position)}</NumberText>
@@ -47,7 +50,7 @@ export function TopCasterList({
                 </span>
                 <span className="caster-name">
                   {name}
-                  {row.fid === user && <small>You</small>}
+                  {row.fid === user && <small>{own ? "You" : "Selected account"}</small>}
                 </span>
               </Link>
               <strong>

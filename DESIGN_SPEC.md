@@ -57,3 +57,5 @@ Follow timeline uses the existing dark canvas, purple controls and citron naviga
 Top Casters adds a sixth shared navigation item, using a trophy icon and the existing citron active state. Its UTC timeframe select sits above a two-column grid of nine dark ranking cards; mobile stacks cards into one column and keeps six equal bottom-nav items. Each row shows its actual numeric position, profile image/name and bold citron count; purple highlighting marks the subject, dashed separators mark omitted positions. Each card has the shared Farcaster/X/copy controls. Display partial-history, source catch-up and refresh details above the cards. OG images retain the logo and use two columns of five actual positions for the selected category, with the subject highlighted.
 
 Top Casters profile pictures use the existing positioned/clipped avatar wrapper, with circular 32px images and no initials. Missing images leave a neutral circle.
+
+Place the shared account search above Top Casters timeframe controls. Show the selected profile in the search field; distinguish Selected account from You when looking up someone else.

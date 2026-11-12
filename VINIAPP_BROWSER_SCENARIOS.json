@@ -164,6 +164,23 @@
         {
           "assert": "fits",
           "test_id": "tab-top-casters"
+        },
+        {
+          "action": "fill",
+          "test_id": "caster-account-input",
+          "value": "366713"
+        },
+        {
+          "action": "click",
+          "test_id": "caster-account-submit"
+        },
+        {
+          "assert": "visible",
+          "test_id": "caster-account-clear"
+        },
+        {
+          "assert": "fits",
+          "test_id": "caster-account-input"
         }
       ]
     }

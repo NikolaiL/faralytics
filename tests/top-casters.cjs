@@ -24,6 +24,27 @@ const origin = process.env.TEST_ORIGIN || 'http://localhost:3100';
       await expect(page.locator('.caster-card')).toHaveCount(9);
       assert.equal(await page.locator('.caster-card .interaction-ranking li').count(), data.lists.reduce((sum, list) => sum + list.rows.length, 0));
     }
+    // Reuse exact username/FID lookup and keep the selected UTC window.
+    await page.getByTestId('caster-account-input').fill('!');
+    await page.getByTestId('caster-account-submit').click();
+    await expect(page.locator('.top-casters-page [role=alert]')).toContainText('valid');
+    let selected = page.waitForResponse(r => r.url().includes('/api/top-casters?') && new URL(r.url()).searchParams.get('user') === '366713');
+    await page.getByTestId('caster-account-input').fill('@nikolaii.eth');
+    await page.getByTestId('caster-account-submit').click();
+    assert.equal((await selected).status(), 200);
+    await expect(page.getByTestId('caster-account-input')).toHaveValue('@nikolaii.eth');
+    assert.equal(new URL(page.url()).searchParams.get('period'), 'days7');
+    assert.equal(new URL(page.url()).searchParams.get('user'), '366713');
+    let cleared = page.waitForResponse(r => r.url().includes('/api/top-casters?') && !new URL(r.url()).searchParams.has('user'));
+    await page.getByTestId('caster-account-clear').click();
+    assert.equal((await cleared).status(), 200);
+    await expect(page.getByTestId('caster-account-input')).toHaveValue('');
+    assert.equal(new URL(page.url()).searchParams.has('user'), false);
+    selected = page.waitForResponse(r => r.url().includes('/api/top-casters?') && new URL(r.url()).searchParams.get('user') === '3');
+    await page.getByTestId('caster-account-input').fill('3');
+    await page.getByTestId('caster-account-submit').click();
+    assert.equal((await selected).status(), 200);
+    await expect(page.getByTestId('caster-account-clear')).toBeVisible();
     const card = page.locator('.caster-card').filter({ has: page.getByRole('heading', { name: 'Mentions received', exact: true }) });
     await card.getByRole('button', { name: 'Copy link', exact: true }).click();
     const share = new URL(await page.evaluate(() => navigator.clipboard.readText()));
@@ -117,6 +138,25 @@ const origin = process.env.TEST_ORIGIN || 'http://localhost:3100';
     await expect(page.locator('.caster-card')).toHaveCount(1);
     await expect(page.locator('#caster-casts')).toBeVisible();
     await expect(page.getByLabel('Caster timeframe')).toHaveValue('days365');
+    // A manual subject overrides host identity, and Me restores it after reset.
+    const otherResponse = host.waitForResponse(r => r.url().includes('/api/top-casters?') && new URL(r.url()).searchParams.get('user') === '3');
+    await host.getByTestId('caster-account-input').fill('3');
+    await host.getByTestId('caster-account-submit').click();
+    assert.equal((await otherResponse).status(), 200);
+    await expect(host.getByTestId('caster-account-clear')).toBeVisible();
+    await expect(host.locator('.caster-self small').first()).toHaveText('Selected account');
+    nativeShare = undefined;
+    await host.locator('.caster-card').first().getByRole('button', { name: 'Share on Farcaster', exact: true }).click();
+    await expect.poll(() => nativeShare).toBeTruthy();
+    assert.ok(!nativeShare.text.includes('I am'));
+    assert.equal(new URL(nativeShare.embeds[0]).searchParams.get('user'), '3');
+    const globalResponse = host.waitForResponse(r => r.url().includes('/api/top-casters?') && !new URL(r.url()).searchParams.has('user'));
+    await host.getByTestId('caster-account-clear').click();
+    assert.equal((await globalResponse).status(), 200);
+    const meResponse = host.waitForResponse(r => r.url().includes('/api/top-casters?') && new URL(r.url()).searchParams.get('user') === '366713');
+    await host.getByTestId('show-me').click();
+    assert.equal((await meResponse).status(), 200);
+    await expect(host.locator('.caster-self small').first()).toHaveText('You');
     await host.route('**/api/top-casters?*', route => route.fulfill({ json: {
       ...data, profiles: [{ fid: '366713', username: 'unranked-caster.eth', display_name: null }],
       lists: data.lists.map(list => ({ ...list, userPosition: null, rows: Array.from({ length: 10 }, (_, i) => ({ fid: String(i + 1), position: i + 1, score: 100 - i })) })),
@@ -127,6 +167,6 @@ const origin = process.env.TEST_ORIGIN || 'http://localhost:3100';
     await expect(host.locator('.caster-card').first().locator('li')).toHaveCount(10);
     await expect(host.locator('.caster-card').first().locator('.captured-badge')).toHaveText('Top 10 · unranked');
     assert.deepEqual(errors, []);
-    console.log('PASS Top Casters browser: six timeframes, nine lists, list sharing/HTML metadata, native viewer/composer, retry, responsive layout and 1200×800/600 PNGs. No social post sent.');
+    console.log('PASS Top Casters browser: six timeframes, nine lists, list sharing/HTML metadata, native viewer/composer, username/FID search, reset/Me, retry, responsive layout and 1200×800/600 PNGs. No social post sent.');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exit(1); });
