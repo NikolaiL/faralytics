@@ -1,6 +1,7 @@
 "use client";
 import { sdk } from "@farcaster/miniapp-sdk";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import { AccountSearch } from "./AccountSearch";
 import { AppNavigation } from "./AppNavigation";
@@ -21,6 +22,17 @@ import {
   type TopCasters,
 } from "~~/lib/top-casters";
 import type { ShareTarget } from "~~/lib/share-credit";
+
+const OnchainActions = dynamic(() => import("./OnchainActions"), {
+  ssr: false,
+  loading: () => (
+    <div className="payment-overlay">
+      <p className="notice" role="status">
+        Loading NFT mint…
+      </p>
+    </div>
+  ),
+});
 
 export function TopCastersExplorer({
   selection: initial,
@@ -46,6 +58,10 @@ export function TopCastersExplorer({
   const [retry, setRetry] = useState(0);
   const [copyCount, setCopyCount] = useState(0);
   const [shareError, setShareError] = useState("");
+  const [mintRequest, setMintRequest] = useState<{
+    selection: CasterSelection & { metric: CasterMetric };
+    id: number;
+  } | null>(null);
   const scrolledToMetric = useRef(false);
   const user = selectedUser === null ? (ready ? fid : undefined) : selectedUser || undefined;
   const current = { ...selection, user };
@@ -261,9 +277,27 @@ export function TopCastersExplorer({
                 disabled={false}
                 onShare={(target) => void handleShare(list.metric, target, Date.now())}
               />
+              <div className="onchain-actions caster-mint">
+                <button
+                  type="button"
+                  className="mint-button"
+                  data-testid="mint-nft"
+                  onClick={() =>
+                    setMintRequest((previous) => ({
+                      selection: { ...current, metric: list.metric },
+                      id: (previous?.id ?? 0) + 1,
+                    }))
+                  }
+                >
+                  Mint as NFT <span>0.001 ETH ↗</span>
+                </button>
+              </div>
             </TopCasterList>
           ))}
         </div>
+      )}
+      {mintRequest && (
+        <OnchainActions key={mintRequest.id} snapshot={{ kind: "top-casters", ...mintRequest.selection }} autoMint />
       )}
       {shareError && (
         <p className="error-box" role="alert">

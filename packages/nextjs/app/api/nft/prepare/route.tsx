@@ -1,4 +1,7 @@
 import { prepareYearReviewOg } from "~~/components/YearReviewOg";
+import { prepareTopCastersOg } from "~~/components/TopCastersOg";
+import { casterMetrics, casterPath, casterPeriods, casterSelection, casterTitle } from "~~/lib/top-casters";
+import { loadTopCasters } from "~~/lib/top-casters-data";
 import { yearReviewEnd, yearReviewPath, yearReviewSections, yearReviewYear } from "~~/lib/year-review";
 import { yearReviewAccess, yearReviewCanMint } from "~~/lib/year-review-access";
 import { readYearReview } from "~~/lib/year-review-data";
@@ -71,6 +74,8 @@ export const POST = withErrorReporting("/api/nft/prepare", async (request) => {
 
 function prepareSnapshot(input: Record<string, unknown> | null) {
   switch (input?.kind) {
+    case "top-casters":
+      return prepareTopCasters(input);
     case "year-review":
       return prepareYearReview(input);
     case "word-cloud":
@@ -88,6 +93,55 @@ function prepareSnapshot(input: Record<string, unknown> | null) {
     default:
       throw new InputError("Choose a supported NFT snapshot.");
   }
+}
+
+async function prepareTopCasters(input: Record<string, unknown>) {
+  if (
+    typeof input.period !== "string" ||
+    typeof input.end !== "string" ||
+    typeof input.metric !== "string" ||
+    (input.user !== undefined && typeof input.user !== "string")
+  )
+    throw new InputError("Choose a ranking category, timeframe and end date.");
+  const params = new URLSearchParams({ period: input.period, end: input.end, metric: input.metric });
+  if (typeof input.user === "string") params.set("user", input.user);
+  const selection = casterSelection(params);
+  if (selection.period !== input.period || selection.metric !== input.metric || selection.user !== input.user)
+    throw new InputError("Choose valid ranking filters.");
+  const metric = selection.metric!;
+  const data = await loadTopCasters(selection);
+  const list = data.lists.find((list) => list.metric === metric)!;
+  const profiles = data.profiles.filter(
+    (profile) => profile.fid === selection.user || list.rows.some((row) => row.fid === profile.fid),
+  );
+  const subject = profiles.find((profile) => profile.fid === selection.user);
+  const label = selection.user ? ` · ${subject?.username ? "@" + subject.username : "FID " + selection.user}` : "";
+  const capturedAt = new Date().toISOString();
+  return {
+    artwork: await prepareTopCastersOg(selection, 800, data),
+    metadata: {
+      name: `Faralytics · ${casterTitle(metric, selection.period)}${label}`,
+      description:
+        "Snapshot of captured Farcaster rankings. User-submitted artwork; not proof of account ownership or complete history.",
+      external_url: `https://faralytics.vercel.app${casterPath(selection, String(Date.parse(capturedAt)))}`,
+      attributes: [
+        { trait_type: "Type", value: "Top Casters" },
+        { trait_type: "Category", value: casterMetrics[metric] },
+        { trait_type: "Period", value: casterPeriods[selection.period] },
+        { trait_type: "From", value: data.start },
+        { trait_type: "Through", value: data.through },
+        ...(selection.user
+          ? [
+              { trait_type: "FID", value: selection.user },
+              { trait_type: "Rank", value: list.userPosition ?? "Unranked" },
+            ]
+          : []),
+        { trait_type: "Summary refreshed", value: data.updatedAt },
+        { trait_type: "Captured at", value: capturedAt },
+      ],
+      properties: { topCasters: { selection, ...data, lists: [list], profiles } },
+    },
+  };
 }
 
 async function prepareActivity(input: { user?: unknown; period?: unknown; end?: unknown }) {

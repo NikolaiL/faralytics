@@ -14,6 +14,7 @@ import deployedContracts from "~~/contracts/deployedContracts";
 import externalContracts, { TREASURY } from "~~/contracts/externalContracts";
 import type { Activity } from "~~/lib/activity";
 import type { WordCloudSelection } from "~~/lib/word-cloud";
+import type { CasterSelection } from "~~/lib/top-casters";
 import type { InteractionMetric, InteractionPeriod } from "~~/lib/interaction-ranking";
 import type { PreparedNFT } from "~~/lib/ipfs";
 import { waitForConfirmation } from "~~/lib/transactions";
@@ -51,10 +52,12 @@ type SnapshotMint =
   | { kind: "follow-timeline"; actor?: string; target?: string }
   | { kind: "interactions"; user: string; period: InteractionPeriod; metric: InteractionMetric }
   | ({ kind: "word-cloud"; user: string } & WordCloudSelection)
-  | { kind: "year-review"; user: string; end: string };
+  | { kind: "year-review"; user: string; end: string }
+  | ({ kind: "top-casters" } & CasterSelection & { metric: NonNullable<CasterSelection["metric"]> });
 type MintInput = { user: string; period: string; end: string } | SnapshotMint;
 type ActionsProps = ({ activity: Activity; snapshot?: never } | { snapshot: SnapshotMint; activity?: never }) & {
   disabled?: boolean;
+  autoMint?: boolean;
 };
 const mintLabels = {
   friendship: "Mint Friendship NFT",
@@ -63,10 +66,11 @@ const mintLabels = {
   "year-review": "Mint full recap NFT",
   followers: "Mint Followers NFT",
   "follow-timeline": "Mint Follow Timeline NFT",
+  "top-casters": "Mint Top Casters NFT",
 };
 type Selection = { kind: "mint" | "coffee"; input: MintInput; resume?: PendingNFT };
 const PENDING_KEY = "faralytics:pending-ipfs-nft";
-function Actions({ activity, snapshot, disabled }: ActionsProps) {
+function Actions({ activity, snapshot, disabled, autoMint }: ActionsProps) {
   const { isMiniApp } = useMiniapp();
   const account = useAccount();
   const { connectors, connectAsync } = useConnect();
@@ -88,6 +92,9 @@ function Actions({ activity, snapshot, disabled }: ActionsProps) {
   const [token, setToken] = useState<string | null>(null);
   const guard = useRef(false);
   const previousFocus = useRef<HTMLElement | null>(null);
+  const initialMint = useRef(
+    autoMint ? (snapshot ?? { user: activity.profile.fid, period: activity.period, end: activity.anchor }) : null,
+  );
   useEffect(() => {
     if (!selection) return;
     previousFocus.current = document.activeElement as HTMLElement;
@@ -197,11 +204,23 @@ function Actions({ activity, snapshot, disabled }: ActionsProps) {
     }
   }
   useEffect(() => {
+    let pending: PendingNFT | null = null;
     try {
       const saved = JSON.parse(sessionStorage.getItem(PENDING_KEY) || "null");
-      if (saved?.transactionHash && saved?.package?.metadataURI) setPendingNFT(saved);
+      if (saved?.transactionHash && saved?.package?.metadataURI) {
+        pending = saved;
+        setPendingNFT(saved);
+      }
     } catch {
       /* Storage is optional for normal minting. */
+    }
+    if (initialMint.current) {
+      setSelection({ kind: "mint", input: initialMint.current, resume: pending ?? undefined });
+      if (pending) {
+        setTx(pending.transactionHash);
+        setToken(pending.tokenId || null);
+        setMessage("Finish the saved NFT upload without another mint payment.");
+      }
     }
   }, []);
   function savePending(value: PendingNFT | null) {
@@ -394,20 +413,22 @@ function Actions({ activity, snapshot, disabled }: ActionsProps) {
   const needsWallet = !nativeCoffee || isMint;
   return (
     <>
-      <div className="onchain-actions" data-testid="onchain-actions">
-        <button className="mint-button" data-testid="mint-nft" disabled={disabled} onClick={() => open("mint")}>
-          {pendingNFT ? "Finish NFT upload" : snapshot ? mintLabels[snapshot.kind] : "Mint my activity NFT"}{" "}
-          <span>
-            <NumberText>{pendingNFT ? "No new mint fee" : "0.001 ETH ↗"}</NumberText>
-          </span>
-        </button>
-        <button className="coffee-button" data-testid="buy-coffee" disabled={disabled} onClick={() => open("coffee")}>
-          ☕ Buy @nikolaii.eth a coffee{" "}
-          <span>
-            <NumberText>2 USDC</NumberText>
-          </span>
-        </button>
-      </div>
+      {!autoMint && (
+        <div className="onchain-actions" data-testid="onchain-actions">
+          <button className="mint-button" data-testid="mint-nft" disabled={disabled} onClick={() => open("mint")}>
+            {pendingNFT ? "Finish NFT upload" : snapshot ? mintLabels[snapshot.kind] : "Mint my activity NFT"}{" "}
+            <span>
+              <NumberText>{pendingNFT ? "No new mint fee" : "0.001 ETH ↗"}</NumberText>
+            </span>
+          </button>
+          <button className="coffee-button" data-testid="buy-coffee" disabled={disabled} onClick={() => open("coffee")}>
+            ☕ Buy @nikolaii.eth a coffee{" "}
+            <span>
+              <NumberText>2 USDC</NumberText>
+            </span>
+          </button>
+        </div>
+      )}
       {selection &&
         createPortal(
           <div
