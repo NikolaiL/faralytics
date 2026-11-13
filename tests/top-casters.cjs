@@ -2,6 +2,8 @@ const assert = require('node:assert/strict');
 const { mkdirSync } = require('node:fs');
 const { chromium, expect } = require('@playwright/test');
 const origin = process.env.TEST_ORIGIN || 'http://localhost:3100';
+const expectedMetrics = ['likes_received', 'recasts_received', 'replies_received', 'mentions_received', 'casts', 'likes_sent', 'recasts_sent', 'replies_sent', 'mentions_sent'];
+const expectedLabels = ['Most Liked Casters', 'Most Recasted Casters', 'Most Replied Casters', 'Most Mentioned Casters', 'Most Original Casts', 'Top Likers', 'Top Recasters', 'Top Repliers', 'Top Mentioners'];
 (async () => {
   const browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH });
   const errors = [];
@@ -12,6 +14,8 @@ const origin = process.env.TEST_ORIGIN || 'http://localhost:3100';
     await page.addInitScript(() => { window.open = url => { window.__lastShare = url; return null; }; });
     await page.goto(origin + '/top-casters', { waitUntil: 'networkidle' });
     await expect(page.locator('.caster-card')).toHaveCount(9);
+    await expect(page.locator('.caster-card h2')).toHaveText(expectedLabels);
+    assert.ok((await page.title()).startsWith('Top Casters · Most Liked Casters · 7 days'));
     await expect(page.getByTestId('tab-top-casters')).toHaveAttribute('aria-current', 'page');
     await expect(page.getByLabel('Caster timeframe')).toHaveValue('days7');
     assert.equal(await page.locator('.caster-card .interaction-ranking li').count(), 90);
@@ -21,6 +25,7 @@ const origin = process.env.TEST_ORIGIN || 'http://localhost:3100';
       const loaded = await response;
       assert.equal(loaded.status(), 200);
       const data = await loaded.json();
+      assert.deepEqual(data.lists.map(list => list.metric), expectedMetrics);
       await expect(page.locator('.caster-card')).toHaveCount(9);
       assert.equal(await page.locator('.caster-card .interaction-ranking li').count(), data.lists.reduce((sum, list) => sum + list.rows.length, 0));
     }
@@ -85,7 +90,7 @@ const origin = process.env.TEST_ORIGIN || 'http://localhost:3100';
     await page.getByTestId('caster-account-submit').click();
     assert.equal((await selected).status(), 200);
     await expect(page.getByTestId('caster-account-clear')).toBeVisible();
-    const card = page.locator('.caster-card').filter({ has: page.getByRole('heading', { name: 'Most mentioned', exact: true }) });
+    const card = page.locator('.caster-card').filter({ has: page.getByRole('heading', { name: 'Most Mentioned Casters', exact: true }) });
     await card.getByRole('button', { name: 'Copy link', exact: true }).click();
     const share = new URL(await page.evaluate(() => navigator.clipboard.readText()));
     assert.equal(share.pathname, '/top-casters');
@@ -98,7 +103,7 @@ const origin = process.env.TEST_ORIGIN || 'http://localhost:3100';
       const compose = new URL(await page.evaluate(() => window.__lastShare));
       const linked = new URL(compose.searchParams.get(target === 'X' ? 'url' : 'embeds[]'));
       assert.equal(linked.searchParams.get('metric'), 'mentions_received');
-      assert.match(compose.searchParams.get('text'), /Most mentioned/);
+      assert.match(compose.searchParams.get('text'), /Most Mentioned Casters/);
     }
     const sharedPath = share.pathname + share.search;
     const html = await (await page.request.get(origin + sharedPath)).text();
@@ -179,10 +184,10 @@ const origin = process.env.TEST_ORIGIN || 'http://localhost:3100';
     await host.locator('.caster-card').first().getByRole('button', { name: 'Share on Farcaster', exact: true }).click();
     await expect.poll(() => nativeShare).toBeTruthy();
     assert.ok(JSON.stringify(nativeShare).includes('user=366713'));
-    assert.ok(nativeShare.text.startsWith('Top Casters · Most original casts · 365 days\n\n#1 '));
+    assert.ok(nativeShare.text.startsWith('Top Casters · Most Liked Casters · 365 days\n\n#1 '));
     assert.ok(nativeShare.text.includes(`I am ranked #${data.lists[0].userPosition.toLocaleString('en-US')}. How about you?`));
     const nativeLink = new URL(nativeShare.embeds[0]);
-    assert.equal(nativeLink.searchParams.get('metric'), 'casts');
+    assert.equal(nativeLink.searchParams.get('metric'), 'likes_received');
     assert.equal(nativeLink.searchParams.get('period'), 'days365');
     for (const list of data.lists) {
       nativeShare = undefined;
@@ -200,7 +205,7 @@ const origin = process.env.TEST_ORIGIN || 'http://localhost:3100';
     }
     await page.goto(origin + nativeLink.pathname + nativeLink.search, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('.caster-card')).toHaveCount(9);
-    await expect(page.locator('#caster-casts')).toBeVisible();
+    await expect(page.locator('#caster-likes_received')).toBeVisible();
     await expect(page.getByLabel('Caster timeframe')).toHaveValue('days365');
     // A manual subject overrides host identity, and Me restores it directly or after reset.
     const otherResponse = host.waitForResponse(r => r.url().includes('/api/top-casters?') && new URL(r.url()).searchParams.get('user') === '3');

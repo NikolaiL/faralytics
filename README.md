@@ -220,19 +220,19 @@ Own-target Farcaster thank-you copy tags only available usernames among the five
 
 `/top-casters` is a public navigation tab with nine lists: original casts, replies/recasts/likes/mentions given, and replies/recasts/likes/mentions received. Choose Today, Yesterday, 7 days (default), 30 days, 365 days or All time. Windows use inclusive UTC days through a validated `end` anchor; Yesterday is the preceding UTC day. All time means all captured history since the Farcaster epoch, not a complete archive.
 
-Display labels use the following metric keys, preserving existing ranking/share URLs:
+Display labels use the following metric keys in this order, preserving existing ranking/share URLs and SQL score indices. Default metadata/artwork uses the first category, Most Liked Casters:
 
-| Metric key | Label |
+| Metric key | Label (display order) |
 | --- | --- |
-| `casts` | Most original casts |
-| `replies_sent` | Most replies sent |
-| `recasts_sent` | Top recasters |
+| `likes_received` | Most Liked Casters |
+| `recasts_received` | Most Recasted Casters |
+| `replies_received` | Most Replied Casters |
+| `mentions_received` | Most Mentioned Casters |
+| `casts` | Most Original Casts |
 | `likes_sent` | Top Likers |
-| `mentions_sent` | Most mentions made |
-| `replies_received` | Most replied to |
-| `recasts_received` | Most recasts received |
-| `likes_received` | Most liked |
-| `mentions_received` | Most mentioned |
+| `recasts_sent` | Top Recasters |
+| `replies_sent` | Top Repliers |
+| `mentions_sent` | Top Mentioners |
 
 Anonymous visitors see ten positive-score accounts in each category. Farcaster host context supplies the signed-in viewer FID. If that account is in the first ten, show ten; otherwise show the first five and positions x−2 through x+2, with the viewer highlighted and gaps marked. Equal scores have distinct positions ordered by numeric FID. Near the bottom, only existing neighbors are shown. Accounts with no captured activity in a category are unranked and get the first ten plus an explanation naming their username (or FID when unavailable). A wallet without a Farcaster identity stays in the anonymous view. The shared username/FID search above the rankings supports suggestions, keyboard selection and exact lookup. Selecting another account preserves the timeframe and shows its positions; Clear returns to global Top 10 and Me restores the signed-in account. While viewing another account, the search field shows both the × clear button and a purple Me button, without clearing the lookup first. Search resolves usernames through the existing exact-search API; ranking/share URLs keep numeric FIDs. Explicit selections take precedence over host identity, and another account is labeled Selected account rather than You. Clicking a ranked username/PFP loads that account into the same search and rankings while preserving the timeframe; the separate external-link icon opens the Farcaster profile.
 

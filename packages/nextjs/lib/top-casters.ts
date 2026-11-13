@@ -9,19 +9,31 @@ export const casterPeriods = {
   days365: "365 days",
   all: "All time",
 } as const;
+// This order matches the SQL score array; presentation uses casterMetricOrder.
 export const casterMetrics = {
-  casts: "Most original casts",
-  replies_sent: "Most replies sent",
-  recasts_sent: "Top recasters",
+  casts: "Most Original Casts",
+  replies_sent: "Top Repliers",
+  recasts_sent: "Top Recasters",
   likes_sent: "Top Likers",
-  mentions_sent: "Most mentions made",
-  replies_received: "Most replied to",
-  recasts_received: "Most recasts received",
-  likes_received: "Most liked",
-  mentions_received: "Most mentioned",
+  mentions_sent: "Top Mentioners",
+  replies_received: "Most Replied Casters",
+  recasts_received: "Most Recasted Casters",
+  likes_received: "Most Liked Casters",
+  mentions_received: "Most Mentioned Casters",
 } as const;
 export type CasterPeriod = keyof typeof casterPeriods;
 export type CasterMetric = keyof typeof casterMetrics;
+export const casterMetricOrder = [
+  "likes_received",
+  "recasts_received",
+  "replies_received",
+  "mentions_received",
+  "casts",
+  "likes_sent",
+  "recasts_sent",
+  "replies_sent",
+  "mentions_sent",
+] as const satisfies readonly CasterMetric[];
 export type CasterSelection = { period: CasterPeriod; end: string; user?: string; metric?: CasterMetric };
 export type CasterRank = { fid: string; score: number; position: number };
 export type CasterList = {

@@ -83,7 +83,7 @@ async function rpc(method, params = []) {
     const image = Buffer.from(prepared.imageBase64, 'base64');
     assert.equal(image.readUInt32BE(16), 1200); assert.equal(image.readUInt32BE(20), 800);
     const metadata = JSON.parse(prepared.metadataJSON);
-    assert.match(metadata.name, /Top Casters · Most liked · 7 days/);
+    assert.match(metadata.name, /Top Casters · Most Liked Casters · 7 days/);
     assert.equal(metadata.properties.topCasters.lists.length, 1);
     assert.equal(metadata.properties.topCasters.lists[0].metric, 'likes_received');
     assert.equal(metadata.properties.topCasters.lists[0].rows.length, 10);

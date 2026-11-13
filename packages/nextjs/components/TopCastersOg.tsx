@@ -2,12 +2,12 @@
 import "server-only";
 import { OgLogo } from "~~/components/OgLogo";
 import { loadAvatar } from "~~/lib/avatar";
-import { casterTitle, type CasterSelection, type TopCasters } from "~~/lib/top-casters";
+import { casterMetricOrder, casterTitle, type CasterSelection, type TopCasters } from "~~/lib/top-casters";
 import { loadTopCasters } from "~~/lib/top-casters-data";
 
 export async function prepareTopCastersOg(selection: CasterSelection, height: number, snapshot?: TopCasters) {
   const data = snapshot ?? (await loadTopCasters(selection));
-  const metric = selection.metric || "casts";
+  const metric = selection.metric || casterMetricOrder[0];
   const list = data.lists.find((list) => list.metric === metric)!;
   const profiles = list.rows.map((row) => data.profiles.find((profile) => profile.fid === row.fid));
   const avatars = await Promise.all(

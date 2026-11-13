@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { casterMetrics, casterPath, casterRange, casterSelection, casterShareText, casterTitle, type CasterMetric, type TopCasters } from "../packages/nextjs/lib/top-casters.ts";
+import { casterMetricOrder, casterMetrics, casterPath, casterRange, casterRankingSql, casterSelection, casterShareText, casterTitle, type CasterMetric, type TopCasters } from "../packages/nextjs/lib/top-casters.ts";
+
+test("caster display order uses the requested names while retaining SQL metric identities", () => {
+  assert.deepEqual(casterMetricOrder, ['likes_received', 'recasts_received', 'replies_received', 'mentions_received', 'casts', 'likes_sent', 'recasts_sent', 'replies_sent', 'mentions_sent']);
+  assert.deepEqual(casterMetricOrder.map(metric => casterMetrics[metric]), ['Most Liked Casters', 'Most Recasted Casters', 'Most Replied Casters', 'Most Mentioned Casters', 'Most Original Casts', 'Top Likers', 'Top Recasters', 'Top Repliers', 'Top Mentioners']);
+  assert.deepEqual([...casterRankingSql.matchAll(/sum\((\w+)\)/g)].map(match => match[1]), Object.keys(casterMetrics));
+});
 
 test("caster timeframes use inclusive UTC days and anchor yesterday separately", () => {
   const end="2026-11-12";
@@ -39,11 +45,11 @@ test("caster self-shares use the selected title, actual rank and platform credit
   };
   assert.equal(
     casterTitle(selection.metric, selection.period),
-    "Top Casters · Most liked · All time",
+    "Top Casters · Most Liked Casters · All time",
   );
   assert.equal(
     casterShareText(selection, review, "farcaster", "366713"),
-    "Top Casters · Most liked · All time\n\nI am ranked #276. How about you?\n\nfaralytics - created by @nikolaii.eth with @viniapp",
+    "Top Casters · Most Liked Casters · All time\n\nI am ranked #276. How about you?\n\nfaralytics - created by @nikolaii.eth with @viniapp",
   );
   assert.ok(
     casterShareText(selection, review, "x", "366713").endsWith(

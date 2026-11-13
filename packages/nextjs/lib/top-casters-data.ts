@@ -5,6 +5,7 @@ import { query } from "~~/lib/clickhouse";
 import { loadProfiles } from "~~/lib/profile-data";
 import {
   casterMetrics,
+  casterMetricOrder,
   casterRange,
   casterRankingSql,
   type CasterSelection,
@@ -59,8 +60,9 @@ export async function loadTopCasters(selection: CasterSelection): Promise<TopCas
     partialDay: range.through === dateKey(new Date()),
     updatedAt: rows[0]?.generated_at || status.updatedAt,
     profiles,
-    lists: Object.keys(casterMetrics).map((metric, index) => {
-      const ranked = rows.filter((row) => Number(row.metric) === index + 1);
+    lists: casterMetricOrder.map((metric) => {
+      const metricNumber = Object.keys(casterMetrics).indexOf(metric) + 1;
+      const ranked = rows.filter((row) => Number(row.metric) === metricNumber);
       const userPosition = Number(ranked[0]?.user_position) || null;
       const positions = ranked.map((row) => ({
         fid: row.fid,
@@ -68,7 +70,7 @@ export async function loadTopCasters(selection: CasterSelection): Promise<TopCas
         position: Number(row.position),
       }));
       return {
-        metric: metric as keyof typeof casterMetrics,
+        metric,
         userPosition,
         rows: positions.filter((row) => userPosition !== 10 || row.position <= 10),
         // Sharing rank #10 needs #11 without expanding the displayed Top 10.

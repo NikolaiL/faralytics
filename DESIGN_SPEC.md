@@ -69,3 +69,5 @@ In Top Casters rows, clicking the username or PFP selects that account in the ra
 Each Top Casters card places one full-width Mint as NFT button below its share controls, showing the existing 0.001 ETH fee. All nine buttons open the same existing wallet/preview/confirmation flow for their own category; retain the server-rendered rankings and avoid adding coffee buttons per card.
 
 For own-account Top Casters shares, leave a blank line after the category/timeframe title before the top-three rank/name/count lines, then the viewer's x−1/x/x+1 rows with a dashed divider only across omitted ranks. Deduplicate overlaps near the top. Keep the rank question and platform credits after a blank line. Apply to all metrics; other-account and anonymous share text stays brief.
+
+Top Casters category order and exact titles: Most Liked Casters, Most Recasted Casters, Most Replied Casters, Most Mentioned Casters, Most Original Casts, Top Likers, Top Recasters, Top Repliers, Top Mentioners. Use the same names in cards, share text, images and NFT metadata. Default previews show Most Liked Casters. Display order is separate from the existing SQL metric indices.
