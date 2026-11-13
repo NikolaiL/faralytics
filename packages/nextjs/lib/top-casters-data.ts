@@ -22,7 +22,7 @@ const readRanks = unstable_cache(
       generated_at: string;
     }>(casterRankingSql, { start, through, user });
   },
-  ["top-casters-ranks-v4"],
+  ["top-casters-ranks-v5"],
   { revalidate: 300 },
 );
 
@@ -61,10 +61,18 @@ export async function loadTopCasters(selection: CasterSelection): Promise<TopCas
     profiles,
     lists: Object.keys(casterMetrics).map((metric, index) => {
       const ranked = rows.filter((row) => Number(row.metric) === index + 1);
+      const userPosition = Number(ranked[0]?.user_position) || null;
+      const positions = ranked.map((row) => ({
+        fid: row.fid,
+        score: Number(row.score),
+        position: Number(row.position),
+      }));
       return {
         metric: metric as keyof typeof casterMetrics,
-        userPosition: Number(ranked[0]?.user_position) || null,
-        rows: ranked.map((row) => ({ fid: row.fid, score: Number(row.score), position: Number(row.position) })),
+        userPosition,
+        rows: positions.filter((row) => userPosition !== 10 || row.position <= 10),
+        // Sharing rank #10 needs #11 without expanding the displayed Top 10.
+        nextRank: userPosition === 10 ? positions.find((row) => row.position === 11) : undefined,
       };
     }),
   };

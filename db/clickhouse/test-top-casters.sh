@@ -60,7 +60,7 @@ TRUNCATE TABLE snapchain.top_casters_daily;
 INSERT INTO snapchain.top_casters_daily SELECT toDate('2026-01-02'), number+1, 100-intDiv(number,2),0,0,0,0,0,0,0,0,now64(3) FROM numbers(20);
 CREATE TABLE farcaster.fixture_ranks (metric UInt64,fid String,score String,position String,user_position String,generated_at DateTime64(3,'UTC')) ENGINE=Memory;
 SQL
-for user in 0 1 11 20 999; do
+for user in 0 1 10 11 20 999; do
   printf 'TRUNCATE TABLE farcaster.fixture_ranks;\nINSERT INTO farcaster.fixture_ranks\n'
   node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --input-type=module - "$sql_dir" "$user" <<'JS'
 import {pathToFileURL} from 'node:url';
@@ -69,6 +69,7 @@ console.log(casterRankingSql.replaceAll('{start:Date}',"toDate('2026-01-01')").r
 JS
   case "$user" in
     0|1|999) expected="[1,2,3,4,5,6,7,8,9,10]";;
+    10) expected="[1,2,3,4,5,6,7,8,9,10,11]";;
     11) expected="[1,2,3,4,5,9,10,11,12,13]";;
     20) expected="[1,2,3,4,5,18,19,20]";;
   esac

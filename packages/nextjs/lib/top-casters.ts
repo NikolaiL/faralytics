@@ -24,7 +24,12 @@ export type CasterPeriod = keyof typeof casterPeriods;
 export type CasterMetric = keyof typeof casterMetrics;
 export type CasterSelection = { period: CasterPeriod; end: string; user?: string; metric?: CasterMetric };
 export type CasterRank = { fid: string; score: number; position: number };
-export type CasterList = { metric: CasterMetric; rows: CasterRank[]; userPosition: number | null };
+export type CasterList = {
+  metric: CasterMetric;
+  rows: CasterRank[];
+  userPosition: number | null;
+  nextRank?: CasterRank;
+};
 export type TopCasters = {
   lists: CasterList[];
   profiles: Profile[];
@@ -83,17 +88,33 @@ export function casterTitle(metric: CasterMetric, period: CasterPeriod) {
 
 export function casterShareText(
   selection: CasterSelection & { metric: CasterMetric },
-  data: Pick<TopCasters, "lists">,
+  data: Pick<TopCasters, "lists" | "profiles">,
   target: Exclude<ShareTarget, "copy">,
   viewerFid?: string,
 ) {
-  const position = data.lists.find((list) => list.metric === selection.metric)?.userPosition;
+  const list = data.lists.find((list) => list.metric === selection.metric);
+  const position = list?.userPosition;
   const own = !!viewerFid && viewerFid === selection.user;
+  const rows = own
+    ? [...(list?.rows ?? []), ...(list?.nextRank ? [list.nextRank] : [])].filter(
+        (row) => row.position <= 3 || (position && Math.abs(row.position - position) <= 1),
+      )
+    : [];
+  const lines: string[] = [];
+  let previous = 0;
+  for (const row of rows) {
+    if (previous && row.position > previous + 1) lines.push("----------");
+    const profile = data.profiles.find((profile) => profile.fid === row.fid);
+    const name = profile?.username ? `@${profile.username}` : `FID ${row.fid}`;
+    lines.push(`#${row.position.toLocaleString("en-US")} ${name} ${row.score.toLocaleString("en-US")}`);
+    previous = row.position;
+  }
+  const leaders = lines.length ? `\n${lines.join("\n")}` : "";
   const ranking = own
     ? `\n\nI am ${position ? `ranked #${position.toLocaleString("en-US")}` : "unranked"}. How about you?`
     : "";
   return formatShareText(
-    `${casterTitle(selection.metric, selection.period)}${ranking}\n\n${shareCredit(target)}`,
+    `${casterTitle(selection.metric, selection.period)}${leaders}${ranking}\n\n${shareCredit(target)}`,
     target,
   );
 }
@@ -119,7 +140,7 @@ WITH scores AS (
 SELECT metric, toString(fid) AS fid, score, position, user_position, generated_at
 FROM positioned
 WHERE ({user:UInt64} = 0 AND position <= 10)
-  OR ({user:UInt64} > 0 AND ((user_position BETWEEN 1 AND 10 AND position <= 10)
+  OR ({user:UInt64} > 0 AND ((user_position BETWEEN 1 AND 10 AND (position <= 10 OR position = user_position + 1))
     OR (user_position > 10 AND (position <= 5 OR abs(toInt64(position) - toInt64(user_position)) <= 2))
     OR (user_position = 0 AND position <= 10)))
 ORDER BY metric, position

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { casterPath, casterRange, casterSelection, casterShareText, casterTitle } from "../packages/nextjs/lib/top-casters.ts";
+import { casterMetrics, casterPath, casterRange, casterSelection, casterShareText, casterTitle, type CasterMetric, type TopCasters } from "../packages/nextjs/lib/top-casters.ts";
 
 test("caster timeframes use inclusive UTC days and anchor yesterday separately", () => {
   const end="2026-11-12";
@@ -31,9 +31,10 @@ test("caster self-shares use the selected title, actual rank and platform credit
   } as const;
   const review: Pick<
     import("../packages/nextjs/lib/top-casters.ts").TopCasters,
-    "through" | "lists"
+    "through" | "lists" | "profiles"
   > = {
     through: data.through,
+    profiles: [],
     lists: [...data.lists].map((list) => ({ ...list, rows: [] })),
   };
   assert.equal(
@@ -58,6 +59,128 @@ test("caster self-shares use the selected title, actual rank and platform credit
   assert.ok(
     casterShareText(selection, review, "farcaster", "366713").includes(
       "I am unranked. How about you?",
+    ),
+  );
+});
+
+function shareFixture(
+  metric: CasterMetric,
+  position: number | null,
+): Pick<TopCasters, "lists" | "profiles"> {
+  const names: Record<number, string> = {
+    1: "neynar",
+    2: "clanker",
+    3: "bizzarebeast",
+    18: "lisashin",
+    19: "nikolaii.eth",
+    20: "adrienne",
+  };
+  const scores: Record<number, number> = {
+    1: 1210,
+    2: 990,
+    3: 482,
+    18: 69,
+    19: 68,
+    20: 67,
+  };
+  const all = Array.from({ length: 30 }, (_, index) => ({
+    fid: position === index + 1 ? "366713" : String(index + 1),
+    position: index + 1,
+    score: scores[index + 1] ?? 100 - index,
+  }));
+  return {
+    lists: [
+      {
+        metric,
+        userPosition: position,
+        rows: all.filter((row) =>
+          !position || position <= 10
+            ? row.position <= 10
+            : row.position <= 5 || Math.abs(row.position - position) <= 2,
+        ),
+        nextRank: position === 10 ? all[10] : undefined,
+      },
+    ],
+    profiles: all.map((row) => ({
+      fid: row.fid,
+      username: names[row.position] ?? `caster${row.position}`,
+      display_name: null,
+    })),
+  };
+}
+
+test("all metric self-shares include top three and immediate neighbors with the requested copy", () => {
+  for (const metric of Object.keys(casterMetrics) as CasterMetric[]) {
+    const selection = {
+      user: "366713",
+      metric,
+      period: "days7",
+      end: "2026-11-13",
+    } as const;
+    const data = shareFixture(metric, 19);
+    const text = casterShareText(selection, data, "farcaster", "366713");
+    assert.equal(
+      text,
+      `Top Casters · ${casterMetrics[metric]} · 7 days\n#1 @neynar 1,210\n#2 @clanker 990\n#3 @bizzarebeast 482\n----------\n#18 @lisashin 69\n#19 @nikolaii.eth 68\n#20 @adrienne 67\n\nI am ranked #19. How about you?\n\nfaralytics - created by @nikolaii.eth with @viniapp`,
+    );
+    const x = casterShareText(selection, data, "x", "366713");
+    assert.ok(x.includes("#1 neynar 1,210"));
+    assert.ok(x.includes("#19 nikolaii.eth 68"));
+    assert.ok(
+      x.endsWith("faralytics - created by @NikolaiLeb with @viniapp_xyz"),
+    );
+    for (const viewer of [undefined, "3"])
+      assert.equal(
+        casterShareText(selection, data, "farcaster", viewer),
+        `Top Casters · ${casterMetrics[metric]} · 7 days\n\nfaralytics - created by @nikolaii.eth with @viniapp`,
+      );
+  }
+});
+
+test("self-share positions avoid duplicates, preserve #11 beside #10, and handle missing neighbors", () => {
+  const selection = {
+    user: "366713",
+    metric: "mentions_received",
+    period: "days7",
+    end: "2026-11-13",
+  } as const;
+  for (const [position, expected] of [
+    [1, [1, 2, 3]],
+    [2, [1, 2, 3]],
+    [3, [1, 2, 3, 4]],
+    [4, [1, 2, 3, 4, 5]],
+    [5, [1, 2, 3, 4, 5, 6]],
+    [6, [1, 2, 3, 5, 6, 7]],
+    [10, [1, 2, 3, 9, 10, 11]],
+    [11, [1, 2, 3, 10, 11, 12]],
+    [30, [1, 2, 3, 29, 30]],
+    [null, [1, 2, 3]],
+  ] as const) {
+    const text = casterShareText(
+      selection,
+      shareFixture(selection.metric, position),
+      "farcaster",
+      "366713",
+    );
+    assert.deepEqual(
+      [...text.matchAll(/^#(\d+) /gm)].map((match) => Number(match[1])),
+      expected,
+    );
+    assert.equal(
+      text.includes("----------"),
+      expected.some(
+        (rank, index) => index > 0 && rank > expected[index - 1] + 1,
+      ),
+    );
+    assert.ok(
+      text.includes(position ? `I am ranked #${position}.` : "I am unranked."),
+    );
+  }
+  const data = shareFixture(selection.metric, 19);
+  data.profiles = [];
+  assert.ok(
+    casterShareText(selection, data, "farcaster", "366713").includes(
+      "#19 FID 366713 68",
     ),
   );
 });

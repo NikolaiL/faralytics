@@ -24,6 +24,18 @@ const origin = process.env.TEST_ORIGIN || 'http://localhost:3100';
       await expect(page.locator('.caster-card')).toHaveCount(9);
       assert.equal(await page.locator('.caster-card .interaction-ranking li').count(), data.lists.reduce((sum, list) => sum + list.rows.length, 0));
     }
+    // Rank #10 keeps ten displayed rows but supplies #11 for the self-share text.
+    const boundaryParams = new URLSearchParams({ period: 'yesterday', end: '2026-11-13' });
+    const boundaryGlobal = await (await page.request.get(`${origin}/api/top-casters?${boundaryParams}`)).json();
+    boundaryParams.set('user', boundaryGlobal.lists[0].rows[9].fid);
+    const boundaryResponse = await page.request.get(`${origin}/api/top-casters?${boundaryParams}`);
+    assert.equal(boundaryResponse.status(), 200);
+    const boundaryData = await boundaryResponse.json();
+    const boundaryList = boundaryData.lists[0];
+    assert.equal(boundaryList.userPosition, 10);
+    assert.equal(boundaryList.rows.length, 10);
+    assert.equal(boundaryList.nextRank.position, 11);
+    assert.ok(boundaryData.profiles.some(profile => profile.fid === boundaryList.nextRank.fid));
     // Selecting a ranked name loads that account into the search and every leaderboard.
     const rankedAccount = page.locator('.caster-card').first().locator('button.timeline-account').first();
     const rankedName = (await rankedAccount.innerText()).trim();
@@ -167,11 +179,25 @@ const origin = process.env.TEST_ORIGIN || 'http://localhost:3100';
     await host.locator('.caster-card').first().getByRole('button', { name: 'Share on Farcaster', exact: true }).click();
     await expect.poll(() => nativeShare).toBeTruthy();
     assert.ok(JSON.stringify(nativeShare).includes('user=366713'));
-    assert.ok(nativeShare.text.startsWith('Top Casters · Most original casts · 365 days\n\nI am ranked #'));
+    assert.ok(nativeShare.text.startsWith('Top Casters · Most original casts · 365 days\n#1 '));
     assert.ok(nativeShare.text.includes(`I am ranked #${data.lists[0].userPosition.toLocaleString('en-US')}. How about you?`));
     const nativeLink = new URL(nativeShare.embeds[0]);
     assert.equal(nativeLink.searchParams.get('metric'), 'casts');
     assert.equal(nativeLink.searchParams.get('period'), 'days365');
+    for (const list of data.lists) {
+      nativeShare = undefined;
+      const section = host.locator('.caster-card').filter({ has: host.locator(`#caster-${list.metric}`) });
+      await section.getByRole('button', { name: 'Share on Farcaster', exact: true }).click();
+      await expect.poll(() => nativeShare).toBeTruthy();
+      const rows = [...list.rows, ...(list.nextRank ? [list.nextRank] : [])].filter(row => row.position <= 3 || (list.userPosition && Math.abs(row.position - list.userPosition) <= 1));
+      for (const row of rows) {
+        const profile = data.profiles.find(profile => profile.fid === row.fid);
+        const name = profile?.username ? `@${profile.username}` : `FID ${row.fid}`;
+        assert.ok(nativeShare.text.includes(`#${row.position.toLocaleString('en-US')} ${name} ${row.score.toLocaleString('en-US')}`), list.metric);
+      }
+      assert.equal((nativeShare.text.match(/^#\d/gm) || []).length, rows.length);
+      assert.equal(new URL(nativeShare.embeds[0]).searchParams.get('metric'), list.metric);
+    }
     await page.goto(origin + nativeLink.pathname + nativeLink.search, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('.caster-card')).toHaveCount(9);
     await expect(page.locator('#caster-casts')).toBeVisible();
@@ -230,6 +256,6 @@ const origin = process.env.TEST_ORIGIN || 'http://localhost:3100';
     await expect(host.locator('.caster-card').first().locator('.captured-badge')).toHaveText('Top 10 · unranked');
     await expect(host.locator('.caster-card').first().locator('.caster-profile-link').first()).toHaveAttribute('href', 'https://farcaster.xyz/~/profiles/1');
     assert.deepEqual(errors, []);
-    console.log('PASS Top Casters browser: six timeframes, nine lists, ranked-name selection, separate web/native profile links, shared-category scrolling on desktop/mobile, HTML metadata, native viewer/composer, username/FID search, direct Me/reset, retry, responsive layout and 1200×800/600 PNGs. No social post sent.');
+    console.log('PASS Top Casters browser: six timeframes, nine lists and self-share texts, #10/#11 share boundary, ranked-name selection, separate web/native profile links, shared-category scrolling on desktop/mobile, HTML metadata, native viewer/composer, username/FID search, direct Me/reset, retry, responsive layout and 1200×800/600 PNGs. No social post sent.');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exit(1); });

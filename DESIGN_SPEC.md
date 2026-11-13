@@ -67,3 +67,5 @@ Shared Top Casters links show all nine categories and scroll to the shared categ
 In Top Casters rows, clicking the username or PFP selects that account in the ranking search and loads all its positions for the current timeframe. A separate external-link icon beside the username opens its Farcaster profile (native profile in Farcaster, new tab on the web). Use purple (#855dcd) for this icon and brighter purple (#b596f2) on hover.
 
 Each Top Casters card places one full-width Mint as NFT button below its share controls, showing the existing 0.001 ETH fee. All nine buttons open the same existing wallet/preview/confirmation flow for their own category; retain the server-rendered rankings and avoid adding coffee buttons per card.
+
+For own-account Top Casters shares, place top-three rank/name/count lines immediately below the category/timeframe title, then the viewer's x−1/x/x+1 rows with a dashed divider only across omitted ranks. Deduplicate overlaps near the top. Keep the rank question and platform credits after a blank line. Apply to all metrics; other-account and anonymous share text stays brief.
