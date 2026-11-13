@@ -109,7 +109,7 @@ export function casterShareText(
     lines.push(`#${row.position.toLocaleString("en-US")} ${name} ${row.score.toLocaleString("en-US")}`);
     previous = row.position;
   }
-  const leaders = lines.length ? `\n${lines.join("\n")}` : "";
+  const leaders = lines.length ? `\n\n${lines.join("\n")}` : "";
   const ranking = own
     ? `\n\nI am ${position ? `ranked #${position.toLocaleString("en-US")}` : "unranked"}. How about you?`
     : "";

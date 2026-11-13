@@ -179,7 +179,7 @@ const origin = process.env.TEST_ORIGIN || 'http://localhost:3100';
     await host.locator('.caster-card').first().getByRole('button', { name: 'Share on Farcaster', exact: true }).click();
     await expect.poll(() => nativeShare).toBeTruthy();
     assert.ok(JSON.stringify(nativeShare).includes('user=366713'));
-    assert.ok(nativeShare.text.startsWith('Top Casters · Most original casts · 365 days\n#1 '));
+    assert.ok(nativeShare.text.startsWith('Top Casters · Most original casts · 365 days\n\n#1 '));
     assert.ok(nativeShare.text.includes(`I am ranked #${data.lists[0].userPosition.toLocaleString('en-US')}. How about you?`));
     const nativeLink = new URL(nativeShare.embeds[0]);
     assert.equal(nativeLink.searchParams.get('metric'), 'casts');

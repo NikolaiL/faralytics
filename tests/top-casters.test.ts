@@ -121,7 +121,7 @@ test("all metric self-shares include top three and immediate neighbors with the 
     const text = casterShareText(selection, data, "farcaster", "366713");
     assert.equal(
       text,
-      `Top Casters · ${casterMetrics[metric]} · 7 days\n#1 @neynar 1,210\n#2 @clanker 990\n#3 @bizzarebeast 482\n----------\n#18 @lisashin 69\n#19 @nikolaii.eth 68\n#20 @adrienne 67\n\nI am ranked #19. How about you?\n\nfaralytics - created by @nikolaii.eth with @viniapp`,
+      `Top Casters · ${casterMetrics[metric]} · 7 days\n\n#1 @neynar 1,210\n#2 @clanker 990\n#3 @bizzarebeast 482\n----------\n#18 @lisashin 69\n#19 @nikolaii.eth 68\n#20 @adrienne 67\n\nI am ranked #19. How about you?\n\nfaralytics - created by @nikolaii.eth with @viniapp`,
     );
     const x = casterShareText(selection, data, "x", "366713");
     assert.ok(x.includes("#1 neynar 1,210"));
