@@ -111,7 +111,8 @@ async function rpc(method, params = []) {
     assert.equal(snapshot.lists[0].metric, 'likes_received');
     assert.ok(snapshot.lists[0].rows.some(row => row.fid === '366713' && row.position === snapshot.lists[0].userPosition));
     assert.equal(new URL(personalMetadata.external_url).searchParams.get('user'), '366713');
-    assert.equal(new URL(personalMetadata.external_url).searchParams.get('end'), snapshot.selection.end);
+    assert.equal(new URL(personalMetadata.external_url).searchParams.has('end'), false);
+    assert.match(snapshot.selection.end, /^\d{4}-\d{2}-\d{2}$/);
     await expect(page.locator('.nft-preview')).toBeVisible();
     assert.equal(writes, 0); assert.equal(pins, 0);
     for (const patch of [{ metric: 'invalid' }, { metric: '' }, { period: '' }, { period: [] }, { user: 366713 }, { user: '' }, { user: '18446744073709551616' }, { end: '2099-01-01' }]) {

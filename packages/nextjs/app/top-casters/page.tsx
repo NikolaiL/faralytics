@@ -10,6 +10,7 @@ async function selectionFrom(searchParams: PageProps["searchParams"]) {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(await searchParams))
     for (const item of Array.isArray(value) ? value : value === undefined ? [] : [value]) params.append(key, item);
+  params.delete("end");
   try {
     return { selection: casterSelection(params), ts: params.get("ts") || undefined };
   } catch {
@@ -24,7 +25,9 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   const origin = process.env.NEXT_PUBLIC_URL || "http://localhost:3100";
   const path = casterPath(selection, ts);
   const url = `${origin}${path}`;
-  const image = `${origin}/api/og/top-casters/farcaster.png?${path.split("?")[1]}`;
+  const imageParams = new URLSearchParams(path.split("?")[1]);
+  imageParams.set("end", selection.end);
+  const image = `${origin}/api/og/top-casters/farcaster.png?${imageParams}`;
   const embed = JSON.stringify({
     version: "1",
     imageUrl: image,
@@ -42,7 +45,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
       card: "summary_large_image",
       title,
       description,
-      images: [`${origin}/api/og/top-casters/x.png?${path.split("?")[1]}`],
+      images: [`${origin}/api/og/top-casters/x.png?${imageParams}`],
     },
     other: { "fc:miniapp": embed, "fc:frame": embed },
   };
@@ -60,7 +63,7 @@ export default async function TopCastersPage({ searchParams }: PageProps) {
   }
   return (
     <TopCastersExplorer
-      key={casterPath(selection)}
+      key={`${casterPath(selection)}:${selection.end}`}
       selection={selection}
       initialData={data}
       initialError={errorMessage}

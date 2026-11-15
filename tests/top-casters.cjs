@@ -96,7 +96,7 @@ const expectedLabels = ['Most Liked Casters', 'Most Recasted Casters', 'Most Rep
     assert.equal(share.pathname, '/top-casters');
     assert.equal(share.searchParams.get('metric'), 'mentions_received');
     assert.equal(share.searchParams.get('period'), 'days7');
-    assert.match(share.searchParams.get('end'), /^\d{4}-\d{2}-\d{2}$/);
+    assert.equal(share.searchParams.has('end'), false);
     assert.match(share.searchParams.get('ts'), /^\d{13}$/);
     for (const target of ['X', 'Farcaster']) {
       await card.getByRole('button', { name: 'Share on ' + target, exact: true }).click();

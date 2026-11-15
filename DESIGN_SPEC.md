@@ -71,3 +71,5 @@ Each Top Casters card places one full-width Mint as NFT button below its share c
 For own-account Top Casters shares, leave a blank line after the category/timeframe title before the top-three rank/name/count lines, then the viewer's x−1/x/x+1 rows with a dashed divider only across omitted ranks. Deduplicate overlaps near the top. Keep the rank question and platform credits after a blank line. Apply to all metrics; other-account and anonymous share text stays brief.
 
 Top Casters category order and exact titles: Most Liked Casters, Most Recasted Casters, Most Replied Casters, Most Mentioned Casters, Most Original Casts, Top Likers, Top Recasters, Top Repliers, Top Mentioners. Use the same names in cards, share text, images and NFT metadata. Default previews show Most Liked Casters. Display order is separate from the existing SQL metric indices.
+
+Top Casters is always a live view. Public/share URLs omit end dates; ignore and remove legacy end parameters. Reset the window to the current UTC day when choosing a timeframe and refresh it at UTC midnight or when an old tab resumes. Keep the UTC date in image cache keys and immutable NFT snapshots internally.

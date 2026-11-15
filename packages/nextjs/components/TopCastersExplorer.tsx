@@ -9,7 +9,7 @@ import { CopyToast } from "./CopyToast";
 import { useMiniapp } from "./MiniappProvider";
 import { ShareActions } from "./ShareActions";
 import { TopCasterList } from "./TopCasterList";
-import { PURPLES, validFid } from "~~/lib/activity";
+import { dateKey, PURPLES, validFid } from "~~/lib/activity";
 import { LOGO_PIXELS } from "~~/lib/brand";
 import {
   casterMetrics,
@@ -75,6 +75,30 @@ export function TopCastersExplorer({
   useEffect(() => () => lookupAbort.current?.abort(), []);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("end")) {
+      params.delete("end");
+      window.history.replaceState(null, "", `/top-casters?${params}`);
+    }
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const refreshDay = () => {
+      const now = new Date();
+      const end = dateKey(now);
+      setSelection((previous) => (previous.end === end ? previous : { ...previous, end }));
+      clearTimeout(timer);
+      timer = setTimeout(refreshDay, Date.parse(`${end}T00:00:00Z`) + 86_400_000 - now.getTime() + 50);
+    };
+    refreshDay();
+    window.addEventListener("focus", refreshDay);
+    document.addEventListener("visibilitychange", refreshDay);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("focus", refreshDay);
+      document.removeEventListener("visibilitychange", refreshDay);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!data || !ready || !initial.metric || scrolledToMetric.current) return;
     const card = document.getElementById(`caster-${initial.metric}`)?.closest(".caster-card");
     if (!card) return;
@@ -107,7 +131,7 @@ export function TopCastersExplorer({
       setRetry((count) => count + 1);
       const params = new URLSearchParams(window.location.search);
       params.set("period", params.get("period") || current.period);
-      params.set("end", current.end);
+      params.delete("end");
       if (account) params.set("user", account);
       else params.delete("user");
       window.history.replaceState(null, "", `/top-casters?${params}`);
@@ -124,7 +148,9 @@ export function TopCastersExplorer({
     const controller = new AbortController();
     void (async () => {
       try {
-        const response = await fetch(`/api/top-casters?${casterPath(parsed).split("?")[1]}`, {
+        const params = new URLSearchParams(casterPath(parsed).split("?")[1]);
+        params.set("end", parsed.end);
+        const response = await fetch(`/api/top-casters?${params}`, {
           signal: AbortSignal.any([controller.signal, AbortSignal.timeout(45000)]),
         });
         const body = await response.json();
@@ -139,7 +165,7 @@ export function TopCastersExplorer({
   }, [key, retry]);
 
   function change(period: CasterPeriod) {
-    const next = { ...current, period };
+    const next = { ...current, period, end: dateKey(new Date()) };
     setSelection(next);
     window.history.replaceState(null, "", casterPath(next));
   }

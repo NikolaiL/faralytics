@@ -16,11 +16,11 @@ test("caster timeframes use inclusive UTC days and anchor yesterday separately",
   ]) assert.deepEqual(casterRange(casterSelection(new URLSearchParams({period,end}))),{start,through});
   assert.equal(casterRange(casterSelection(new URLSearchParams('period=days365&end=2024-03-01'))).start,'2023-03-03');
 });
-test("caster filters reject invalid input and preserve UInt64 identity in list shares",()=>{
+test("caster filters reject invalid input and share URLs stay dynamic with UInt64 identity",()=>{
   const selection=casterSelection(new URLSearchParams('user=18446744073709551615&period=yesterday&end=2026-11-12&metric=mentions_received'));
   const path=casterPath(selection,'1794450000000');
-  assert.equal(path,'/top-casters?period=yesterday&end=2026-11-12&user=18446744073709551615&metric=mentions_received&ts=1794450000000');
-  assert.deepEqual(casterSelection(new URLSearchParams(path.split('?')[1])),selection);
+  assert.equal(path,'/top-casters?period=yesterday&user=18446744073709551615&metric=mentions_received&ts=1794450000000');
+  assert.deepEqual(casterSelection(new URLSearchParams(path.split('?')[1])),{...selection,end:new Date().toISOString().slice(0,10)});
   for(const query of ['user=0','user=18446744073709551616','user=1 OR 1','period=week','metric=constructor','period=toString','end=2099-01-01','end=2026-02-30','user=1&user=2','ts=abc'])assert.throws(()=>casterSelection(new URLSearchParams(query)));
 });
 

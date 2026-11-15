@@ -87,7 +87,7 @@ export function casterRange({ period, end }: CasterSelection) {
 }
 
 export function casterPath(selection: CasterSelection, ts?: string) {
-  const params = new URLSearchParams({ period: selection.period, end: selection.end });
+  const params = new URLSearchParams({ period: selection.period });
   if (selection.user) params.set("user", selection.user);
   if (selection.metric) params.set("metric", selection.metric);
   if (ts) params.set("ts", ts);
