@@ -16,14 +16,14 @@ const makeEvent=(id,action='cast',actor=profile)=>({id,cursor:'1794742348:0x'+'a
    calls++;const u=new URL(route.request().url());requests.push(u);
    if(fail) return route.fulfill({status:502,json:{error:'Test refresh unavailable'}});
    const user=u.searchParams.get('user');const type=u.searchParams.get('type');
-   await route.fulfill({json:{events:[makeEvent(String(sequence),type==='all'?'cast':type)],headCursor:'1794742348:0x'+'a'.repeat(40),hasMore:false,profile:user?profile:null,date:new Date().toISOString().slice(0,10),now:new Date(Date.now()-(sequence>1?60000:0)).toISOString(),totals:{today:{casts:123+sequence,replies:40,recasts:20,likes:300,mentions:15},yesterday:{casts:100,replies:30,recasts:10,likes:200,mentions:8}},source:{checkedAt:new Date().toISOString(),catchingUp:false,coverage:'Captured history is incomplete.'}}});
+   await route.fulfill({json:{events:[makeEvent(String(sequence),type==='all'?'cast':type)],headCursor:'1794742348:0x'+'a'.repeat(40),hasMore:false,profile:user?profile:null,date:new Date().toISOString().slice(0,10),now:new Date(Date.now()-(sequence>1?60000:0)).toISOString(),totals:{asOf:new Date().toISOString(),today:{casts:123+sequence,replies:40,recasts:20,likes:300,mentions:15,dau:70},yesterday:{casts:100,replies:30,recasts:10,likes:200,mentions:8,dau:60}},source:{checkedAt:new Date().toISOString(),catchingUp:false,coverage:'Captured history is incomplete.'}}});
   });
   await page.goto(origin+'/live-view');
-  await expect(page.locator('.live-stat')).toHaveCount(5);
-  await expect(page.locator('.live-stat h2')).toHaveText(['Casts','Replies','Recasts','Likes','Mentions']);
+  await expect(page.locator('.live-stat')).toHaveCount(6);
+  await expect(page.locator('.live-stat h2')).toHaveText(['Casts','Replies','Recasts','Likes','Mentions','DAU']);
   assert.match(await page.getByTestId('live-clock').getAttribute('aria-label'),/^2026 Nov \d+ \d{2}:\d{2}:\d{2} UTC$/);
   assert.equal(await page.locator('.live-clock number-flow-react').count(),5);
-  assert.equal(await page.locator('.live-stat number-flow-react').count(),10);
+  assert.equal(await page.locator('.live-stat number-flow-react').count(),12);
   assert.ok(await page.locator('.live-stat p').first().evaluate(el=>Number(getComputedStyle(el).opacity)<1));
   await page.locator('.live-events li').first().waitFor();
   await expect(page.getByText('Updates every 5 seconds',{exact:true})).toHaveCount(0);
@@ -83,7 +83,7 @@ const makeEvent=(id,action='cast',actor=profile)=>({id,cursor:'1794742348:0x'+'a
   await filters.click();
   fail=true;
   await expect(page.locator('.live-view-page [role=alert]')).toContainText('Test refresh unavailable',{timeout:10000});
-  await expect(page.locator('.live-stat')).toHaveCount(5);
+  await expect(page.locator('.live-stat')).toHaveCount(6);
   fail=false;
   await page.getByRole('button',{name:'Try again'}).click();
   await expect(page.locator('.live-view-page [role=alert]')).toHaveCount(0);
@@ -101,7 +101,7 @@ const makeEvent=(id,action='cast',actor=profile)=>({id,cursor:'1794742348:0x'+'a
    assert.equal(nav.length,7);assert.ok(nav.every(r=>r.left>=0&&r.right<=width),`navigation at ${width}`);
    await page.evaluate(()=>{ document.activeElement?.blur(); scrollTo(0,0); });
    const boxes=await page.locator('.live-stat').evaluateAll(els=>els.map(el=>el.getBoundingClientRect().top));
-   assert.ok(boxes.every(top=>Math.abs(top-boxes[0])<1),`five metrics in one row at ${width}`);
+   assert.ok(boxes.every(top=>Math.abs(top-boxes[0])<1),`six metrics in one row at ${width}`);
    const first=await page.locator('.live-events li').first().boundingBox();
    assert.ok(first.y+first.height<600,`first event before fold at ${width}`);
    const header=await page.locator('.topbar').evaluate(el=>{const a=el.querySelector('a').getBoundingClientRect(),h=el.querySelector('h1').getBoundingClientRect();return Math.abs((a.top+a.bottom)/2-(h.top+h.bottom)/2)<2&&h.left>a.right;});
@@ -126,6 +126,6 @@ const makeEvent=(id,action='cast',actor=profile)=>({id,cursor:'1794742348:0x'+'a
   console.log('Live API timings',timings.map(({query,ms,events})=>({query,ms,events})));
   for(const query of ['?user=0','?type=constructor','?after=bad','?type=cast&type=like'])assert.equal((await page.request.get(origin+'/api/live-view'+query)).status(),400);
   assert.deepEqual(errors,[]);
-  console.log('PASS Live View: UTC NumberFlow clock, five rolling counters with yesterday, live insertion, pause/resume, reading position, filters, retry, reduced motion, seven responsive tabs and real captured API data.');
+  console.log('PASS Live View: UTC NumberFlow clock, six rolling counters with yesterday, live insertion, pause/resume, reading position, filters, retry, reduced motion, seven responsive tabs and real captured API data.');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exit(1)});

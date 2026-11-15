@@ -10,7 +10,15 @@ export const liveTypes = {
   mention: "Mentions",
 } as const;
 export type LiveType = keyof typeof liveTypes;
-export type LiveCounts = { casts: number; replies: number; recasts: number; likes: number; mentions: number };
+export const liveMetricLabels = {
+  casts: "Casts",
+  replies: "Replies",
+  recasts: "Recasts",
+  likes: "Likes",
+  mentions: "Mentions",
+  dau: "DAU",
+} as const;
+export type LiveCounts = Record<keyof typeof liveMetricLabels, number>;
 export type LiveEvent = {
   id: string;
   cursor: string;
@@ -30,17 +38,19 @@ export type LiveData = {
   profile: Profile | null;
   date: string;
   now: string;
-  totals: { today: LiveCounts; yesterday: LiveCounts };
+  totals: { today: LiveCounts; yesterday: LiveCounts; asOf: string };
   source: { checkedAt: string | null; catchingUp: boolean; coverage: string };
 };
 export function liveSelection(params: URLSearchParams) {
-  for (const key of ["user", "type", "after"])
+  for (const key of ["user", "type", "after", "share"])
     if (params.getAll(key).length > 1) throw new InputError("Choose one value per live filter.");
   const user = (params.get("user") || "").trim().replace(/^@/, "");
   if (user.length > 64 || (user && !/^[a-zA-Z0-9._-]+$/.test(user)) || (/^\d+$/.test(user) && !validFid(user)))
     throw new InputError("Enter a valid username or FID.");
   const type = params.get("type") || "all";
   if (!Object.hasOwn(liveTypes, type)) throw new InputError("Choose a valid event type.");
+  const share = params.get("share");
+  if (share !== null && !/^[a-f0-9]{64}$/.test(share)) throw new InputError("Invalid activity snapshot.");
   const after = params.get("after") || undefined;
   if (after) parseTimelineCursor(after);
   return { user: user || undefined, type: type as LiveType, after };
@@ -88,4 +98,13 @@ export function liveClockParts(now: number) {
     minute: date.getUTCMinutes(),
     second: date.getUTCSeconds(),
   };
+}
+
+export type LiveSnapshot = Pick<LiveData, "date" | "totals" | "source" | "profile"> & { type: LiveType };
+export function livePath(selection: { user?: string; type: LiveType }, share?: string) {
+  const params = new URLSearchParams();
+  if (selection.user) params.set("user", selection.user);
+  if (selection.type !== "all") params.set("type", selection.type);
+  if (share) params.set("share", share);
+  return `/live-view${params.size ? `?${params}` : ""}`;
 }

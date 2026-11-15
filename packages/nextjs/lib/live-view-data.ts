@@ -6,7 +6,7 @@ import { loadProfiles } from "~~/lib/profile-data";
 import { dateKey, type Profile } from "~~/lib/activity";
 import { liveEventsQuery, type LiveCounts, type LiveData, type LiveType } from "~~/lib/live-view";
 
-const zero = (): LiveCounts => ({ casts: 0, replies: 0, recasts: 0, likes: 0, mentions: 0 });
+const zero = (): LiveCounts => ({ casts: 0, replies: 0, recasts: 0, likes: 0, mentions: 0, dau: 0 });
 const readTotals = unstable_cache(
   async (user: string, date: string) => {
     const table = user ? "action_messages_by_fid" : "action_messages";
@@ -14,12 +14,16 @@ const readTotals = unstable_cache(
     const window =
       "timestamp >= toDateTime({date:Date}, 'UTC') - INTERVAL 1 DAY AND timestamp <= toDateTime({asOf:UInt32}, 'UTC')";
     const keys = `SELECT fid,substring(hash,3) FROM snapchain.${table} ${actor} WHERE ${window} AND action_type IN ('cast','reply')`;
-    const params = { date, user: user || "0", asOf: String(Math.floor(Date.now() / 1000)) };
+    const params = {
+      date,
+      user: user || "0",
+      asOf: String(Math.min(Math.floor(Date.now() / 1000), Date.parse(date + "T23:59:59Z") / 1000)),
+    };
     const [actions, mentions] = await Promise.all([
-      query<{ day: string; casts: number; replies: number; recasts: number; likes: number }>(
+      query<{ day: string; casts: number; replies: number; recasts: number; likes: number; dau: number }>(
         `SELECT toDate(timestamp,'UTC') AS day,countIf(action_type='cast') AS casts,
-       countIf(action_type='reply') AS replies,countIf(action_type='recast') AS recasts,countIf(action_type='like') AS likes
-       FROM snapchain.${table} FINAL ${actor} WHERE ${window} AND action_type IN ('cast','reply','recast','like') GROUP BY day`,
+       countIf(action_type='reply') AS replies,countIf(action_type='recast') AS recasts,countIf(action_type='like') AS likes,uniqExactIf(fid,fid>0) AS dau
+       FROM snapchain.${table} FINAL ${actor} WHERE ${window} GROUP BY day`,
         params,
         { timeoutMs: 12000 },
       ),
@@ -42,12 +46,17 @@ const readTotals = unstable_cache(
         replies: Number(row.replies),
         recasts: Number(row.recasts),
         likes: Number(row.likes),
+        dau: Number(row.dau),
       };
     for (const row of mentions) counts[row.day] = { ...(counts[row.day] ?? zero()), mentions: Number(row.mentions) };
     const yesterday = dateKey(new Date(Date.parse(date + "T00:00:00Z") - 86400000));
-    return { today: counts[date] ?? zero(), yesterday: counts[yesterday] ?? zero() };
+    return {
+      today: counts[date] ?? zero(),
+      yesterday: counts[yesterday] ?? zero(),
+      asOf: new Date(Number(params.asOf) * 1000).toISOString(),
+    };
   },
-  ["live-view-totals-v1"],
+  ["live-view-totals-v2"],
   { revalidate: 5 },
 );
 const readSource = unstable_cache(

@@ -7,11 +7,15 @@ import { AccountSearch } from "./AccountSearch";
 import { AppNavigation } from "./AppNavigation";
 import { AvatarImage } from "./AvatarImage";
 import { TimelineTime } from "./TimelineTime";
+import { ShareActions } from "./ShareActions";
+import { shareCredit, type ShareTarget } from "~~/lib/share-credit";
 import { useMiniapp } from "./MiniappProvider";
 import { PURPLES, type Profile } from "~~/lib/activity";
 import { LOGO_PIXELS } from "~~/lib/brand";
 import {
   liveClockParts,
+  liveMetricLabels,
+  livePath,
   liveTypes,
   mergeLiveEvents,
   type LiveCounts,
@@ -23,13 +27,6 @@ import {
 const name = (profile: Profile) => (profile.username ? `@${profile.username}` : `FID ${profile.fid}`);
 const integer = { useGrouping: false };
 const twoDigits = { useGrouping: false, minimumIntegerDigits: 2 };
-const labels: Record<keyof LiveCounts, string> = {
-  casts: "Casts",
-  replies: "Replies",
-  recasts: "Recasts",
-  likes: "Likes",
-  mentions: "Mentions",
-};
 
 export function LiveView({
   initialUser = "",
@@ -50,6 +47,11 @@ export function LiveView({
   const [error, setError] = useState("");
   const [live, setLive] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [shareNotice, setShareNotice] = useState("");
+  const [shareError, setShareError] = useState("");
+  const shareGuard = useRef(false);
   const liveRef = useRef(true);
   const [pending, setPending] = useState(false);
   const pendingRows = useRef<LiveEvent[]>([]);
@@ -127,6 +129,8 @@ export function LiveView({
           const url = new URLSearchParams();
           if (next.profile) url.set("user", next.profile.fid);
           if (type !== "all") url.set("type", type);
+          const share = new URLSearchParams(window.location.search).get("share");
+          if (share && user === initialUser && type === initialType) url.set("share", share);
           window.history.replaceState(null, "", `/live-view${url.size ? `?${url}` : ""}`);
         } else if (next.events.length) {
           const incoming = mergeLiveEvents(pendingRows.current, next.events).filter(
@@ -174,7 +178,7 @@ export function LiveView({
       clearTimeout(drain);
       document.removeEventListener("visibilitychange", visible);
     };
-  }, [user, type]);
+  }, [user, type, initialUser, initialType]);
   useLayoutEffect(() => {
     const previous = positions.current;
     positions.current = null;
@@ -219,6 +223,82 @@ export function LiveView({
         {name(profile)}
       </a>
     );
+  }
+  async function handleShare(target: ShareTarget) {
+    if (!data || shareGuard.current) return;
+    shareGuard.current = true;
+    setSharing(true);
+    setShareError("");
+    setShareNotice("");
+    let popup: Window | null = null;
+    let url = "";
+    try {
+      popup = target !== "copy" && !(target === "farcaster" && isMiniApp) ? window.open("about:blank", "_blank") : null;
+      if (popup) popup.opener = null;
+      const prepared = (async () => {
+        const response = await fetch("/api/live-view/share", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user: user || undefined, type }),
+          signal: AbortSignal.timeout(45000),
+        });
+        const snapshot = await response.json();
+        if (!response.ok) throw new Error(snapshot.error || "Could not prepare this share.");
+        url = new URL(
+          livePath({ user: snapshot.profile?.fid, type: snapshot.type }, snapshot.id),
+          process.env.NEXT_PUBLIC_URL || window.location.origin,
+        ).toString();
+        return snapshot;
+      })();
+      let copyError: unknown;
+      const copied =
+        target === "copy" && typeof ClipboardItem !== "undefined" && navigator.clipboard?.write
+          ? navigator.clipboard
+              .write([
+                new ClipboardItem({ "text/plain": prepared.then(() => new Blob([url], { type: "text/plain" })) }),
+              ])
+              .catch((error) => {
+                copyError = error;
+              })
+          : undefined;
+      const snapshot = await prepared;
+      if (target === "copy") {
+        if (copied) {
+          await copied;
+          if (copyError) throw copyError;
+        } else await navigator.clipboard.writeText(url);
+        setShareNotice("Link copied.");
+      } else {
+        const text = `Farcaster today · Live View · ${snapshot.date} UTC\n\n${shareCredit(target)}`;
+        if (target === "farcaster" && isMiniApp) {
+          try {
+            await sdk.actions.composeCast({ text, embeds: [url] });
+            setShareOpen(false);
+            return;
+          } catch {
+            /* Use the web composer when native sharing is unavailable. */
+          }
+        }
+        const compose = new URL(target === "x" ? "https://x.com/intent/post" : "https://farcaster.xyz/~/compose");
+        compose.searchParams.set("text", text);
+        compose.searchParams.set(target === "x" ? "url" : "embeds[]", url);
+        if (popup) popup.location.replace(compose.toString());
+        else window.open(compose.toString(), "_blank", "noopener,noreferrer");
+      }
+      setShareOpen(false);
+    } catch (error) {
+      popup?.close();
+      setShareError(
+        url
+          ? `Could not share. Copy this link: ${url}`
+          : error instanceof Error
+            ? error.message
+            : "Could not prepare this share.",
+      );
+    } finally {
+      shareGuard.current = false;
+      setSharing(false);
+    }
   }
   const clock = liveClockParts(now);
   return (
@@ -315,9 +395,11 @@ export function LiveView({
           className="live-stats"
           aria-label={data.profile ? `Today’s activity by ${name(data.profile)}` : "Today’s network activity"}
         >
-          {(Object.keys(labels) as (keyof LiveCounts)[]).map((key) => (
+          {(Object.keys(liveMetricLabels) as (keyof LiveCounts)[]).map((key) => (
             <article className="live-stat" key={key} data-testid={`live-stat-${key}`}>
-              <h2>{labels[key]}</h2>
+              <h2 title={key === "dau" ? "Unique FIDs with any captured action today" : undefined}>
+                {liveMetricLabels[key]}
+              </h2>
               <NumberFlow className="live-stat-value numeric-value" value={data.totals.today[key]} locales="en-US" />
               <p>
                 <span>Yesterday</span> <NumberFlow value={data.totals.yesterday[key]} locales="en-US" />
@@ -339,10 +421,51 @@ export function LiveView({
           </button>
         </div>
       )}
+      {shareNotice && (
+        <p className="live-share-notice" role="status">
+          {shareNotice}
+        </p>
+      )}
+      {shareError && (
+        <p className="error-box" role="alert">
+          {shareError}
+        </p>
+      )}
       <section className="timeline-feed live-feed" aria-label="Live events">
         <div className="timeline-toolbar">
           <span className={live ? "live-indicator" : ""}>{live ? "● Live" : "Paused"}</span>
           <div>
+            <button
+              className="live-share-toggle"
+              type="button"
+              aria-label="Share daily metrics"
+              aria-expanded={shareOpen}
+              aria-controls="live-share-menu"
+              disabled={!data || sharing}
+              onClick={() => setShareOpen((value) => !value)}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="19"
+                height="19"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                aria-hidden="true"
+              >
+                <path d="M12 16V3m-5 5 5-5 5 5M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" />
+              </svg>
+            </button>
+            {shareOpen && (
+              <div className="live-share-menu" id="live-share-menu">
+                <ShareActions
+                  placement="below"
+                  heading="share today’s metrics:"
+                  disabled={sharing}
+                  onShare={(target) => void handleShare(target)}
+                />
+              </div>
+            )}
             <button
               className="live-pause"
               type="button"
