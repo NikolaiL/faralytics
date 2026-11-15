@@ -40,3 +40,5 @@ Top Casters supports minting each category through the existing immutable-IPFS N
 Top Casters share creation stores one category snapshot in Neon through `/api/top-casters/share`; share text and OG images use the same persisted data, even after the hourly summary changes. Public ranking pages stay live; snapshot IDs freeze their previews. Category/timeframe titles omit the Top Casters prefix. Apply migration 002 with `yarn db:migrate` before deployment.
 
 Add `/live-view` as the seventh shared desktop/mobile tab: NumberFlow UTC clock, five rolling today counters with muted yesterday totals, animated newest-first captured cast/reply/recast/like/mention events, actor and event-type filters, Pause/Resume, retry and reduced motion. Poll every five seconds while visible, preserve reading position, reuse indexed captured tables and corrected mention tags, and exclude future events.
+
+Live View uses a clock independent of feed responses, a compact logo/title header, one row of smaller metrics at all widths and gray/accent filter-icon toggles for inactive/active filters. Hide filters by default and keep the first events before the fold.

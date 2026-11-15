@@ -49,12 +49,12 @@ export function LiveView({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [live, setLive] = useState(true);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const liveRef = useRef(true);
   const [pending, setPending] = useState(false);
   const pendingRows = useRef<LiveEvent[]>([]);
   const [announcement, setAnnouncement] = useState("");
   const [now, setNow] = useState(Date.parse(initialNow));
-  const offset = useRef(0);
   const list = useRef<HTMLOListElement>(null);
   const positions = useRef<Map<string, number> | null>(null);
   const actions = useRef({ poll: () => {}, latest: () => {} });
@@ -70,7 +70,7 @@ export function LiveView({
   }
   useEffect(() => {
     const tick = () => {
-      if (!document.hidden) setNow(Date.now() + offset.current);
+      if (!document.hidden) setNow(Date.now());
     };
     tick();
     const timer = setInterval(tick, 1000);
@@ -118,8 +118,6 @@ export function LiveView({
         if (initialized && (!liveRef.current || document.hidden)) return;
         setData(next);
         setError("");
-        offset.current = Date.parse(next.now) - Date.now();
-        setNow(Date.parse(next.now));
         head = next.headCursor;
         if (!initialized) {
           initialized = true;
@@ -234,29 +232,49 @@ export function LiveView({
           </span>
           faralytics<span className="wordmark-dot">.</span>
         </Link>
-      </header>
-      <AppNavigation active="live-view" />
-      <section className="timeline-intro">
         <h1>
           Live View<span>.</span>
         </h1>
-        <p>Captured Farcaster activity as it arrives.</p>
-      </section>
-      <time
-        className="live-clock"
-        dateTime={new Date(now).toISOString()}
-        aria-label={`${clock.year} ${clock.month} ${clock.day} ${String(clock.hour).padStart(2, "0")}:${String(clock.minute).padStart(2, "0")}:${String(clock.second).padStart(2, "0")} UTC`}
-        aria-live="off"
-        data-testid="live-clock"
-      >
-        <span aria-hidden="true">
-          <NumberFlow value={clock.year} format={integer} /> {clock.month}{" "}
-          <NumberFlow value={clock.day} format={twoDigits} /> <NumberFlow value={clock.hour} format={twoDigits} />:
-          <NumberFlow value={clock.minute} format={twoDigits} />:<NumberFlow value={clock.second} format={twoDigits} />{" "}
-          UTC
-        </span>
-      </time>
-      <div className="live-filters">
+      </header>
+      <AppNavigation active="live-view" />
+      <div className="live-controls">
+        <time
+          className="live-clock"
+          dateTime={new Date(now).toISOString()}
+          aria-label={`${clock.year} ${clock.month} ${clock.day} ${String(clock.hour).padStart(2, "0")}:${String(clock.minute).padStart(2, "0")}:${String(clock.second).padStart(2, "0")} UTC`}
+          aria-live="off"
+          data-testid="live-clock"
+        >
+          <span aria-hidden="true">
+            <NumberFlow value={clock.year} format={integer} /> {clock.month}{" "}
+            <NumberFlow value={clock.day} format={twoDigits} /> <NumberFlow value={clock.hour} format={twoDigits} />:
+            <NumberFlow value={clock.minute} format={twoDigits} />:
+            <NumberFlow value={clock.second} format={twoDigits} /> UTC
+          </span>
+        </time>
+        <button
+          className="live-filter-toggle"
+          type="button"
+          aria-label={user || type !== "all" ? "Filters (active)" : "Filters"}
+          aria-expanded={filtersOpen}
+          aria-controls="live-filters"
+          data-active={!!user || type !== "all"}
+          onClick={() => setFiltersOpen((value) => !value)}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            aria-hidden="true"
+          >
+            <path d="M4 4h16l-6 7v7l-4 2v-9z" />
+          </svg>
+        </button>
+      </div>
+      <div className="live-filters" id="live-filters" hidden={!filtersOpen}>
         <form
           className="search-form"
           onSubmit={(event) => {
@@ -291,9 +309,6 @@ export function LiveView({
             ))}
           </select>
         </label>
-        <button className="live-pause" type="button" onClick={() => setLive((value) => !value)} aria-pressed={!live}>
-          {live ? "Pause" : "Resume"}
-        </button>
       </div>
       {data && (
         <div
@@ -305,7 +320,7 @@ export function LiveView({
               <h2>{labels[key]}</h2>
               <NumberFlow className="live-stat-value numeric-value" value={data.totals.today[key]} locales="en-US" />
               <p>
-                Yesterday <NumberFlow value={data.totals.yesterday[key]} locales="en-US" />
+                <span>Yesterday</span> <NumberFlow value={data.totals.yesterday[key]} locales="en-US" />
               </p>
             </article>
           ))}
@@ -327,7 +342,17 @@ export function LiveView({
       <section className="timeline-feed live-feed" aria-label="Live events">
         <div className="timeline-toolbar">
           <span className={live ? "live-indicator" : ""}>{live ? "● Live" : "Paused"}</span>
-          <span>Updates every 5 seconds</span>
+          <div>
+            <span>Updates every 5 seconds</span>
+            <button
+              className="live-pause"
+              type="button"
+              onClick={() => setLive((value) => !value)}
+              aria-pressed={!live}
+            >
+              {live ? "Pause" : "Resume"}
+            </button>
+          </div>
         </div>
         <ol className="live-events" ref={list}>
           {events.map((event) => (

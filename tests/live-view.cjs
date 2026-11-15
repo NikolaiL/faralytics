@@ -16,7 +16,7 @@ const makeEvent=(id,action='cast',actor=profile)=>({id,cursor:'1794742348:0x'+'a
    calls++;const u=new URL(route.request().url());requests.push(u);
    if(fail) return route.fulfill({status:502,json:{error:'Test refresh unavailable'}});
    const user=u.searchParams.get('user');const type=u.searchParams.get('type');
-   await route.fulfill({json:{events:[makeEvent(String(sequence),type==='all'?'cast':type)],headCursor:'1794742348:0x'+'a'.repeat(40),hasMore:false,profile:user?profile:null,date:new Date().toISOString().slice(0,10),now:new Date().toISOString(),totals:{today:{casts:123+sequence,replies:40,recasts:20,likes:300,mentions:15},yesterday:{casts:100,replies:30,recasts:10,likes:200,mentions:8}},source:{checkedAt:new Date().toISOString(),catchingUp:false,coverage:'Captured history is incomplete.'}}});
+   await route.fulfill({json:{events:[makeEvent(String(sequence),type==='all'?'cast':type)],headCursor:'1794742348:0x'+'a'.repeat(40),hasMore:false,profile:user?profile:null,date:new Date().toISOString().slice(0,10),now:new Date(Date.now()-(sequence>1?60000:0)).toISOString(),totals:{today:{casts:123+sequence,replies:40,recasts:20,likes:300,mentions:15},yesterday:{casts:100,replies:30,recasts:10,likes:200,mentions:8}},source:{checkedAt:new Date().toISOString(),catchingUp:false,coverage:'Captured history is incomplete.'}}});
   });
   await page.goto(origin+'/live-view');
   await expect(page.locator('.live-stat')).toHaveCount(5);
@@ -27,9 +27,14 @@ const makeEvent=(id,action='cast',actor=profile)=>({id,cursor:'1794742348:0x'+'a
   assert.ok(await page.locator('.live-stat p').first().evaluate(el=>Number(getComputedStyle(el).opacity)<1));
   await page.locator('.live-events li').first().waitFor();
   await page.evaluate(()=>{const animate=Element.prototype.animate;window.__insertAnimations=0;Element.prototype.animate=function(...args){if(this.matches('.live-events>li'))window.__insertAnimations++;return animate.apply(this,args)};});
+  await page.evaluate(()=>{
+   window.__clockTimes=[];
+   new MutationObserver(()=>window.__clockTimes.push(Date.parse(document.querySelector('[data-testid="live-clock"]').dateTime))).observe(document.querySelector('[data-testid="live-clock"]'),{attributes:true,attributeFilter:['datetime']});
+  });
   sequence=2;
   await expect.poll(()=>page.locator('.live-events li').first().getAttribute('data-event-id'),{timeout:10000}).toBe('2');
   assert.ok(await page.evaluate(()=>window.__insertAnimations>0));
+  assert.ok(await page.getByTestId('live-clock').evaluate(el=>Math.abs(Date.parse(el.dateTime)-Date.now())<2000),'refresh timestamps must not reset the clock');
   const firstClock=await page.getByTestId('live-clock').getAttribute('dateTime');
   await page.getByRole('button',{name:'Pause',exact:true}).click();
   const pausedCalls=calls;
@@ -46,7 +51,19 @@ const makeEvent=(id,action='cast',actor=profile)=>({id,cursor:'1794742348:0x'+'a
   await expect(page.locator('.live-events li').first()).toHaveAttribute('data-event-id','3');
   await page.getByRole('button',{name:'Show new events ↑'}).click();
   await expect(page.locator('.live-events li').first()).toHaveAttribute('data-event-id','4');
+  const filters=page.getByRole('button',{name:/^Filters/});
+  await expect(page.getByLabel('Live event type')).toBeHidden();
+  await expect(filters).toHaveAttribute('data-active','false');
+  const gray=await filters.evaluate(el=>getComputedStyle(el).color);
+  await filters.click();
+  await expect(filters).toHaveAttribute('aria-expanded','true');
   await page.getByLabel('Live event type').selectOption('like');
+  await expect(filters).toHaveAttribute('data-active','true');
+  assert.notEqual(await filters.evaluate(el=>getComputedStyle(el).color),gray);
+  await filters.click();
+  await expect(page.getByLabel('Live event type')).toBeHidden();
+  await expect(filters).toHaveAttribute('data-active','true');
+  await filters.click();
   await expect(page.locator('.live-events')).toContainText('liked a cast by');
   assert.equal(requests.at(-1).searchParams.get('type'),'like');
   await page.getByTestId('live-user-input').fill('366713');
@@ -57,6 +74,9 @@ const makeEvent=(id,action='cast',actor=profile)=>({id,cursor:'1794742348:0x'+'a
   await page.getByTestId('live-user-clear').click();
   await expect(page.getByTestId('live-user-input')).toHaveValue('');
   await expect.poll(()=>requests.at(-1).searchParams.has('user')).toBe(false);
+  await page.getByLabel('Live event type').selectOption('all');
+  await expect(filters).toHaveAttribute('data-active','false');
+  await filters.click();
   fail=true;
   await expect(page.locator('.live-view-page [role=alert]')).toContainText('Test refresh unavailable',{timeout:10000});
   await expect(page.locator('.live-stat')).toHaveCount(5);
@@ -71,12 +91,22 @@ const makeEvent=(id,action='cast',actor=profile)=>({id,cursor:'1794742348:0x'+'a
   assert.equal(await page.evaluate(()=>window.__insertAnimations),animations);
   mkdirSync('artifacts',{recursive:true});
   for(const width of [1280,820,761,760,390,320]){
-   await page.setViewportSize({width,height:1000});
+   await page.setViewportSize({width,height:700});
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`overflow at ${width}`);
    const nav=await page.locator('.app-navigation a').evaluateAll(els=>els.map(el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right}}));
    assert.equal(nav.length,7);assert.ok(nav.every(r=>r.left>=0&&r.right<=width),`navigation at ${width}`);
+   await page.evaluate(()=>{ document.activeElement?.blur(); scrollTo(0,0); });
+   const boxes=await page.locator('.live-stat').evaluateAll(els=>els.map(el=>el.getBoundingClientRect().top));
+   assert.ok(boxes.every(top=>Math.abs(top-boxes[0])<1),`five metrics in one row at ${width}`);
+   const first=await page.locator('.live-events li').first().boundingBox();
+   assert.ok(first.y+first.height<600,`first event before fold at ${width}`);
+   const header=await page.locator('.topbar').evaluate(el=>{const a=el.querySelector('a').getBoundingClientRect(),h=el.querySelector('h1').getBoundingClientRect();return Math.abs((a.top+a.bottom)/2-(h.top+h.bottom)/2)<2&&h.left>a.right;});
+   assert.ok(header,`title aligned with logo at ${width}`);
    if(width===390) await page.screenshot({path:'artifacts/live-view-fixture-mobile.png',fullPage:true});
   }
+  const clockTimes=await page.evaluate(()=>window.__clockTimes);
+  assert.ok(clockTimes.length>10);
+  assert.ok(clockTimes.every((time,index)=>!index||time>=clockTimes[index-1]),'clock never rewinds across feed/filter updates');
   // Exercise the actual server and captured data after deterministic UI checks.
   const timings=[];
   for(const query of ['', '?type=cast','?type=reply','?type=recast','?type=like','?type=mention','?user=366713&type=all']){
