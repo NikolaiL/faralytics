@@ -58,6 +58,8 @@ export function TopCastersExplorer({
   const [retry, setRetry] = useState(0);
   const [copyCount, setCopyCount] = useState(0);
   const [shareError, setShareError] = useState("");
+  const [sharing, setSharing] = useState(false);
+  const shareGuard = useRef(false);
   const [mintRequest, setMintRequest] = useState<{
     selection: CasterSelection & { metric: CasterMetric };
     id: number;
@@ -132,6 +134,7 @@ export function TopCastersExplorer({
       const params = new URLSearchParams(window.location.search);
       params.set("period", params.get("period") || current.period);
       params.delete("end");
+      params.delete("share");
       if (account) params.set("user", account);
       else params.delete("user");
       window.history.replaceState(null, "", `/top-casters?${params}`);
@@ -171,19 +174,52 @@ export function TopCastersExplorer({
   }
 
   async function handleShare(metric: CasterMetric, target: ShareTarget, timestamp: number) {
-    if (!data) return;
+    if (!data || shareGuard.current) return;
+    shareGuard.current = true;
+    setSharing(true);
     setShareError("");
-    const url = new URL(
-      casterPath({ ...current, metric }, String(timestamp)),
-      process.env.NEXT_PUBLIC_URL || window.location.origin,
-    ).toString();
+    let url = "";
+    let popup: Window | null = null;
     try {
+      popup = target !== "copy" && !(target === "farcaster" && isMiniApp) ? window.open("about:blank", "_blank") : null;
+      if (popup) popup.opener = null;
+      const prepared = (async () => {
+        const response = await fetch("/api/top-casters/share", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ period: current.period, user, metric }),
+          signal: AbortSignal.timeout(45000),
+        });
+        const snapshot = await response.json();
+        if (!response.ok) throw new Error(snapshot.error || "Could not prepare this share.");
+        url = new URL(
+          casterPath(snapshot.selection, String(timestamp), snapshot.id),
+          process.env.NEXT_PUBLIC_URL || window.location.origin,
+        ).toString();
+        return snapshot;
+      })();
+      // Start clipboard permission while the click still has browser user activation.
+      let copyError: unknown;
+      const copied =
+        target === "copy" && typeof ClipboardItem !== "undefined" && navigator.clipboard?.write
+          ? navigator.clipboard
+              .write([
+                new ClipboardItem({ "text/plain": prepared.then(() => new Blob([url], { type: "text/plain" })) }),
+              ])
+              .catch((error) => {
+                copyError = error;
+              })
+          : undefined;
+      const snapshot = await prepared;
       if (target === "copy") {
-        await navigator.clipboard.writeText(url);
+        if (copied) {
+          await copied;
+          if (copyError) throw copyError;
+        } else await navigator.clipboard.writeText(url);
         setCopyCount((count) => count + 1);
         return;
       }
-      const text = casterShareText({ ...current, metric }, data, target, fid);
+      const text = casterShareText(snapshot.selection, snapshot.data, target, fid);
       if (target === "farcaster" && isMiniApp) {
         try {
           await sdk.actions.composeCast({ text, embeds: [url] });
@@ -195,9 +231,20 @@ export function TopCastersExplorer({
       const compose = new URL(target === "x" ? "https://x.com/intent/post" : "https://farcaster.xyz/~/compose");
       compose.searchParams.set("text", text);
       compose.searchParams.set(target === "x" ? "url" : "embeds[]", url);
-      window.open(compose.toString(), "_blank", "noopener,noreferrer");
-    } catch {
-      setShareError(`Could not share. Copy this link: ${url}`);
+      if (popup) popup.location.replace(compose.toString());
+      else window.open(compose.toString(), "_blank", "noopener,noreferrer");
+    } catch (error) {
+      popup?.close();
+      setShareError(
+        url
+          ? `Could not share. Copy this link: ${url}`
+          : error instanceof Error
+            ? error.message
+            : "Could not prepare this share. Please try again.",
+      );
+    } finally {
+      shareGuard.current = false;
+      setSharing(false);
     }
   }
 
@@ -300,7 +347,7 @@ export function TopCastersExplorer({
               <ShareActions
                 placement="below"
                 heading={`share ${casterMetrics[list.metric].toLowerCase()}:`}
-                disabled={false}
+                disabled={sharing}
                 onShare={(target) => void handleShare(list.metric, target, Date.now())}
               />
               <div className="onchain-actions caster-mint">

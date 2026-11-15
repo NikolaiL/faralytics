@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { TopCastersExplorer } from "~~/components/TopCastersExplorer";
 import { casterMetricOrder, casterPath, casterSelection, casterTitle } from "~~/lib/top-casters";
 import { loadTopCasters } from "~~/lib/top-casters-data";
+import { readCasterShare } from "~~/lib/top-caster-shares";
+import { InputError } from "~~/lib/activity";
 import { reportServerError } from "~~/utils/reportServerError";
 
 type PageProps = { searchParams: Promise<Record<string, string | string[] | undefined>> };
@@ -12,21 +14,33 @@ async function selectionFrom(searchParams: PageProps["searchParams"]) {
     for (const item of Array.isArray(value) ? value : value === undefined ? [] : [value]) params.append(key, item);
   params.delete("end");
   try {
-    return { selection: casterSelection(params), ts: params.get("ts") || undefined };
+    return {
+      selection: casterSelection(params),
+      ts: params.get("ts") || undefined,
+      share: params.get("share") || undefined,
+    };
   } catch {
     notFound();
   }
 }
 
 export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
-  const { selection, ts } = await selectionFrom(searchParams);
-  const title = `${casterTitle(selection.metric || casterMetricOrder[0], selection.period)} — Faralytics`;
-  const description = `Captured Farcaster activity rankings through ${selection.end} UTC${selection.user ? `, including FID ${selection.user}’s position` : ""}.`;
+  const { selection, ts, share } = await selectionFrom(searchParams);
+  const snapshot = share
+    ? await readCasterShare(share, selection).catch((error) => {
+        if (error instanceof InputError) notFound();
+        reportServerError(error, "/top-casters/metadata");
+        throw error;
+      })
+    : undefined;
+  const imageSelection = snapshot?.selection ?? selection;
+  const title = `${casterTitle(imageSelection.metric || casterMetricOrder[0], imageSelection.period)} — Faralytics`;
+  const description = `Captured Farcaster activity rankings through ${imageSelection.end} UTC${selection.user ? `, including FID ${selection.user}’s position` : ""}.`;
   const origin = process.env.NEXT_PUBLIC_URL || "http://localhost:3100";
-  const path = casterPath(selection, ts);
+  const path = casterPath(selection, ts, share);
   const url = `${origin}${path}`;
   const imageParams = new URLSearchParams(path.split("?")[1]);
-  imageParams.set("end", selection.end);
+  imageParams.set("end", imageSelection.end);
   const image = `${origin}/api/og/top-casters/farcaster.png?${imageParams}`;
   const embed = JSON.stringify({
     version: "1",

@@ -4,7 +4,7 @@ export function AppNavigation({
   fids = [],
   end,
 }: {
-  active: "activity" | "followers" | "follow-timeline" | "friendship" | "word-cloud" | "top-casters";
+  active: "activity" | "followers" | "follow-timeline" | "friendship" | "word-cloud" | "top-casters" | "live-view";
   fids?: string[];
   end?: string;
 }) {
@@ -85,6 +85,12 @@ export function AppNavigation({
           <path d="M8 3h8v5a4 4 0 0 1-8 0V3ZM8 5H4v2a4 4 0 0 0 5 4m7-6h4v2a4 4 0 0 1-5 4M12 12v6m-5 3v-3h10v3" />
         </svg>
         Top casters
+      </Link>
+      <Link href="/live-view" aria-current={active === "live-view" ? "page" : undefined} data-testid="tab-live-view">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+          <path d="M3 12h4l3-8 4 16 3-8h4" />
+        </svg>
+        Live View
       </Link>
     </nav>
   );

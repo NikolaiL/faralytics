@@ -1,0 +1,97 @@
+const assert = require('node:assert/strict');
+const {mkdirSync,writeFileSync} = require('node:fs');
+const {chromium,expect} = require('@playwright/test');
+const origin=process.env.TEST_ORIGIN || 'http://localhost:3100';
+const profile={fid:'366713',username:'nikolaii.eth',display_name:null};
+const makeEvent=(id,action='cast',actor=profile)=>({id,cursor:'1794742348:0x'+'a'.repeat(40),timestamp:new Date(Date.now()+Number(id)*1000).toISOString(),action,actor,target:{fid:'3',username:'dwr',display_name:null},text:action==='cast'?'A captured cast':'',castHash:'0x'+'a'.repeat(40),mentions:[],mentionCount:0});
+(async()=>{
+ const browser=await chromium.launch();
+ const errors=[];
+ try {
+  const context=await browser.newContext({viewport:{width:1280,height:1000}});
+  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
+  let calls=0, sequence=1, fail=false;
+  const requests=[];
+  await page.route('**/api/live-view?*',async route=>{
+   calls++;const u=new URL(route.request().url());requests.push(u);
+   if(fail) return route.fulfill({status:502,json:{error:'Test refresh unavailable'}});
+   const user=u.searchParams.get('user');const type=u.searchParams.get('type');
+   await route.fulfill({json:{events:[makeEvent(String(sequence),type==='all'?'cast':type)],headCursor:'1794742348:0x'+'a'.repeat(40),hasMore:false,profile:user?profile:null,date:new Date().toISOString().slice(0,10),now:new Date().toISOString(),totals:{today:{casts:123+sequence,replies:40,recasts:20,likes:300,mentions:15},yesterday:{casts:100,replies:30,recasts:10,likes:200,mentions:8}},source:{checkedAt:new Date().toISOString(),catchingUp:false,coverage:'Captured history is incomplete.'}}});
+  });
+  await page.goto(origin+'/live-view');
+  await expect(page.locator('.live-stat')).toHaveCount(5);
+  await expect(page.locator('.live-stat h2')).toHaveText(['Casts','Replies','Recasts','Likes','Mentions']);
+  assert.match(await page.getByTestId('live-clock').getAttribute('aria-label'),/^2026 Nov \d+ \d{2}:\d{2}:\d{2} UTC$/);
+  assert.equal(await page.locator('.live-clock number-flow-react').count(),5);
+  assert.equal(await page.locator('.live-stat number-flow-react').count(),10);
+  assert.ok(await page.locator('.live-stat p').first().evaluate(el=>Number(getComputedStyle(el).opacity)<1));
+  await page.locator('.live-events li').first().waitFor();
+  await page.evaluate(()=>{const animate=Element.prototype.animate;window.__insertAnimations=0;Element.prototype.animate=function(...args){if(this.matches('.live-events>li'))window.__insertAnimations++;return animate.apply(this,args)};});
+  sequence=2;
+  await expect.poll(()=>page.locator('.live-events li').first().getAttribute('data-event-id'),{timeout:10000}).toBe('2');
+  assert.ok(await page.evaluate(()=>window.__insertAnimations>0));
+  const firstClock=await page.getByTestId('live-clock').getAttribute('dateTime');
+  await page.getByRole('button',{name:'Pause',exact:true}).click();
+  const pausedCalls=calls;
+  await page.waitForTimeout(5500);
+  assert.equal(calls,pausedCalls);
+  assert.notEqual(await page.getByTestId('live-clock').getAttribute('dateTime'),firstClock);
+  sequence=3;
+  await page.getByRole('button',{name:'Resume',exact:true}).click();
+  await expect(page.locator('.live-events li').first()).toHaveAttribute('data-event-id','3');
+  // A focused older row keeps its position until the reader requests new events.
+  await page.locator('.live-events li').last().locator('a').first().focus();
+  sequence=4;
+  await expect(page.getByRole('button',{name:'Show new events ↑'})).toBeVisible({timeout:10000});
+  await expect(page.locator('.live-events li').first()).toHaveAttribute('data-event-id','3');
+  await page.getByRole('button',{name:'Show new events ↑'}).click();
+  await expect(page.locator('.live-events li').first()).toHaveAttribute('data-event-id','4');
+  await page.getByLabel('Live event type').selectOption('like');
+  await expect(page.locator('.live-events')).toContainText('liked a cast by');
+  assert.equal(requests.at(-1).searchParams.get('type'),'like');
+  await page.getByTestId('live-user-input').fill('366713');
+  await page.getByTestId('live-user-submit').click();
+  await expect(page.getByTestId('live-user-input')).toHaveValue('@nikolaii.eth');
+  assert.equal(requests.at(-1).searchParams.get('user'),'366713');
+  assert.ok(page.url().includes('user=366713'));
+  await page.getByTestId('live-user-clear').click();
+  await expect(page.getByTestId('live-user-input')).toHaveValue('');
+  await expect.poll(()=>requests.at(-1).searchParams.has('user')).toBe(false);
+  fail=true;
+  await expect(page.locator('.live-view-page [role=alert]')).toContainText('Test refresh unavailable',{timeout:10000});
+  await expect(page.locator('.live-stat')).toHaveCount(5);
+  fail=false;
+  await page.getByRole('button',{name:'Try again'}).click();
+  await expect(page.locator('.live-view-page [role=alert]')).toHaveCount(0);
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await page.locator('h1').click();await page.evaluate(()=>scrollTo(0,0));
+  const animations=await page.evaluate(()=>window.__insertAnimations);
+  sequence=5;
+  await expect(page.locator('.live-events li').first()).toHaveAttribute('data-event-id','5',{timeout:10000});
+  assert.equal(await page.evaluate(()=>window.__insertAnimations),animations);
+  mkdirSync('artifacts',{recursive:true});
+  for(const width of [1280,820,761,760,390,320]){
+   await page.setViewportSize({width,height:1000});
+   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`overflow at ${width}`);
+   const nav=await page.locator('.app-navigation a').evaluateAll(els=>els.map(el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right}}));
+   assert.equal(nav.length,7);assert.ok(nav.every(r=>r.left>=0&&r.right<=width),`navigation at ${width}`);
+   if(width===390) await page.screenshot({path:'artifacts/live-view-fixture-mobile.png',fullPage:true});
+  }
+  // Exercise the actual server and captured data after deterministic UI checks.
+  const timings=[];
+  for(const query of ['', '?type=cast','?type=reply','?type=recast','?type=like','?type=mention','?user=366713&type=all']){
+   const t=Date.now(),response=await page.request.get(origin+'/api/live-view'+query,{timeout:30000});
+   assert.equal(response.status(),200,query);const data=await response.json();
+   assert.equal(data.date,new Date().toISOString().slice(0,10));
+   assert.ok(data.events.length<=20);
+   for(const event of data.events){assert.ok(Date.parse(event.timestamp)<=Date.parse(data.now));if(query.includes('user='))assert.equal(event.actor.fid,'366713');if(query.includes('type=')&&!query.includes('all'))assert.equal(event.action,new URLSearchParams(query.slice(1)).get('type'));}
+   for(const day of ['today','yesterday'])for(const value of Object.values(data.totals[day]))assert.ok(Number.isSafeInteger(value)&&value>=0);
+   timings.push({query,ms:Date.now()-t,events:data.events.length,totals:data.totals});
+  }
+  writeFileSync('artifacts/live-view-performance.json',JSON.stringify(timings,null,2));
+  console.log('Live API timings',timings.map(({query,ms,events})=>({query,ms,events})));
+  for(const query of ['?user=0','?type=constructor','?after=bad','?type=cast&type=like'])assert.equal((await page.request.get(origin+'/api/live-view'+query)).status(),400);
+  assert.deepEqual(errors,[]);
+  console.log('PASS Live View: UTC NumberFlow clock, five rolling counters with yesterday, live insertion, pause/resume, reading position, filters, retry, reduced motion, seven responsive tabs and real captured API data.');
+ }finally{await browser.close();}
+})().catch(e=>{console.error(e);process.exit(1)});

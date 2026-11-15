@@ -37,7 +37,9 @@ function embed(html) {
       if (period === 'today') todayData = data;
       assert.equal(new URL(page.url()).searchParams.has('end'), false);
       const card = page.locator('.caster-card').filter({ has: page.locator('#caster-likes_received') });
+      await page.evaluate(() => navigator.clipboard.writeText(''));
       await card.getByRole('button', { name: 'Copy link', exact: true }).click();
+      await expect.poll(() => page.evaluate(() => navigator.clipboard.readText()), { timeout: 45000 }).toContain('share=');
       const share = new URL(await page.evaluate(() => navigator.clipboard.readText()));
       assert.equal(share.searchParams.has('end'), false);
       assert.equal(share.searchParams.get('period'), period);

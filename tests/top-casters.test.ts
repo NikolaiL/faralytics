@@ -45,11 +45,11 @@ test("caster self-shares use the selected title, actual rank and platform credit
   };
   assert.equal(
     casterTitle(selection.metric, selection.period),
-    "Top Casters · Most Liked Casters · All time",
+    "Most Liked Casters · All time",
   );
   assert.equal(
     casterShareText(selection, review, "farcaster", "366713"),
-    "Top Casters · Most Liked Casters · All time\n\nI am ranked #276. How about you?\n\nfaralytics - created by @nikolaii.eth with @viniapp",
+    "Most Liked Casters · All time\n\nI am ranked #276. How about you?\n\nfaralytics - created by @nikolaii.eth with @viniapp",
   );
   assert.ok(
     casterShareText(selection, review, "x", "366713").endsWith(
@@ -127,7 +127,7 @@ test("all metric self-shares include top three and immediate neighbors with the 
     const text = casterShareText(selection, data, "farcaster", "366713");
     assert.equal(
       text,
-      `Top Casters · ${casterMetrics[metric]} · 7 days\n\n#1 @neynar 1,210\n#2 @clanker 990\n#3 @bizzarebeast 482\n----------\n#18 @lisashin 69\n#19 @nikolaii.eth 68\n#20 @adrienne 67\n\nI am ranked #19. How about you?\n\nfaralytics - created by @nikolaii.eth with @viniapp`,
+      `${casterMetrics[metric]} · 7 days\n\n#1 @neynar 1,210\n#2 @clanker 990\n#3 @bizzarebeast 482\n----------\n#18 @lisashin 69\n#19 @nikolaii.eth 68\n#20 @adrienne 67\n\nI am ranked #19. How about you?\n\nfaralytics - created by @nikolaii.eth with @viniapp`,
     );
     const x = casterShareText(selection, data, "x", "366713");
     assert.ok(x.includes("#1 neynar 1,210"));
@@ -138,7 +138,7 @@ test("all metric self-shares include top three and immediate neighbors with the 
     for (const viewer of [undefined, "3"])
       assert.equal(
         casterShareText(selection, data, "farcaster", viewer),
-        `Top Casters · ${casterMetrics[metric]} · 7 days\n\nfaralytics - created by @nikolaii.eth with @viniapp`,
+        `${casterMetrics[metric]} · 7 days\n\nfaralytics - created by @nikolaii.eth with @viniapp`,
       );
   }
 });

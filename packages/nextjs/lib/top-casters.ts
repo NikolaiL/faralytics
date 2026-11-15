@@ -55,7 +55,7 @@ export type TopCasters = {
 };
 
 export function casterSelection(params: URLSearchParams): CasterSelection {
-  for (const key of ["period", "end", "user", "metric", "ts"])
+  for (const key of ["period", "end", "user", "metric", "ts", "share"])
     if (params.getAll(key).length > 1) throw new InputError("Choose one value for each ranking filter.");
   const period = params.get("period") || "days7";
   if (!Object.hasOwn(casterPeriods, period)) throw new InputError("Choose a valid ranking timeframe.");
@@ -67,6 +67,8 @@ export function casterSelection(params: URLSearchParams): CasterSelection {
   if (metric && !Object.hasOwn(casterMetrics, metric)) throw new InputError("Choose a valid ranking category.");
   const ts = params.get("ts");
   if (ts && !/^\d{13}$/.test(ts)) throw new InputError("Invalid share timestamp.");
+  const share = params.get("share");
+  if (share !== null && !/^[a-f0-9]{64}$/.test(share)) throw new InputError("Invalid ranking snapshot.");
   return { period: period as CasterPeriod, end, user, metric: metric as CasterMetric | undefined };
 }
 
@@ -86,16 +88,17 @@ export function casterRange({ period, end }: CasterSelection) {
   return { start, through };
 }
 
-export function casterPath(selection: CasterSelection, ts?: string) {
+export function casterPath(selection: CasterSelection, ts?: string, share?: string) {
   const params = new URLSearchParams({ period: selection.period });
   if (selection.user) params.set("user", selection.user);
   if (selection.metric) params.set("metric", selection.metric);
   if (ts) params.set("ts", ts);
+  if (share) params.set("share", share);
   return `/top-casters?${params}`;
 }
 
 export function casterTitle(metric: CasterMetric, period: CasterPeriod) {
-  return `Top Casters · ${casterMetrics[metric]} · ${casterPeriods[period]}`;
+  return `${casterMetrics[metric]} · ${casterPeriods[period]}`;
 }
 
 export function casterShareText(

@@ -15,7 +15,7 @@ const expectedLabels = ['Most Liked Casters', 'Most Recasted Casters', 'Most Rep
     await page.goto(origin + '/top-casters', { waitUntil: 'networkidle' });
     await expect(page.locator('.caster-card')).toHaveCount(9);
     await expect(page.locator('.caster-card h2')).toHaveText(expectedLabels);
-    assert.ok((await page.title()).startsWith('Top Casters · Most Liked Casters · 7 days'));
+    assert.ok((await page.title()).startsWith('Most Liked Casters · 7 days'));
     await expect(page.getByTestId('tab-top-casters')).toHaveAttribute('aria-current', 'page');
     await expect(page.getByLabel('Caster timeframe')).toHaveValue('days7');
     assert.equal(await page.locator('.caster-card .interaction-ranking li').count(), 90);
@@ -92,14 +92,18 @@ const expectedLabels = ['Most Liked Casters', 'Most Recasted Casters', 'Most Rep
     await expect(page.getByTestId('caster-account-clear')).toBeVisible();
     const card = page.locator('.caster-card').filter({ has: page.getByRole('heading', { name: 'Most Mentioned Casters', exact: true }) });
     await card.getByRole('button', { name: 'Copy link', exact: true }).click();
+    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText()), { timeout: 45000 }).toContain('share=');
     const share = new URL(await page.evaluate(() => navigator.clipboard.readText()));
     assert.equal(share.pathname, '/top-casters');
     assert.equal(share.searchParams.get('metric'), 'mentions_received');
     assert.equal(share.searchParams.get('period'), 'days7');
     assert.equal(share.searchParams.has('end'), false);
     assert.match(share.searchParams.get('ts'), /^\d{13}$/);
+    assert.match(share.searchParams.get('share'), /^[a-f0-9]{64}$/);
     for (const target of ['X', 'Farcaster']) {
+      await page.evaluate(() => { window.__lastShare = null; });
       await card.getByRole('button', { name: 'Share on ' + target, exact: true }).click();
+      await expect.poll(() => page.evaluate(() => window.__lastShare), { timeout: 45000 }).toContain(target === 'X' ? 'intent' : 'compose');
       const compose = new URL(await page.evaluate(() => window.__lastShare));
       const linked = new URL(compose.searchParams.get(target === 'X' ? 'url' : 'embeds[]'));
       assert.equal(linked.searchParams.get('metric'), 'mentions_received');
@@ -156,7 +160,8 @@ const expectedLabels = ['Most Liked Casters', 'Most Recasted Casters', 'Most Rep
     let nativeProfile;
     await host.route('https://faralytics.vercel.app/**', async route => {
       const url = new URL(route.request().url());
-      const response = await fetch(origin + url.pathname + url.search);
+      const request = route.request();
+      const response = await fetch(origin + url.pathname + url.search, { method: request.method(), headers: { 'Content-Type': 'application/json' }, body: request.postData() || undefined });
       await route.fulfill({ status: response.status, headers: Object.fromEntries([...response.headers].filter(([key]) => !['content-encoding', 'content-length', 'transfer-encoding'].includes(key))), body: Buffer.from(await response.arrayBuffer()) });
     });
     await host.exposeFunction('recordShare', value => { nativeShare = value; });
@@ -181,22 +186,27 @@ const expectedLabels = ['Most Liked Casters', 'Most Recasted Casters', 'Most Rep
       assert.deepEqual(await section.locator('li').evaluateAll(rows => rows.map(row => Number(row.value))), list.rows.map(row => row.position));
       if (list.userPosition !== null) await expect(section.locator('.caster-self')).toHaveCount(1);
     }
+    const firstSnapshot = host.waitForResponse(r => r.url().includes('/api/top-casters/share') && r.request().method() === 'POST');
     await host.locator('.caster-card').first().getByRole('button', { name: 'Share on Farcaster', exact: true }).click();
-    await expect.poll(() => nativeShare).toBeTruthy();
+    const firstShared = await (await firstSnapshot).json();
+    await expect.poll(() => nativeShare, { timeout: 45000 }).toBeTruthy();
     assert.ok(JSON.stringify(nativeShare).includes('user=366713'));
-    assert.ok(nativeShare.text.startsWith('Top Casters · Most Liked Casters · 365 days\n\n#1 '));
-    assert.ok(nativeShare.text.includes(`I am ranked #${data.lists[0].userPosition.toLocaleString('en-US')}. How about you?`));
+    assert.ok(nativeShare.text.startsWith('Most Liked Casters · 365 days\n\n#1 '));
+    assert.ok(nativeShare.text.includes(`I am ranked #${firstShared.data.lists[0].userPosition.toLocaleString('en-US')}. How about you?`));
     const nativeLink = new URL(nativeShare.embeds[0]);
     assert.equal(nativeLink.searchParams.get('metric'), 'likes_received');
     assert.equal(nativeLink.searchParams.get('period'), 'days365');
     for (const list of data.lists) {
       nativeShare = undefined;
       const section = host.locator('.caster-card').filter({ has: host.locator(`#caster-${list.metric}`) });
+      const created = host.waitForResponse(r => r.url().includes('/api/top-casters/share') && r.request().method() === 'POST');
       await section.getByRole('button', { name: 'Share on Farcaster', exact: true }).click();
-      await expect.poll(() => nativeShare).toBeTruthy();
-      const rows = [...list.rows, ...(list.nextRank ? [list.nextRank] : [])].filter(row => row.position <= 3 || (list.userPosition && Math.abs(row.position - list.userPosition) <= 1));
+      const snapshot = await (await created).json();
+      const sharedList = snapshot.data.lists[0];
+      await expect.poll(() => nativeShare, { timeout: 45000 }).toBeTruthy();
+      const rows = [...sharedList.rows, ...(sharedList.nextRank ? [sharedList.nextRank] : [])].filter(row => row.position <= 3 || (sharedList.userPosition && Math.abs(row.position - sharedList.userPosition) <= 1));
       for (const row of rows) {
-        const profile = data.profiles.find(profile => profile.fid === row.fid);
+        const profile = snapshot.data.profiles.find(profile => profile.fid === row.fid);
         const name = profile?.username ? `@${profile.username}` : `FID ${row.fid}`;
         assert.ok(nativeShare.text.includes(`#${row.position.toLocaleString('en-US')} ${name} ${row.score.toLocaleString('en-US')}`), list.metric);
       }
@@ -220,7 +230,7 @@ const expectedLabels = ['Most Liked Casters', 'Most Recasted Casters', 'Most Rep
     assert.equal(host.url(), beforeProfile, 'profile icon does not change selected rankings');
     nativeShare = undefined;
     await host.locator('.caster-card').first().getByRole('button', { name: 'Share on Farcaster', exact: true }).click();
-    await expect.poll(() => nativeShare).toBeTruthy();
+    await expect.poll(() => nativeShare, { timeout: 45000 }).toBeTruthy();
     assert.ok(!nativeShare.text.includes('I am'));
     assert.equal(new URL(nativeShare.embeds[0]).searchParams.get('user'), '3');
     const field = host.locator('.search-field');
