@@ -26,6 +26,10 @@ const makeEvent=(id,action='cast',actor=profile)=>({id,cursor:'1794742348:0x'+'a
   assert.equal(await page.locator('.live-stat number-flow-react').count(),10);
   assert.ok(await page.locator('.live-stat p').first().evaluate(el=>Number(getComputedStyle(el).opacity)<1));
   await page.locator('.live-events li').first().waitFor();
+  await expect(page.getByText('Updates every 5 seconds',{exact:true})).toHaveCount(0);
+  const bubble=await page.locator('.live-event-main').first().evaluate(el=>({radius:getComputedStyle(el).borderTopRightRadius,background:getComputedStyle(el).backgroundColor}));
+  assert.equal(bubble.radius,'14px');
+  assert.notEqual(bubble.background,'rgba(0, 0, 0, 0)');
   await page.evaluate(()=>{const animate=Element.prototype.animate;window.__insertAnimations=0;Element.prototype.animate=function(...args){if(this.matches('.live-events>li'))window.__insertAnimations++;return animate.apply(this,args)};});
   await page.evaluate(()=>{
    window.__clockTimes=[];

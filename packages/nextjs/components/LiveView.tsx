@@ -343,7 +343,6 @@ export function LiveView({
         <div className="timeline-toolbar">
           <span className={live ? "live-indicator" : ""}>{live ? "● Live" : "Paused"}</span>
           <div>
-            <span>Updates every 5 seconds</span>
             <button
               className="live-pause"
               type="button"
