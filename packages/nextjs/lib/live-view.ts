@@ -30,6 +30,7 @@ export type LiveEvent = {
   castHash: string;
   mentions: Profile[];
   mentionCount: number;
+  quotes?: { author: Profile; hash: string; text: string | null }[];
 };
 export type LiveData = {
   events: LiveEvent[];
@@ -107,4 +108,29 @@ export function livePath(selection: { user?: string; type: LiveType }, share?: s
   if (selection.type !== "all") params.set("type", selection.type);
   if (share) params.set("share", share);
   return `/live-view${params.size ? `?${params}` : ""}`;
+}
+
+// ClickHouse extracts the FID as raw JSON to avoid rounding UInt64 values in JSON.parse.
+export function liveQuoteIds(embeds: [string, string][]) {
+  const quotes = new Map<string, { fid: string; hash: string }>();
+  for (const [rawFid, rawHash] of embeds.slice(0, 4)) {
+    try {
+      const fid = rawFid.startsWith('"') ? JSON.parse(rawFid) : rawFid;
+      const value = JSON.parse(rawHash);
+      const bytes = value?.type === "Buffer" ? value.data : null;
+      const hash =
+        typeof value === "string"
+          ? value.replace(/^0x/, "").toLowerCase()
+          : Array.isArray(bytes) &&
+              bytes.length === 20 &&
+              bytes.every((byte) => Number.isInteger(byte) && byte >= 0 && byte <= 255)
+            ? bytes.map((byte) => byte.toString(16).padStart(2, "0")).join("")
+            : "";
+      if (typeof fid === "string" && validFid(fid) && /^[a-f0-9]{40}$/.test(hash))
+        quotes.set(`${fid}:${hash}`, { fid, hash: "0x" + hash });
+    } catch {
+      /* Ignore URL embeds and malformed cast IDs. */
+    }
+  }
+  return [...quotes.values()];
 }

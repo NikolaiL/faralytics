@@ -3,7 +3,7 @@ const {mkdirSync,writeFileSync} = require('node:fs');
 const {chromium,expect} = require('@playwright/test');
 const origin=process.env.TEST_ORIGIN || 'http://localhost:3100';
 const profile={fid:'366713',username:'nikolaii.eth',display_name:null};
-const makeEvent=(id,action='cast',actor=profile)=>({id,cursor:'1794742348:0x'+'a'.repeat(40),timestamp:new Date(Date.now()+Number(id)*1000).toISOString(),action,actor,target:{fid:'3',username:'dwr',display_name:null},text:action==='cast'?'A captured cast':'',castHash:'0x'+'a'.repeat(40),mentions:[],mentionCount:0});
+const makeEvent=(id,action='cast',actor=profile)=>({id,cursor:'1794742348:0x'+'a'.repeat(40),timestamp:new Date(Date.now()+Number(id)*1000).toISOString(),action,actor,target:{fid:'3',username:'dwr',display_name:null},text:action==='cast'?'A captured cast':'',castHash:'0x'+'a'.repeat(40),mentions:[],mentionCount:0,quotes:action==='cast'&&id==='1'?[{author:{fid:'3',username:'dwr',display_name:null},hash:'0x'+'b'.repeat(40),text:'Original quoted cast'}]:[]});
 (async()=>{
  const browser=await chromium.launch();
  const errors=[];
@@ -26,6 +26,11 @@ const makeEvent=(id,action='cast',actor=profile)=>({id,cursor:'1794742348:0x'+'a
   assert.equal(await page.locator('.live-stat number-flow-react').count(),12);
   assert.ok(await page.locator('.live-stat p').first().evaluate(el=>Number(getComputedStyle(el).opacity)<1));
   await page.locator('.live-events li').first().waitFor();
+  await expect(page.locator('.live-sentence').first()).toContainText('quote-recasted');
+  await expect(page.locator('.live-quote').first()).toContainText('@dwr');
+  await expect(page.locator('.live-quote').first()).toContainText('Original quoted cast');
+  await expect(page.locator('.live-quote-link').first()).toHaveAttribute('href','https://farcaster.xyz/~/conversations/0x'+'b'.repeat(40));
+  await expect(page.locator('.live-event-foot a').first()).toHaveAttribute('href','https://farcaster.xyz/~/conversations/0x'+'a'.repeat(40));
   await expect(page.getByText('Updates every 5 seconds',{exact:true})).toHaveCount(0);
   const bubble=await page.locator('.live-event-main').first().evaluate(el=>({radius:getComputedStyle(el).borderTopRightRadius,background:getComputedStyle(el).backgroundColor}));
   assert.equal(bubble.radius,'14px');

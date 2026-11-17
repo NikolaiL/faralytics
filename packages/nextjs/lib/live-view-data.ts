@@ -4,7 +4,7 @@ import { query } from "~~/lib/clickhouse";
 import { resolveAccount } from "~~/lib/data";
 import { loadProfiles } from "~~/lib/profile-data";
 import { dateKey, type Profile } from "~~/lib/activity";
-import { liveEventsQuery, type LiveCounts, type LiveData, type LiveType } from "~~/lib/live-view";
+import { liveQuoteIds, liveEventsQuery, type LiveCounts, type LiveData, type LiveType } from "~~/lib/live-view";
 
 const zero = (): LiveCounts => ({ casts: 0, replies: 0, recasts: 0, likes: 0, mentions: 0, dau: 0 });
 const readTotals = unstable_cache(
@@ -98,23 +98,44 @@ export async function loadLiveView(selection: { user?: string; type: LiveType; a
   const candidates = [...new Map(raw.slice(0, 60).map((row) => [row.hash, row])).values()];
   const posts = candidates.filter((row) => row.action_type === "cast" || row.action_type === "reply");
   const tags = posts.length
-    ? await query<{ actor: string; hash: string; mentions: string[] }>(
-        `SELECT toString(fid) AS actor,hash,arrayMap(target -> toString(target),arrayDistinct(arrayFilter(target -> target>0 AND target!=fid,mentions))) AS mentions
+    ? await query<{ actor: string; hash: string; mentions: string[]; quotes: [string, string][] }>(
+        `SELECT toString(fid) AS actor,hash,arrayMap(target -> toString(target),arrayDistinct(arrayFilter(target -> target>0 AND target!=fid,mentions))) AS mentions,
+        arrayMap(embed -> (JSONExtractRaw(embed,'castId','fid'),JSONExtractRaw(embed,'castId','hash')),arraySlice(JSONExtractArrayRaw(embeds_json),1,4)) AS quotes
      FROM snapchain.messages FINAL PREWHERE (fid,type,hash) IN {posts:Array(Tuple(UInt64,UInt16,String))} WHERE operation IN ('merge','prune') SETTINGS optimize_move_to_prewhere_if_final=0`,
         { posts: `[${posts.map((row) => `(${row.actor},1,'${row.hash.slice(2)}')`).join(",")}]` },
         { timeoutMs: 8000 },
       )
     : [];
-  const tagged = candidates.map((row) => ({
-    ...row,
-    mentions: tags.find((tag) => tag.hash === row.hash.slice(2) && tag.actor === row.actor)?.mentions ?? [],
-  }));
+  const tagged = candidates.map((row) => {
+    const metadata = tags.find((tag) => tag.hash === row.hash.slice(2) && tag.actor === row.actor);
+    return { ...row, mentions: metadata?.mentions ?? [], quotes: liveQuoteIds(metadata?.quotes ?? []) };
+  });
   const matching = tagged.filter((row) => selection.type !== "mention" || row.mentions.length > 0);
   const page = matching.slice(0, 20);
   const consumed = matching.length > 20 ? page.at(-1) : tagged.at(-1);
+  const quoteIds = [
+    ...new Map(page.flatMap((row) => row.quotes).map((quote) => [`${quote.fid}:${quote.hash}`, quote])).values(),
+  ];
+  const quoteKeys = `[${quoteIds.map((quote) => `(${quote.fid},1,'${quote.hash.slice(2)}')`).join(",")}]`;
+  const quoted = quoteIds.length
+    ? await query<{ actor: string; hash: string; text: string }>(
+        `SELECT toString(fid) AS actor,hash,substringUTF8(text,1,512) AS text FROM snapchain.messages FINAL
+    PREWHERE (fid,type,hash) IN {quotes:Array(Tuple(UInt64,UInt16,String))}
+    WHERE operation IN ('merge','prune') AND timestamp <= {asOf:UInt32} AND (fid,hash) NOT IN (
+      SELECT fid,target_hash FROM snapchain.cast_removals FINAL PREWHERE (fid,target_hash) IN {removed:Array(Tuple(UInt64,String))} WHERE operation='merge'
+    ) SETTINGS optimize_move_to_prewhere_if_final=0`,
+        {
+          quotes: quoteKeys,
+          removed: `[${quoteIds.map((quote) => `(${quote.fid},'${quote.hash.slice(2)}')`).join(",")}]`,
+          asOf: String(Math.floor(Date.now() / 1000) - 1609459200),
+        },
+        { timeoutMs: 8000 },
+      )
+    : [];
   const fids = [
     ...new Set([
       ...(user ? [user] : []),
+      ...quoteIds.map((quote) => quote.fid),
       ...page
         .flatMap((row) => [row.actor, row.parent, row.target, ...row.mentions.slice(0, 5)])
         .filter((fid): fid is string => !!fid && fid !== "0"),
@@ -139,6 +160,11 @@ export async function loadLiveView(selection: { user?: string; type: LiveType; a
     castHash: row.target_hash || row.parent_hash || row.hash,
     mentions: row.mentions.slice(0, 5).map(profile),
     mentionCount: row.mentions.length,
+    quotes: row.quotes.map((quote) => ({
+      author: profile(quote.fid),
+      hash: quote.hash,
+      text: quoted.find((cast) => cast.actor === quote.fid && cast.hash === quote.hash.slice(2))?.text ?? null,
+    })),
   }));
   if (selection.after) events.reverse();
   return {

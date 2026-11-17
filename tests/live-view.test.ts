@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { liveClockParts, liveSelection, liveEventsQuery, mergeLiveEvents, type LiveEvent } from "../packages/nextjs/lib/live-view.ts";
+import { liveClockParts, liveQuoteIds, liveSelection, liveEventsQuery, mergeLiveEvents, type LiveEvent } from "../packages/nextjs/lib/live-view.ts";
 
 test("live filters validate types, UInt64 users and cursors", () => {
   assert.equal(liveSelection(new URLSearchParams("user=@nikolaii.eth&type=mention")).user, "nikolaii.eth");
@@ -34,4 +34,14 @@ test("live UTC clock rolls over and feed merges once in descending order with a 
   assert.equal(new Set(merged.map(r => r.id)).size,100);
   assert.equal(merged[0].id,"119");
   assert.equal(merged.at(-1)?.id,"20");
+});
+
+
+test("quote cast IDs decode stored Buffer hashes, preserve UInt64 FIDs, and ignore bad embeds", () => {
+  const bytes = Array.from({length:20},(_,i)=>i);
+  const hash = bytes.map(byte=>byte.toString(16).padStart(2,"0")).join("");
+  const stored = JSON.stringify({type:"Buffer",data:bytes});
+  assert.deepEqual(liveQuoteIds([["", ""], ["18446744073709551615", stored], ['"18446744073709551615"',JSON.stringify("0x"+hash)]]), [{fid:"18446744073709551615",hash:"0x"+hash}]);
+  for (const entry of [["0",stored],["18446744073709551616",stored],["2",JSON.stringify({type:"Buffer",data:[256,...bytes.slice(1)]})],["2","not json"],["2",JSON.stringify({type:"Buffer",data:[1]})]] as [string,string][])
+    assert.deepEqual(liveQuoteIds([entry]), []);
 });

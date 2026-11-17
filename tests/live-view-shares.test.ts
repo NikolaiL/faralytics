@@ -40,3 +40,27 @@ test("daily totals count DAU across all actions and keep exact UTC cutoff",async
  const result=await data.loadLiveView({type:"all"});assert.equal(result.totals.today.dau,2);assert.equal(result.totals.yesterday.dau,0);assert.match(result.totals.asOf,/T\d{2}:\d{2}:\d{2}\.000Z$/);
  const aggregate=sqls.find(sql=>sql.includes(" AS dau"))!;assert.match(aggregate,/uniqExactIf\(fid,fid>0\)/);assert.doesNotMatch(aggregate,/WHERE[^;]*action_type IN/);assert.match(aggregate,/timestamp <= toDateTime\(\{asOf:UInt32\}/);
 });
+
+
+test("Live View enriches quote-recasts through existing bounded message keys and retains unavailable references",async()=>{
+ const ownHash="a".repeat(40), quoteHash="b".repeat(40), quotedFid="18446744073709551615";
+ let available=true;
+ const queries:string[]=[];
+ const data=moduleFrom("lib/live-view-data.ts",{
+  "server-only":{},"next/cache":{unstable_cache:(fn:unknown)=>fn},
+  "~~/lib/clickhouse":{query:async(sql:string,params:any)=>{
+   queries.push(sql);
+   if(sql.includes(" AS dau"))return [];
+   if(sql.includes("dataset_status"))return [{current_state_is_ready:1}];
+   if(sql.includes(" AS mentions"))return [{actor:"366713",hash:ownHash,mentions:[],quotes:[[quotedFid,JSON.stringify({type:"Buffer",data:Array(20).fill(187)})]]}];
+   if(sql.includes(" AS text")){assert.ok(params.quotes.includes(quotedFid));assert.ok(params.removed.includes(quoteHash));return available?[{actor:quotedFid,hash:quoteHash,text:"Original quoted cast"}]:[];}
+   return [{ts:Math.floor(Date.now()/1000),hash:"0x"+ownHash,actor:"366713",action_type:"cast",body:"My quote",parent:null,target:null,parent_hash:null,target_hash:null}];
+  }},"~~/lib/data":{resolveAccount:async(v:string)=>v},"~~/lib/profile-data":{loadProfiles:async(fids:string[])=>{assert.ok(fids.includes(quotedFid));return [{fid:quotedFid,username:"quoted-caster",display_name:null}];}},"~~/lib/activity":await import("../packages/nextjs/lib/activity.ts"),"~~/lib/live-view":live,
+ });
+ const first=await data.loadLiveView({type:"cast"});
+ assert.equal(first.events[0].action,"cast");assert.equal(first.events[0].castHash,"0x"+ownHash);
+ assert.equal(first.events[0].quotes[0].author.fid,quotedFid);assert.equal(first.events[0].quotes[0].hash,"0x"+quoteHash);assert.equal(first.events[0].quotes[0].text,"Original quoted cast");
+ assert.ok(queries.some(sql=>sql.includes("embeds_json")));
+ const contextQuery=queries.find(sql=>sql.includes(" AS text"))!;assert.match(contextQuery,/PREWHERE \(fid,type,hash\) IN/);assert.match(contextQuery,/cast_removals/);assert.match(contextQuery,/timestamp <= \{asOf:UInt32\}/);
+ available=false;const missing=await data.loadLiveView({type:"cast"});assert.equal(missing.events.length,1);assert.equal(missing.events[0].quotes[0].text,null);
+});

@@ -44,3 +44,5 @@ Add `/live-view` as the seventh shared desktop/mobile tab: NumberFlow UTC clock,
 Live View uses a clock independent of feed responses, a compact logo/title header, one row of smaller metrics at all widths and gray/accent filter-icon toggles for inactive/active filters. Hide filters by default and keep the first events before the fold.
 
 Live View DAU counts exact distinct positive FIDs across all captured action types per UTC day. Add a share control preserving actor/type filters and storing one immutable daily snapshot for its real HTML metadata and 1200×800/600 OG cards, with exact UTC cutoff and yesterday comparisons. Apply migration 003 for `live_view_shares`; the shared landing page remains live.
+
+After more than three minutes without a successful Live View update, replace stale and queued events with one current snapshot without an old cursor. Preserve filters and paused state; ignore responses suspended past that threshold. Enrich quote-recasts from existing Snapchain cast embeds and show the original author/text/link, with an unavailable fallback and no ClickHouse schema/MV changes.

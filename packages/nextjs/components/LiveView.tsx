@@ -27,6 +27,7 @@ import {
 const name = (profile: Profile) => (profile.username ? `@${profile.username}` : `FID ${profile.fid}`);
 const integer = { useGrouping: false };
 const twoDigits = { useGrouping: false, minimumIntegerDigits: 2 };
+const STALE_AFTER_MS = 3 * 60 * 1000;
 
 export function LiveView({
   initialUser = "",
@@ -91,6 +92,7 @@ export function LiveView({
       inFlight = false,
       initialized = false;
     let head: string | null = null;
+    let lastUpdate = 0;
     let rows: LiveEvent[] = [];
     let drain: ReturnType<typeof setTimeout> | undefined;
     const controller = new AbortController();
@@ -106,10 +108,12 @@ export function LiveView({
     async function load() {
       if (!active || inFlight || (initialized && (!liveRef.current || document.hidden))) return;
       inFlight = true;
+      const requestedAt = Date.now();
+      const refresh = initialized && requestedAt - lastUpdate > STALE_AFTER_MS;
       try {
         const params = new URLSearchParams({ type });
         if (user) params.set("user", user);
-        if (head) params.set("after", head);
+        if (head && !refresh) params.set("after", head);
         const response = await fetch(`/api/live-view?${params}`, {
           cache: "no-store",
           signal: AbortSignal.any([controller.signal, AbortSignal.timeout(25000)]),
@@ -118,8 +122,14 @@ export function LiveView({
         if (!response.ok) throw new Error(next.error || "Could not refresh live activity.");
         if (!active) return;
         if (initialized && (!liveRef.current || document.hidden)) return;
+        // A response suspended with the tab can itself be too old to display.
+        if (Date.now() - requestedAt > STALE_AFTER_MS) {
+          drain = setTimeout(() => void load(), 0);
+          return;
+        }
         setData(next);
         setError("");
+        lastUpdate = Date.now();
         head = next.headCursor;
         if (!initialized) {
           initialized = true;
@@ -132,6 +142,13 @@ export function LiveView({
           const share = new URLSearchParams(window.location.search).get("share");
           if (share && user === initialUser && type === initialType) url.set("share", share);
           window.history.replaceState(null, "", `/live-view${url.size ? `?${url}` : ""}`);
+        } else if (refresh) {
+          rows = next.events;
+          pendingRows.current = [];
+          positions.current = null;
+          setEvents(rows);
+          setPending(false);
+          setAnnouncement("Showing latest events.");
         } else if (next.events.length) {
           const incoming = mergeLiveEvents(pendingRows.current, next.events).filter(
             (event) => !rows.some((old) => old.id === event.id),
@@ -146,7 +163,7 @@ export function LiveView({
           }
           if (incoming.length) setAnnouncement(`${incoming.length} new event${incoming.length === 1 ? "" : "s"}.`);
         }
-        if (next.hasMore && next.headCursor) drain = setTimeout(() => void load(), 400);
+        if (!refresh && next.hasMore && next.headCursor) drain = setTimeout(() => void load(), 400);
       } catch (cause) {
         if (active) setError(cause instanceof Error ? cause.message : "Could not refresh live activity.");
       } finally {
@@ -487,7 +504,9 @@ export function LiveView({
                   {profileLink(event.actor)}{" "}
                   <span className={`live-verb live-verb-${event.action}`}>
                     {event.action === "cast"
-                      ? "casted"
+                      ? event.quotes?.length
+                        ? "quote-recasted"
+                        : "casted"
                       : event.action === "mention"
                         ? "mentioned"
                         : `${event.action === "reply" ? "replied to" : event.action === "like" ? "liked" : "recasted"} a cast${event.target ? " by" : ""}`}
@@ -515,6 +534,20 @@ export function LiveView({
                     {event.text}
                   </a>
                 )}
+                {event.quotes?.map((quote) => (
+                  <blockquote className="live-quote" key={`${quote.author.fid}:${quote.hash}`}>
+                    {profileLink(quote.author)}
+                    <p className="live-quote-text">{quote.text ?? "Quoted cast is unavailable in captured history."}</p>
+                    <a
+                      className="live-quote-link"
+                      href={`https://farcaster.xyz/~/conversations/${quote.hash}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      View quoted cast ↗
+                    </a>
+                  </blockquote>
+                ))}
                 {event.action !== "mention" && event.mentions.length > 0 && (
                   <div className="live-mentions">
                     Mentioned{" "}
