@@ -14,6 +14,9 @@ import { PURPLES, type Profile } from "~~/lib/activity";
 import { LOGO_PIXELS } from "~~/lib/brand";
 import {
   liveClockParts,
+  liveEventAction,
+  liveDirections,
+  type LiveDirection,
   liveMetricLabels,
   livePath,
   liveTypes,
@@ -32,16 +35,19 @@ const STALE_AFTER_MS = 3 * 60 * 1000;
 export function LiveView({
   initialUser = "",
   initialType = "all",
+  initialDirection = "actor",
   initialNow,
 }: {
   initialUser?: string;
   initialType?: LiveType;
+  initialDirection?: LiveDirection;
   initialNow: string;
 }) {
   const { fid, isMiniApp } = useMiniapp();
   const [user, setUser] = useState(initialUser);
   const [draft, setDraft] = useState(initialUser);
   const [type, setType] = useState(initialType);
+  const [direction, setDirection] = useState(initialDirection);
   const [data, setData] = useState<LiveData | null>(null);
   const [events, setEvents] = useState<LiveEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -103,8 +109,18 @@ export function LiveView({
     setPending(false);
     pendingRows.current = [];
     positions.current = null;
-    const atTop = () =>
-      (list.current?.getBoundingClientRect().top ?? 0) >= -80 && !list.current?.contains(document.activeElement);
+    const atTop = () => (list.current?.getBoundingClientRect().top ?? 0) >= -80;
+    function applyPending() {
+      if (!pendingRows.current.length) return;
+      rememberPositions();
+      rows = mergeLiveEvents(rows, pendingRows.current);
+      pendingRows.current = [];
+      setEvents(rows);
+      setPending(false);
+    }
+    const autoLatest = () => {
+      if (liveRef.current && !document.hidden && atTop()) applyPending();
+    };
     async function load() {
       if (!active || inFlight || (initialized && (!liveRef.current || document.hidden))) return;
       inFlight = true;
@@ -112,7 +128,10 @@ export function LiveView({
       const refresh = initialized && requestedAt - lastUpdate > STALE_AFTER_MS;
       try {
         const params = new URLSearchParams({ type });
-        if (user) params.set("user", user);
+        if (user) {
+          params.set("user", user);
+          params.set("direction", direction);
+        }
         if (head && !refresh) params.set("after", head);
         const response = await fetch(`/api/live-view?${params}`, {
           cache: "no-store",
@@ -139,8 +158,10 @@ export function LiveView({
           const url = new URLSearchParams();
           if (next.profile) url.set("user", next.profile.fid);
           if (type !== "all") url.set("type", type);
+          if (next.profile && direction !== "actor") url.set("direction", direction);
           const share = new URLSearchParams(window.location.search).get("share");
-          if (share && user === initialUser && type === initialType) url.set("share", share);
+          if (share && user === initialUser && type === initialType && direction === initialDirection)
+            url.set("share", share);
           window.history.replaceState(null, "", `/live-view${url.size ? `?${url}` : ""}`);
         } else if (refresh) {
           rows = next.events;
@@ -153,10 +174,9 @@ export function LiveView({
           const incoming = mergeLiveEvents(pendingRows.current, next.events).filter(
             (event) => !rows.some((old) => old.id === event.id),
           );
-          if (atTop() && !pendingRows.current.length) {
-            rememberPositions();
-            rows = mergeLiveEvents(rows, incoming);
-            setEvents(rows);
+          if (atTop() && !list.current?.contains(document.activeElement)) {
+            pendingRows.current = incoming;
+            applyPending();
           } else {
             pendingRows.current = incoming;
             setPending(incoming.length > 0);
@@ -172,13 +192,12 @@ export function LiveView({
       }
     }
     actions.current = {
-      poll: () => void load(),
+      poll: () => {
+        autoLatest();
+        void load();
+      },
       latest: () => {
-        rememberPositions();
-        rows = mergeLiveEvents(rows, pendingRows.current);
-        setEvents(rows);
-        pendingRows.current = [];
-        setPending(false);
+        applyPending();
         list.current?.scrollIntoView({ block: "start", behavior: "auto" });
       },
     };
@@ -188,14 +207,16 @@ export function LiveView({
       if (!document.hidden) void load();
     };
     document.addEventListener("visibilitychange", visible);
+    window.addEventListener("scroll", autoLatest, { passive: true });
     return () => {
       active = false;
       controller.abort();
       clearInterval(timer);
       clearTimeout(drain);
       document.removeEventListener("visibilitychange", visible);
+      window.removeEventListener("scroll", autoLatest);
     };
-  }, [user, type, initialUser, initialType]);
+  }, [user, type, direction, initialUser, initialType, initialDirection]);
   useLayoutEffect(() => {
     const previous = positions.current;
     positions.current = null;
@@ -219,6 +240,7 @@ export function LiveView({
   function apply(value: string) {
     setDraft(value);
     setUser(value.trim());
+    if (!value.trim()) setDirection("actor");
   }
   function profileLink(profile: Profile) {
     const href = `https://farcaster.xyz/${profile.username || `~/profiles/${profile.fid}`}`;
@@ -256,13 +278,13 @@ export function LiveView({
         const response = await fetch("/api/live-view/share", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ user: user || undefined, type }),
+          body: JSON.stringify({ user: user || undefined, type, direction }),
           signal: AbortSignal.timeout(45000),
         });
         const snapshot = await response.json();
         if (!response.ok) throw new Error(snapshot.error || "Could not prepare this share.");
         url = new URL(
-          livePath({ user: snapshot.profile?.fid, type: snapshot.type }, snapshot.id),
+          livePath({ user: snapshot.profile?.fid, type: snapshot.type, direction: snapshot.direction }, snapshot.id),
           process.env.NEXT_PUBLIC_URL || window.location.origin,
         ).toString();
         return snapshot;
@@ -381,7 +403,7 @@ export function LiveView({
         >
           <AccountSearch
             searchId="live-user"
-            label="Activity by username or FID"
+            label="Filter by username or FID"
             value={resolved ? name(data!.profile!).replace(/^FID /, "") : draft}
             onChange={setDraft}
             onSelect={apply}
@@ -406,6 +428,22 @@ export function LiveView({
             ))}
           </select>
         </label>
+        <label className="interaction-filter">
+          <span>User role</span>
+          <select
+            aria-label="Live user role"
+            value={direction}
+            disabled={!user}
+            onChange={(event) => setDirection(event.target.value as LiveDirection)}
+          >
+            {Object.entries(liveDirections).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+        {user && <p className="live-scope-note">User role affects events; daily metrics show actions by this user.</p>}
       </div>
       {data && (
         <div
@@ -494,77 +532,78 @@ export function LiveView({
           </div>
         </div>
         <ol className="live-events" ref={list}>
-          {events.map((event) => (
-            <li key={event.id} data-event-id={event.id}>
-              <span className="result-avatar timeline-avatar" aria-hidden="true">
-                <AvatarImage source={event.actor.pfp_url} size={32} />
-              </span>
-              <div className="live-event-main">
-                <div className="live-sentence">
-                  {profileLink(event.actor)}{" "}
-                  <span className={`live-verb live-verb-${event.action}`}>
-                    {event.action === "cast"
-                      ? event.quotes?.length
-                        ? "quote-recasted"
-                        : "casted"
-                      : event.action === "mention"
-                        ? "mentioned"
-                        : `${event.action === "reply" ? "replied to" : event.action === "like" ? "liked" : "recasted"} a cast${event.target ? " by" : ""}`}
-                  </span>{" "}
-                  {event.action === "mention" ? (
-                    <>
-                      {event.mentions.map((profile) => (
-                        <span key={profile.fid}>{profileLink(profile)} </span>
-                      ))}
-                      {event.mentionCount > event.mentions.length && (
-                        <span>+{event.mentionCount - event.mentions.length} others</span>
-                      )}
-                    </>
-                  ) : (
-                    event.target && profileLink(event.target)
-                  )}
-                </div>
-                {event.text && (
-                  <a
-                    className="live-cast-text"
-                    href={`https://farcaster.xyz/~/conversations/${event.castHash}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {event.text}
-                  </a>
-                )}
-                {event.quotes?.map((quote) => (
-                  <blockquote className="live-quote" key={`${quote.author.fid}:${quote.hash}`}>
-                    {profileLink(quote.author)}
-                    <p className="live-quote-text">{quote.text ?? "Quoted cast is unavailable in captured history."}</p>
+          {events.map((event) => {
+            const action = liveEventAction(event);
+            const castUrl = (hash: string) => `https://farcaster.xyz/~/conversations/${hash}`;
+            return (
+              <li key={event.id} data-event-id={event.id}>
+                <div className="live-event-main">
+                  <div className="live-sentence">
+                    <span className="result-avatar live-event-avatar" aria-hidden="true">
+                      <AvatarImage source={event.actor.pfp_url} size={20} />
+                    </span>
+                    {profileLink(event.actor)}{" "}
                     <a
-                      className="live-quote-link"
-                      href={`https://farcaster.xyz/~/conversations/${quote.hash}`}
+                      className={`live-verb live-verb-${event.action}`}
+                      href={action.actionUrl}
                       target="_blank"
                       rel="noreferrer"
                     >
-                      View quoted cast ↗
+                      {action.verb}
                     </a>
-                  </blockquote>
-                ))}
-                {event.action !== "mention" && event.mentions.length > 0 && (
-                  <div className="live-mentions">
-                    Mentioned{" "}
-                    {event.mentions.map((profile) => (
-                      <span key={profile.fid}>{profileLink(profile)} </span>
-                    ))}
+                    {action.castHash && (
+                      <>
+                        {action.connector}
+                        <a className="live-cast-link" href={castUrl(action.castHash)} target="_blank" rel="noreferrer">
+                          cast
+                        </a>
+                        {action.target && <> by {profileLink(action.target)}</>}
+                      </>
+                    )}
+                    {action.profileAction && action.target && <> {profileLink(action.target)}</>}
+                    {event.action === "mention" && (
+                      <>
+                        {" "}
+                        {event.mentions.map((profile) => (
+                          <span key={profile.fid}>{profileLink(profile)} </span>
+                        ))}
+                        {event.mentionCount > event.mentions.length && (
+                          <span>+{event.mentionCount - event.mentions.length} others</span>
+                        )}
+                      </>
+                    )}
                   </div>
-                )}
-                <div className="live-event-foot">
-                  <TimelineTime timestamp={event.timestamp} now={now} />
-                  <a href={`https://farcaster.xyz/~/conversations/${event.castHash}`} target="_blank" rel="noreferrer">
-                    View cast ↗
-                  </a>
+                  {event.text && (
+                    <a className="live-cast-text" href={action.actionUrl} target="_blank" rel="noreferrer">
+                      {event.text}
+                    </a>
+                  )}
+                  {event.quotes?.map((quote) => (
+                    <blockquote className="live-quote" key={`${quote.author.fid}:${quote.hash}`}>
+                      <span className="result-avatar live-quote-avatar" aria-hidden="true">
+                        <AvatarImage source={quote.author.pfp_url} size={16} />
+                      </span>
+                      {profileLink(quote.author)}
+                      <a className="live-quote-text" href={castUrl(quote.hash)} target="_blank" rel="noreferrer">
+                        {quote.text ?? "Quoted cast is unavailable in captured history."}
+                      </a>
+                    </blockquote>
+                  ))}
+                  {event.action !== "mention" && event.mentions.length > 0 && (
+                    <div className="live-mentions">
+                      Mentioned{" "}
+                      {event.mentions.map((profile) => (
+                        <span key={profile.fid}>{profileLink(profile)} </span>
+                      ))}
+                    </div>
+                  )}
+                  <div className="live-event-foot">
+                    <TimelineTime timestamp={event.timestamp} now={now} />
+                  </div>
                 </div>
-              </div>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ol>
         {!loading && !events.length && (
           <p className="empty-note">No recent events for these filters. New activity will appear here.</p>

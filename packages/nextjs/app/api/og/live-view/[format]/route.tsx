@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { LiveViewOg } from "~~/components/LiveViewOg";
+import { prepareLiveViewOg } from "~~/components/LiveViewOg";
 import { InputError } from "~~/lib/activity";
 import { OG_FONTS } from "~~/lib/og-fonts";
 import { liveSelection } from "~~/lib/live-view";
@@ -19,9 +19,9 @@ export const GET = withErrorReporting<{ params: Promise<{ format: string }> }>(
         share = request.nextUrl.searchParams.get("share");
       const snapshot = share
         ? await readLiveShare(share, selection)
-        : { ...(await loadLiveView(selection)), type: selection.type };
+        : { ...(await loadLiveView(selection)), type: selection.type, direction: selection.direction };
       const height = format === "x.png" ? 600 : 800;
-      return new ImageResponse(<LiveViewOg snapshot={snapshot} height={height} />, {
+      return new ImageResponse(await prepareLiveViewOg(snapshot, height), {
         width: 1200,
         height,
         fonts: OG_FONTS,

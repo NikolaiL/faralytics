@@ -4,7 +4,14 @@ import { query } from "~~/lib/clickhouse";
 import { resolveAccount } from "~~/lib/data";
 import { loadProfiles } from "~~/lib/profile-data";
 import { dateKey, type Profile } from "~~/lib/activity";
-import { liveQuoteIds, liveEventsQuery, type LiveCounts, type LiveData, type LiveType } from "~~/lib/live-view";
+import {
+  liveQuoteIds,
+  liveEventsQuery,
+  type LiveCounts,
+  type LiveData,
+  type LiveType,
+  type LiveDirection,
+} from "~~/lib/live-view";
 
 const zero = (): LiveCounts => ({ casts: 0, replies: 0, recasts: 0, likes: 0, mentions: 0, dau: 0 });
 const readTotals = unstable_cache(
@@ -76,16 +83,21 @@ const readSource = unstable_cache(
   { revalidate: 10 },
 );
 
-export async function loadLiveView(selection: { user?: string; type: LiveType; after?: string }): Promise<LiveData> {
+export async function loadLiveView(selection: {
+  user?: string;
+  type: LiveType;
+  after?: string;
+  direction?: LiveDirection;
+}): Promise<LiveData> {
   const user = selection.user ? await resolveAccount(selection.user) : undefined;
   const date = dateKey(new Date());
-  const { sql, params } = liveEventsQuery(user, selection.type, selection.after);
+  const { sql, params } = liveEventsQuery(user, selection.type, selection.after, selection.direction);
   const [raw, totals, source] = await Promise.all([
     query<{
       ts: number;
       hash: string;
       actor: string;
-      action_type: "cast" | "reply" | "like" | "recast";
+      action_type: Exclude<LiveType, "all" | "mention">;
       body: string;
       parent: string | null;
       target: string | null;
@@ -110,7 +122,23 @@ export async function loadLiveView(selection: { user?: string; type: LiveType; a
     const metadata = tags.find((tag) => tag.hash === row.hash.slice(2) && tag.actor === row.actor);
     return { ...row, mentions: metadata?.mentions ?? [], quotes: liveQuoteIds(metadata?.quotes ?? []) };
   });
-  const matching = tagged.filter((row) => selection.type !== "mention" || row.mentions.length > 0);
+  const matching = tagged.filter((row) => {
+    const outgoing = row.actor === user;
+    const mentioned = user ? row.mentions.includes(user) : row.mentions.length > 0;
+    const incoming =
+      row.parent === user || row.target === user || mentioned || row.quotes.some((quote) => quote.fid === user);
+    const scope =
+      !user ||
+      !selection.direction ||
+      selection.direction === "actor" ||
+      incoming ||
+      (selection.direction === "both" && outgoing);
+    return (
+      scope &&
+      (selection.type !== "mention" ||
+        (!user || (selection.direction !== "target" && outgoing) ? row.mentions.length > 0 : mentioned))
+    );
+  });
   const page = matching.slice(0, 20);
   const consumed = matching.length > 20 ? page.at(-1) : tagged.at(-1);
   const quoteIds = [
@@ -158,7 +186,12 @@ export async function loadLiveView(selection: { user?: string; type: LiveType; a
           : null,
     text: row.body,
     castHash: row.target_hash || row.parent_hash || row.hash,
-    mentions: row.mentions.slice(0, 5).map(profile),
+    mentions: (user && row.mentions.includes(user)
+      ? [user, ...row.mentions.filter((fid) => fid !== user)]
+      : row.mentions
+    )
+      .slice(0, 5)
+      .map(profile),
     mentionCount: row.mentions.length,
     quotes: row.quotes.map((quote) => ({
       author: profile(quote.fid),

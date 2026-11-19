@@ -58,5 +58,12 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
 }
 export default async function LiveViewPage({ searchParams }: PageProps) {
   const { selection } = await selectionFrom(searchParams);
-  return <LiveView initialUser={selection.user} initialType={selection.type} initialNow={new Date().toISOString()} />;
+  return (
+    <LiveView
+      initialUser={selection.user}
+      initialType={selection.type}
+      initialDirection={selection.direction}
+      initialNow={new Date().toISOString()}
+    />
+  );
 }

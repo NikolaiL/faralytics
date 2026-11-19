@@ -45,4 +45,8 @@ Live View uses a clock independent of feed responses, a compact logo/title heade
 
 Live View DAU counts exact distinct positive FIDs across all captured action types per UTC day. Add a share control preserving actor/type filters and storing one immutable daily snapshot for its real HTML metadata and 1200×800/600 OG cards, with exact UTC cutoff and yesterday comparisons. Apply migration 003 for `live_view_shares`; the shared landing page remains live.
 
-After more than three minutes without a successful Live View update, replace stale and queued events with one current snapshot without an old cursor. Preserve filters and paused state; ignore responses suspended past that threshold. Enrich quote-recasts from existing Snapchain cast embeds and show the original author/text/link, with an unavailable fallback and no ClickHouse schema/MV changes.
+After more than three minutes without a successful Live View update, replace stale and queued events with one current snapshot without an old cursor. Preserve filters and paused state; ignore responses suspended past that threshold. Enrich quote-recasts from existing Snapchain cast embeds and show the original author/text/link, with an unavailable fallback using existing raw message fields.
+
+Live View should automatically apply queued events when scrolling back to the top. Put small avatars inside bubbles and link action words and original cast references separately. Render OG previews with all six metrics on one row and the largest fitting prefix of frozen latest events, preserving metrics-only legacy snapshots.
+
+User role filters By user / To user / Both must include incoming mentions and quote references through the supplemental ClickHouse recipient index (006/007), preserve roles in URLs/shares and deduplicate combined results. Add follows/unfollows/unlikes/unrecasts/cast deletions as live events without changing the six daily metric definitions.

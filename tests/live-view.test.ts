@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { liveClockParts, liveQuoteIds, liveSelection, liveEventsQuery, mergeLiveEvents, type LiveEvent } from "../packages/nextjs/lib/live-view.ts";
+import { livePath, liveEventAction, liveOgEvents, liveOgEventHeight, liveClockParts, liveQuoteIds, liveSelection, liveEventsQuery, mergeLiveEvents, type LiveEvent } from "../packages/nextjs/lib/live-view.ts";
 
 test("live filters validate types, UInt64 users and cursors", () => {
   assert.equal(liveSelection(new URLSearchParams("user=@nikolaii.eth&type=mention")).user, "nikolaii.eth");
   assert.equal(liveSelection(new URLSearchParams("user=18446744073709551615")).user, "18446744073709551615");
-  for (const input of ["user=0", "user=18446744073709551616", "user=x';--", "type=constructor", "type=follow", "type=cast&type=like", "after=bad"])
+  for (const input of ["user=0", "user=18446744073709551616", "user=x';--", "type=constructor", "direction=constructor", "direction=actor&direction=both", "type=cast&type=like", "after=bad"])
     assert.throws(() => liveSelection(new URLSearchParams(input)));
 });
 test("live queries bound future events, use indexed user reads and drain newer events in order", () => {
@@ -44,4 +44,46 @@ test("quote cast IDs decode stored Buffer hashes, preserve UInt64 FIDs, and igno
   assert.deepEqual(liveQuoteIds([["", ""], ["18446744073709551615", stored], ['"18446744073709551615"',JSON.stringify("0x"+hash)]]), [{fid:"18446744073709551615",hash:"0x"+hash}]);
   for (const entry of [["0",stored],["18446744073709551616",stored],["2",JSON.stringify({type:"Buffer",data:[256,...bytes.slice(1)]})],["2","not json"],["2",JSON.stringify({type:"Buffer",data:[1]})]] as [string,string][])
     assert.deepEqual(liveQuoteIds([entry]), []);
+});
+
+
+test("bubble action links distinguish replies from original casts and quote references", () => {
+ const own="0x"+"a".repeat(40),original="0x"+"b".repeat(40);
+ const event={cursor:"1794742348:"+own,castHash:original,target:{fid:"3",username:"dwr",display_name:null},action:"reply"} as LiveEvent;
+ assert.equal(liveEventAction(event).actionHash,own);
+ assert.equal(liveEventAction(event).castHash,original);
+ assert.equal(liveEventAction(event).verb,"replied");
+ for(const action of ["like","recast"] as const){const links=liveEventAction({...event,action});assert.equal(links.actionHash,original);assert.equal(links.castHash,original);}
+ const cast=liveEventAction({...event,action:"cast",castHash:own});assert.equal(cast.verb,"casted");assert.equal(cast.actionHash,own);assert.equal(cast.castHash,null);
+ const quote=liveEventAction({...event,action:"cast",castHash:own,quotes:[{author:event.target!,hash:original,text:"Original"}]});assert.equal(quote.verb,"quote-recasted");assert.equal(quote.actionHash,own);assert.equal(quote.castHash,original);
+ assert.equal(liveEventAction({...event,action:"mention"}).actionHash,own);
+});
+test("OG uses the largest ordered prefix that fits each image below the single metrics row", () => {
+ for(const text of ["","Cast commentary"]){
+  const events=Array.from({length:20},(_,i)=>({id:String(i),text} as LiveEvent));
+  for(const height of [600,800]){
+   const visible=liveOgEvents(events,height),used=visible.reduce((sum,event)=>sum+liveOgEventHeight(event),0)+Math.max(0,visible.length-1)*6;
+   assert.ok(visible.length>0);assert.deepEqual(visible,events.slice(0,visible.length));assert.ok(used<=height-250);
+   assert.ok(used+6+liveOgEventHeight(events[visible.length])>height-250);
+  }
+  assert.ok(liveOgEvents(events,800).length>liveOgEvents(events,600).length);
+ }
+});
+
+
+test("incoming and combined roles use recipient indexes and preserve direction in share links", () => {
+ assert.equal(liveSelection(new URLSearchParams("user=3&direction=target")).direction,"target");
+ assert.equal(liveSelection(new URLSearchParams("direction=both")).direction,"actor");
+ const incoming=liveEventsQuery("18446744073709551615","all",undefined,"target");
+ assert.match(incoming.sql,/recipient_fid = \{user:UInt64\}/);assert.match(incoming.sql,/live_cast_recipients/);assert.match(incoming.sql,/SELECT DISTINCT fid,timestamp,hash/);assert.equal(incoming.params.user,"18446744073709551615");
+ assert.ok(livePath({user:"3",type:"all",direction:"target"},"f".repeat(64)).includes("direction=target"));
+ const both=liveEventsQuery("3","mention",undefined,"both");assert.match(both.sql,/is_mention=1/);assert.match(both.sql,/UNION ALL/);
+ const actions=liveEventsQuery(undefined,"all").params.actions;for(const key of ["follow","unfollow","unlike","unrecast","cast_delete"])assert.ok(actions.includes("'"+key+"'"));
+});
+test("follow and undo/delete bubbles use meaningful profile or original-cast destinations",()=>{
+ const own="0x"+"a".repeat(40),original="0x"+"b".repeat(40);
+ const event={cursor:"1794742348:"+own,castHash:original,target:{fid:"18446744073709551615",username:null,display_name:null},action:"follow"} as LiveEvent;
+ for(const action of ["follow","unfollow"] as const){const link=liveEventAction({...event,action});assert.equal(link.castHash,null);assert.ok(link.actionUrl.endsWith("~/profiles/18446744073709551615"));assert.equal(link.profileAction,true);}
+ for(const action of ["unlike","unrecast","cast_delete"] as const){const link=liveEventAction({...event,action});assert.equal(link.castHash,original);assert.ok(link.actionUrl.endsWith(original));}
+ assert.equal(liveEventAction({...event,action:"cast_delete"}).target,null);
 });
