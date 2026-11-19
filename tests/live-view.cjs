@@ -16,7 +16,7 @@ const makeEvent=(id,action='cast',actor=profile)=>({id,cursor:'1794742348:0x'+'a
    calls++;const u=new URL(route.request().url());requests.push(u);
    if(fail) return route.fulfill({status:502,json:{error:'Test refresh unavailable'}});
    const user=u.searchParams.get('user');const type=u.searchParams.get('type');
-   await route.fulfill({json:{events:[makeEvent(String(sequence),type==='all'?'cast':type)],headCursor:'1794742348:0x'+'a'.repeat(40),hasMore:false,profile:user?profile:null,date:new Date().toISOString().slice(0,10),now:new Date(Date.now()-(sequence>1?60000:0)).toISOString(),totals:{asOf:new Date().toISOString(),today:{casts:123+sequence,replies:40,recasts:20,likes:300,mentions:15,dau:70},yesterday:{casts:100,replies:30,recasts:10,likes:200,mentions:8,dau:60}},source:{checkedAt:new Date().toISOString(),catchingUp:false,coverage:'Captured history is incomplete.'}}});
+   await route.fulfill({json:{events:[makeEvent(String(sequence),type==='all'?'cast':type)],headCursor:'1794742348:0x'+'a'.repeat(40),hasMore:false,profile:user?profile:null,date:new Date().toISOString().slice(0,10),now:new Date(Date.now()-(sequence>1?60000:0)).toISOString(),totals:{asOf:new Date().toISOString(),today:{casts:2204+sequence,replies:1263,recasts:366,likes:2761,mentions:505,dau:1783},yesterday:{casts:100,replies:30,recasts:10,likes:200,mentions:8,dau:60}},source:{checkedAt:new Date().toISOString(),catchingUp:false,coverage:'Captured history is incomplete.'}}});
   });
   await page.goto(origin+'/live-view');
   await expect(page.locator('.live-stat')).toHaveCount(6);
@@ -107,7 +107,7 @@ const makeEvent=(id,action='cast',actor=profile)=>({id,cursor:'1794742348:0x'+'a
   await expect(page.locator('.live-events li').first()).toHaveAttribute('data-event-id','5',{timeout:10000});
   assert.equal(await page.evaluate(()=>window.__insertAnimations),animations);
   mkdirSync('artifacts',{recursive:true});
-  for(const width of [1280,820,761,760,390,320]){
+  for(const width of [1280,820,761,760,440,430,402,390,375,320]){
    await page.setViewportSize({width,height:700});
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`overflow at ${width}`);
    const nav=await page.locator('.app-navigation a').evaluateAll(els=>els.map(el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right}}));
@@ -115,6 +115,8 @@ const makeEvent=(id,action='cast',actor=profile)=>({id,cursor:'1794742348:0x'+'a
    await page.evaluate(()=>{ document.activeElement?.blur(); scrollTo(0,0); });
    assert.ok(await page.locator('.live-stat').evaluateAll(els=>els.every(el=>getComputedStyle(el).textAlign==='center')),`centered metrics at ${width}`);
    assert.ok(await page.locator('.live-sentence').first().evaluate(el=>parseFloat(getComputedStyle(el).fontSize)>=16));
+   const numericOverflow=await page.locator('.live-stat').evaluateAll(cards=>cards.flatMap(card=>{const box=card.getBoundingClientRect(),style=getComputedStyle(card),left=box.left+parseFloat(style.paddingLeft)+1,right=box.right-parseFloat(style.paddingRight)-1;return Array.from(card.querySelectorAll('number-flow-react')).flatMap(flow=>{const parts=Array.from(flow.shadowRoot.querySelectorAll('.section')).map(part=>part.getBoundingClientRect()).filter(r=>r.width>0);if(!parts.length)throw Error('NumberFlow digits were not measured');return parts.filter(r=>r.left<left-1||r.right>right+1).map(r=>({left:r.left,right:r.right,available:[left,right]}));});}));
+   assert.deepEqual(numericOverflow,[],`all today/yesterday digits fit their card at ${width}`);
    const boxes=await page.locator('.live-stat').evaluateAll(els=>els.map(el=>el.getBoundingClientRect().top));
    assert.ok(boxes.every(top=>Math.abs(top-boxes[0])<1),`six metrics in one row at ${width}`);
    const bubbles=await page.locator('.live-events li').evaluateAll(els=>els.slice(0,2).map(el=>{const row=el.getBoundingClientRect(),b=el.querySelector('.live-event-main').getBoundingClientRect();return{left:b.left-row.left,right:row.right-b.right,width:b.width,rowWidth:row.width}}));
