@@ -77,6 +77,7 @@ const makeEvent=(id,action='cast',actor=profile)=>({id,cursor:'1794742348:0x'+'a
   await expect(filters).toHaveAttribute('data-active','true');
   await filters.click();
   await expect(page.locator('.live-events')).toContainText('liked a cast by');
+  assert.equal(await page.locator('.live-verb').first().evaluate(el=>getComputedStyle(el).color),'rgb(245, 128, 178)');
   assert.equal(requests.at(-1).searchParams.get('type'),'like');
   await page.getByTestId('live-user-input').fill('366713');
   await page.getByTestId('live-user-submit').click();
@@ -116,6 +117,9 @@ const makeEvent=(id,action='cast',actor=profile)=>({id,cursor:'1794742348:0x'+'a
    assert.ok(await page.locator('.live-sentence').first().evaluate(el=>parseFloat(getComputedStyle(el).fontSize)>=16));
    const boxes=await page.locator('.live-stat').evaluateAll(els=>els.map(el=>el.getBoundingClientRect().top));
    assert.ok(boxes.every(top=>Math.abs(top-boxes[0])<1),`six metrics in one row at ${width}`);
+   const bubbles=await page.locator('.live-events li').evaluateAll(els=>els.slice(0,2).map(el=>{const row=el.getBoundingClientRect(),b=el.querySelector('.live-event-main').getBoundingClientRect();return{left:b.left-row.left,right:row.right-b.right,width:b.width,rowWidth:row.width}}));
+   assert.ok(bubbles.every(b=>b.left>=7&&b.right>=7),`inset bubbles at ${width}`);
+   assert.ok(bubbles[0].left<bubbles[0].right&&bubbles[1].right<bubbles[1].left,`alternating short bubbles at ${width}`);
    const first=await page.locator('.live-events li').first().boundingBox();
    assert.ok(first.y+first.height<600,`first event before fold at ${width}`);
    const header=await page.locator('.topbar').evaluate(el=>{const a=el.querySelector('a').getBoundingClientRect(),h=el.querySelector('h1').getBoundingClientRect();return Math.abs((a.top+a.bottom)/2-(h.top+h.bottom)/2)<2&&h.left>a.right;});

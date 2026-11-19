@@ -22,6 +22,7 @@ export async function createLiveShare(input: Record<string, unknown>) {
   const data = await loadLiveView(selection);
   const snapshot: LiveSnapshot = {
     date: data.date,
+    now: data.now,
     totals: data.totals,
     source: data.source,
     profile: data.profile,

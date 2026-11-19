@@ -4,12 +4,14 @@ import { OgLogo } from "~~/components/OgLogo";
 import { loadAvatar } from "~~/lib/avatar";
 import {
   liveEventAction,
+  liveActionColors,
   liveMetricLabels,
   liveOgEventHeight,
   liveOgEvents,
   type LiveCounts,
   type LiveSnapshot,
 } from "~~/lib/live-view";
+import { relativeEventTime } from "~~/lib/follow-timeline";
 import type { Profile } from "~~/lib/activity";
 const name = (profile: Profile) => (profile.username ? `@${profile.username}` : `FID ${profile.fid}`);
 const oneLine = (text: string) => text.replace(/\s+/g, " ").trim();
@@ -41,6 +43,9 @@ export function LiveViewOg({
   avatars?: Record<string, string | null>;
 }) {
   const events = liveOgEvents(snapshot.events ?? [], height);
+  const capturedAt = snapshot.now
+    ? Date.parse(snapshot.now)
+    : Math.max(Date.parse(snapshot.totals.asOf), ...events.map((event) => Date.parse(event.timestamp)));
   const avatar = (profile: Profile, size: number) =>
     avatars[profile.fid] ? (
       <img
@@ -109,11 +114,19 @@ export function LiveViewOg({
           </div>
         ))}
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 16, flexShrink: 0 }}>
-        {events.map((event) => {
+      <div
+        style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 16, padding: "0 24px", flexShrink: 0 }}
+      >
+        {events.map((event, index) => {
           const action = liveEventAction(event),
             quote = event.quotes?.[0];
-          const heading = `${name(event.actor)} ${action.verb}${action.castHash ? `${action.connector}cast${action.target ? ` by ${name(action.target)}` : ""}` : action.profileAction && action.target ? ` ${name(action.target)}` : event.action === "mention" ? ` ${event.mentions.map(name).join(", ")}` : ""}`;
+          const reference = action.castHash
+            ? `${action.connector}cast${action.target ? ` by ${name(action.target)}` : ""}`
+            : action.profileAction && action.target
+              ? ` ${name(action.target)}`
+              : event.action === "mention"
+                ? ` ${event.mentions.map(name).join(", ")}`
+                : "";
           return (
             <div
               key={event.id}
@@ -121,6 +134,8 @@ export function LiveViewOg({
                 display: "flex",
                 flexDirection: "column",
                 height: liveOgEventHeight(event),
+                alignSelf: index % 2 ? "flex-end" : "flex-start",
+                maxWidth: "100%",
                 padding: "14px",
                 border: "1px solid #332840",
                 borderRadius: 12,
@@ -132,19 +147,27 @@ export function LiveViewOg({
                 {avatar(event.actor, 20)}
                 <span
                   style={{
+                    display: "flex",
+                    gap: 6,
                     fontSize: 22,
                     fontWeight: 700,
-                    flex: 1,
+                    flexShrink: 1,
                     minWidth: 0,
                     whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                   }}
                 >
-                  {heading}
+                  <span style={{ color: "#d7c1f4", flexShrink: 0 }}>{name(event.actor)}</span>
+                  <span style={{ color: liveActionColors[event.action], flexShrink: 0 }}>{action.verb}</span>
+                  {reference && (
+                    <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {reference.trim()}
+                    </span>
+                  )}
                 </span>
                 <span style={{ fontSize: 16, color: "#ac9bbb", flexShrink: 0 }}>
-                  {event.timestamp.slice(11, 19)} UTC
+                  {relativeEventTime(event.timestamp, capturedAt)}
                 </span>
               </div>
               {event.text && (

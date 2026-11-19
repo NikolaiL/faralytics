@@ -15,6 +15,18 @@ export const liveTypes = {
   cast_delete: "Cast deletions",
 } as const;
 export type LiveType = keyof typeof liveTypes;
+export const liveActionColors: Record<Exclude<LiveType, "all">, string> = {
+  cast: "#9d93ad",
+  reply: "#8bbdff",
+  recast: "#52d6a4",
+  like: "#f580b2",
+  mention: "#b596f2",
+  follow: "#52d6a4",
+  unfollow: "#ffa28b",
+  unlike: "#ffa28b",
+  unrecast: "#ffa28b",
+  cast_delete: "#ffa28b",
+};
 export const liveDirections = { actor: "By user", target: "To user", both: "Both" } as const;
 export type LiveDirection = keyof typeof liveDirections;
 export const liveMetricLabels = {
@@ -149,6 +161,7 @@ export function liveClockParts(now: number) {
 export type LiveSnapshot = Pick<LiveData, "date" | "totals" | "source" | "profile"> & {
   type: LiveType;
   direction?: LiveDirection;
+  now?: string;
   events?: LiveEvent[];
 };
 export function livePath(selection: { user?: string; type: LiveType; direction?: LiveDirection }, share?: string) {

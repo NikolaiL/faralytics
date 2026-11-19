@@ -88,3 +88,5 @@ Place 20px actor avatars inside the bubble before the username, with 16px avatar
 Add a User role dropdown beside Event type: By user / To user / Both. Disable it without an account and explain that it affects the feed while the metric cards describe the selected user’s own actions. Follow/unfollow bubbles show a linked verb and target profile; undo/deletion actions keep separate action/cast links.
 
 Live View typography prioritizes reading over event density: larger bubble text on web/mobile and 22px event text on OG images, with larger timestamps and comparisons. Center metric labels, totals and yesterday values horizontally on all layouts; retain the six-card row and fit fewer OG events when needed.
+
+Live View bubbles size to their content and alternate between inset left/right alignment on web/mobile and OG images. Long content can use the available inset width. OG action verbs share the web palette; event times use human-readable ages frozen relative to snapshot capture time, with a stable fallback for older snapshots.

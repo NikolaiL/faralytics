@@ -15,6 +15,7 @@ import { LOGO_PIXELS } from "~~/lib/brand";
 import {
   liveClockParts,
   liveEventAction,
+  liveActionColors,
   liveDirections,
   type LiveDirection,
   liveMetricLabels,
@@ -545,6 +546,7 @@ export function LiveView({
                     {profileLink(event.actor)}{" "}
                     <a
                       className={`live-verb live-verb-${event.action}`}
+                      style={{ color: liveActionColors[event.action] }}
                       href={action.actionUrl}
                       target="_blank"
                       rel="noreferrer"
