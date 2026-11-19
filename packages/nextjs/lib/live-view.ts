@@ -218,13 +218,13 @@ export function liveEventAction(event: LiveEvent) {
   };
 }
 export function liveOgEventHeight(event: LiveEvent) {
-  return 40 + (event.text ? 22 : 0) + (event.quotes?.length ? 40 : 0);
+  return 58 + (event.text ? 30 : 0) + (event.quotes?.length ? 50 : 0);
 }
 export function liveOgEvents(events: LiveEvent[], height: number) {
   const visible: LiveEvent[] = [];
-  let remaining = height - 250;
+  let remaining = height - 320;
   for (const event of events.slice(0, 20)) {
-    const size = liveOgEventHeight(event) + (visible.length ? 6 : 0);
+    const size = liveOgEventHeight(event) + (visible.length ? 8 : 0);
     if (size > remaining) break;
     visible.push(event);
     remaining -= size;

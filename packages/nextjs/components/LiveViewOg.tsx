@@ -67,50 +67,49 @@ export function LiveViewOg({
       }}
     >
       <div
-        style={{ display: "flex", justifyContent: "space-between", alignItems: "center", height: 32, flexShrink: 0 }}
+        style={{ display: "flex", justifyContent: "space-between", alignItems: "center", height: 38, flexShrink: 0 }}
       >
         <OgLogo />
-        <span style={{ fontSize: 26, fontWeight: 700 }}>
+        <span style={{ fontSize: 32, fontWeight: 700 }}>
           Live View<span style={{ color: "#d6ff3f" }}>.</span>
         </span>
       </div>
-      <span style={{ height: 22, marginTop: 8, fontSize: 16, lineHeight: "22px", color: "#ac9bbb", flexShrink: 0 }}>
+      <span style={{ height: 28, marginTop: 8, fontSize: 20, lineHeight: "28px", color: "#ac9bbb", flexShrink: 0 }}>
         {snapshot.date} · metrics as of {snapshot.totals.asOf.slice(11, 19)} UTC
         {snapshot.profile
           ? ` · ${name(snapshot.profile)}${snapshot.direction === "target" ? " · incoming events" : snapshot.direction === "both" ? " · both directions" : ""}`
           : ""}
       </span>
-      <div style={{ display: "flex", gap: 8, marginTop: 12, height: 84, flexShrink: 0 }}>
+      <div style={{ display: "flex", gap: 8, marginTop: 12, height: 120, flexShrink: 0 }}>
         {(Object.keys(liveMetricLabels) as (keyof LiveCounts)[]).map((key) => (
           <div
             key={key}
             style={{
               display: "flex",
               flexDirection: "column",
-              gap: 4,
+              gap: 6,
+              alignItems: "center",
+              textAlign: "center",
               flex: 1,
               minWidth: 0,
-              height: 84,
-              padding: "8px 12px",
+              height: 120,
+              padding: "10px 8px",
               border: "1px solid #332840",
               borderRadius: 12,
               background: "#17121e",
             }}
           >
-            <span style={{ fontSize: 13, lineHeight: "14px", color: "#ac9bbb" }}>
-              {liveMetricLabels[key]}
-              {key === "dau" ? " · unique FIDs" : ""}
-            </span>
-            <span style={{ fontSize: 26, lineHeight: "30px", fontWeight: 900, color: "#d6ff3f" }}>
+            <span style={{ fontSize: 18, lineHeight: "22px", color: "#ac9bbb" }}>{liveMetricLabels[key]}</span>
+            <span style={{ fontSize: 34, lineHeight: "38px", fontWeight: 900, color: "#d6ff3f" }}>
               {snapshot.totals.today[key].toLocaleString("en-US")}
             </span>
-            <span style={{ fontSize: 11, lineHeight: "14px", color: "#ac9bbb" }}>
+            <span style={{ fontSize: 16, lineHeight: "22px", color: "#ac9bbb" }}>
               Yesterday {snapshot.totals.yesterday[key].toLocaleString("en-US")}
             </span>
           </div>
         ))}
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 12, flexShrink: 0 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 16, flexShrink: 0 }}>
         {events.map((event) => {
           const action = liveEventAction(event),
             quote = event.quotes?.[0];
@@ -122,18 +121,18 @@ export function LiveViewOg({
                 display: "flex",
                 flexDirection: "column",
                 height: liveOgEventHeight(event),
-                padding: "9px 12px",
+                padding: "14px",
                 border: "1px solid #332840",
                 borderRadius: 12,
                 background: "#1c1526",
                 flexShrink: 0,
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 6, height: 20, flexShrink: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, height: 28, flexShrink: 0 }}>
                 {avatar(event.actor, 20)}
                 <span
                   style={{
-                    fontSize: 15,
+                    fontSize: 22,
                     fontWeight: 700,
                     flex: 1,
                     minWidth: 0,
@@ -144,17 +143,17 @@ export function LiveViewOg({
                 >
                   {heading}
                 </span>
-                <span style={{ fontSize: 10, color: "#ac9bbb", flexShrink: 0 }}>
+                <span style={{ fontSize: 16, color: "#ac9bbb", flexShrink: 0 }}>
                   {event.timestamp.slice(11, 19)} UTC
                 </span>
               </div>
               {event.text && (
                 <span
                   style={{
-                    height: 18,
+                    height: 26,
                     marginTop: 4,
-                    fontSize: 15,
-                    lineHeight: "18px",
+                    fontSize: 22,
+                    lineHeight: "26px",
                     whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
@@ -170,7 +169,7 @@ export function LiveViewOg({
                     display: "flex",
                     alignItems: "center",
                     gap: 6,
-                    height: 34,
+                    height: 44,
                     marginTop: 6,
                     padding: "6px 9px",
                     borderLeft: "3px solid #855dcd",
@@ -182,7 +181,7 @@ export function LiveViewOg({
                   {avatar(quote.author, 16)}
                   <span
                     style={{
-                      fontSize: 13,
+                      fontSize: 20,
                       flex: 1,
                       minWidth: 0,
                       whiteSpace: "nowrap",
@@ -199,7 +198,7 @@ export function LiveViewOg({
           );
         })}
         {!events.length && (
-          <span style={{ fontSize: 17, color: "#ac9bbb" }}>
+          <span style={{ fontSize: 22, color: "#ac9bbb" }}>
             {snapshot.events ? "No recent events for these filters." : "This snapshot contains daily metrics only."}
           </span>
         )}
@@ -211,7 +210,7 @@ export function LiveViewOg({
           alignItems: "flex-end",
           height: 24,
           marginTop: "auto",
-          fontSize: 11,
+          fontSize: 14,
           color: "#ac9bbb",
           flexShrink: 0,
         }}

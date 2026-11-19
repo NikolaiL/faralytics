@@ -112,6 +112,8 @@ const makeEvent=(id,action='cast',actor=profile)=>({id,cursor:'1794742348:0x'+'a
    const nav=await page.locator('.app-navigation a').evaluateAll(els=>els.map(el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right}}));
    assert.equal(nav.length,7);assert.ok(nav.every(r=>r.left>=0&&r.right<=width),`navigation at ${width}`);
    await page.evaluate(()=>{ document.activeElement?.blur(); scrollTo(0,0); });
+   assert.ok(await page.locator('.live-stat').evaluateAll(els=>els.every(el=>getComputedStyle(el).textAlign==='center')),`centered metrics at ${width}`);
+   assert.ok(await page.locator('.live-sentence').first().evaluate(el=>parseFloat(getComputedStyle(el).fontSize)>=16));
    const boxes=await page.locator('.live-stat').evaluateAll(els=>els.map(el=>el.getBoundingClientRect().top));
    assert.ok(boxes.every(top=>Math.abs(top-boxes[0])<1),`six metrics in one row at ${width}`);
    const first=await page.locator('.live-events li').first().boundingBox();

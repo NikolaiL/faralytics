@@ -62,9 +62,9 @@ test("OG uses the largest ordered prefix that fits each image below the single m
  for(const text of ["","Cast commentary"]){
   const events=Array.from({length:20},(_,i)=>({id:String(i),text} as LiveEvent));
   for(const height of [600,800]){
-   const visible=liveOgEvents(events,height),used=visible.reduce((sum,event)=>sum+liveOgEventHeight(event),0)+Math.max(0,visible.length-1)*6;
-   assert.ok(visible.length>0);assert.deepEqual(visible,events.slice(0,visible.length));assert.ok(used<=height-250);
-   assert.ok(used+6+liveOgEventHeight(events[visible.length])>height-250);
+   const visible=liveOgEvents(events,height),used=visible.reduce((sum,event)=>sum+liveOgEventHeight(event),0)+Math.max(0,visible.length-1)*8;
+   assert.ok(visible.length>0);assert.deepEqual(visible,events.slice(0,visible.length));assert.ok(used<=height-320);
+   assert.ok(used+8+liveOgEventHeight(events[visible.length])>height-320);
   }
   assert.ok(liveOgEvents(events,800).length>liveOgEvents(events,600).length);
  }
