@@ -120,8 +120,7 @@ const makeEvent=(id,action='cast',actor=profile)=>({id,cursor:'1794742348:0x'+'a
    const boxes=await page.locator('.live-stat').evaluateAll(els=>els.map(el=>el.getBoundingClientRect().top));
    assert.ok(boxes.every(top=>Math.abs(top-boxes[0])<1),`six metrics in one row at ${width}`);
    const bubbles=await page.locator('.live-events li').evaluateAll(els=>els.slice(0,2).map(el=>{const row=el.getBoundingClientRect(),b=el.querySelector('.live-event-main').getBoundingClientRect();return{left:b.left-row.left,right:row.right-b.right,width:b.width,rowWidth:row.width}}));
-   assert.ok(bubbles.every(b=>b.left>=7&&b.right>=7),`inset bubbles at ${width}`);
-   assert.ok(bubbles[0].left<bubbles[0].right&&bubbles[1].right<bubbles[1].left,`alternating short bubbles at ${width}`);
+   assert.ok(bubbles.every(b=>Math.abs(b.left)<1),`all web/mobile bubbles remain left-aligned at ${width}`);
    const first=await page.locator('.live-events li').first().boundingBox();
    assert.ok(first.y+first.height<600,`first event before fold at ${width}`);
    const header=await page.locator('.topbar').evaluate(el=>{const a=el.querySelector('a').getBoundingClientRect(),h=el.querySelector('h1').getBoundingClientRect();return Math.abs((a.top+a.bottom)/2-(h.top+h.bottom)/2)<2&&h.left>a.right;});

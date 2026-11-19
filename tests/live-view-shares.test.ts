@@ -34,6 +34,7 @@ test("Live View snapshot freezes all six daily metrics, filters and cutoff for b
  const styled:any[]=[];const walk=(node:any)=>{if(Array.isArray(node)){node.forEach(walk);return;}if(node?.props){if(node.props.style)styled.push(node);walk(node.props.children);}};
  walk(og.LiveViewOg({snapshot:await shares.readLiveShare(snapshot.id,{type:"all"}),height:800}));
  assert.deepEqual(styled.filter(n=>n.props.style.alignSelf).map(n=>n.props.style.alignSelf),["flex-start","flex-end"]);
+ assert.ok(styled.filter(n=>n.props.style.alignSelf).every(n=>n.props.style.width==="80%"&&n.props.style.justifyContent==="center"));
  assert.ok(styled.some(n=>n.props.children==="liked"&&n.props.style.color===live.liveActionColors.like));
  const oldEventsSnapshot={...(stored.get(snapshot.id) as any)};delete oldEventsSnapshot.now;
  assert.ok(words(og.LiveViewOg({snapshot:oldEventsSnapshot,height:800})).includes("1 second ago"));

@@ -132,91 +132,100 @@ export function LiveViewOg({
               key={event.id}
               style={{
                 display: "flex",
-                flexDirection: "column",
-                height: liveOgEventHeight(event),
+                width: "80%",
                 alignSelf: index % 2 ? "flex-end" : "flex-start",
-                maxWidth: "100%",
-                padding: "14px",
-                border: "1px solid #332840",
-                borderRadius: 12,
-                background: "#1c1526",
+                justifyContent: "center",
                 flexShrink: 0,
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 8, height: 28, flexShrink: 0 }}>
-                {avatar(event.actor, 20)}
-                <span
-                  style={{
-                    display: "flex",
-                    gap: 6,
-                    fontSize: 22,
-                    fontWeight: 700,
-                    flexShrink: 1,
-                    minWidth: 0,
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
-                  <span style={{ color: "#d7c1f4", flexShrink: 0 }}>{name(event.actor)}</span>
-                  <span style={{ color: liveActionColors[event.action], flexShrink: 0 }}>{action.verb}</span>
-                  {reference && (
-                    <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {reference.trim()}
-                    </span>
-                  )}
-                </span>
-                <span style={{ fontSize: 16, color: "#ac9bbb", flexShrink: 0 }}>
-                  {relativeEventTime(event.timestamp, capturedAt)}
-                </span>
-              </div>
-              {event.text && (
-                <span
-                  style={{
-                    height: 26,
-                    marginTop: 4,
-                    fontSize: 22,
-                    lineHeight: "26px",
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    flexShrink: 0,
-                  }}
-                >
-                  {oneLine(event.text)}
-                </span>
-              )}
-              {quote && (
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    height: 44,
-                    marginTop: 6,
-                    padding: "6px 9px",
-                    borderLeft: "3px solid #855dcd",
-                    borderRadius: 6,
-                    background: "#120e19",
-                    flexShrink: 0,
-                  }}
-                >
-                  {avatar(quote.author, 16)}
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  height: liveOgEventHeight(event),
+                  maxWidth: "100%",
+                  padding: "14px",
+                  border: "1px solid #332840",
+                  borderRadius: 12,
+                  background: "#1c1526",
+                  flexShrink: 0,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 8, height: 28, flexShrink: 0 }}>
+                  {avatar(event.actor, 20)}
                   <span
                     style={{
-                      fontSize: 20,
-                      flex: 1,
+                      display: "flex",
+                      gap: 6,
+                      fontSize: 22,
+                      fontWeight: 700,
+                      flexShrink: 1,
                       minWidth: 0,
                       whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                     }}
                   >
-                    {name(quote.author)}: {oneLine(quote.text ?? "Quoted cast is unavailable in captured history.")}
-                    {(event.quotes?.length ?? 0) > 1 ? ` (+${event.quotes!.length - 1} more quotes)` : ""}
+                    <span style={{ color: "#d7c1f4", flexShrink: 0 }}>{name(event.actor)}</span>
+                    <span style={{ color: liveActionColors[event.action], flexShrink: 0 }}>{action.verb}</span>
+                    {reference && (
+                      <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {reference.trim()}
+                      </span>
+                    )}
+                  </span>
+                  <span style={{ fontSize: 16, color: "#ac9bbb", flexShrink: 0 }}>
+                    {relativeEventTime(event.timestamp, capturedAt)}
                   </span>
                 </div>
-              )}
+                {event.text && (
+                  <span
+                    style={{
+                      height: 26,
+                      marginTop: 4,
+                      fontSize: 22,
+                      lineHeight: "26px",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {oneLine(event.text)}
+                  </span>
+                )}
+                {quote && (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      height: 44,
+                      marginTop: 6,
+                      padding: "6px 9px",
+                      borderLeft: "3px solid #855dcd",
+                      borderRadius: 6,
+                      background: "#120e19",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {avatar(quote.author, 16)}
+                    <span
+                      style={{
+                        fontSize: 20,
+                        flex: 1,
+                        minWidth: 0,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {name(quote.author)}: {oneLine(quote.text ?? "Quoted cast is unavailable in captured history.")}
+                      {(event.quotes?.length ?? 0) > 1 ? ` (+${event.quotes!.length - 1} more quotes)` : ""}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           );
         })}

@@ -89,6 +89,6 @@ Add a User role dropdown beside Event type: By user / To user / Both. Disable it
 
 Live View typography prioritizes reading over event density: larger bubble text on web/mobile and 22px event text on OG images, with larger timestamps and comparisons. Center metric labels, totals and yesterday values horizontally on all layouts; retain the six-card row and fit fewer OG events when needed.
 
-Live View bubbles size to their content and alternate between inset left/right alignment on web/mobile and OG images. Long content can use the available inset width. OG action verbs share the web palette; event times use human-readable ages frozen relative to snapshot capture time, with a stable fallback for older snapshots.
+Live View web/mobile bubbles stay left-aligned and size to content. Only OG images alternate: each bubble is centered within an 80%-width area anchored alternately left and right, so its position adapts to its width. Long content can fill that area. OG action verbs share the web palette; event times use human-readable ages frozen relative to snapshot capture time, with a stable fallback for older snapshots.
 
 Keep mobile metric totals at a responsive 11–14px so grouped four-digit numbers fit within all six cards, including narrow phones. Keep the larger OG number typography independent. Check digit bounds inside each card rather than only page overflow.
