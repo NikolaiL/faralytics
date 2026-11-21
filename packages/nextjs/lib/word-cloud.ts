@@ -1,5 +1,7 @@
 import type { Profile } from "./activity.ts";
 
+export const wordCloudImageVersion = "4";
+
 export const wordCloudPeriods = {
   "7": "Last 7 days",
   "30": "Last 30 days",

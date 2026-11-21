@@ -3,6 +3,7 @@ const config: NextConfig = {
   reactStrictMode: true,
   devIndicators: false,
   outputFileTracingIncludes: {
+    "/api/og/word-cloud/*": ["./assets/fonts/word-cloud/*.otf"],
     "/api/nft/*": [
       "./node_modules/@img/sharp-linux-x64/**/*",
       "./node_modules/@img/sharp-libvips-linux-x64/**/*",

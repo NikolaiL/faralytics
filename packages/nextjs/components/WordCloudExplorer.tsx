@@ -11,6 +11,7 @@ import { formatShareText, shareCredit, type ShareTarget } from "~~/lib/share-cre
 import { cloudHeight, cloudWidth } from "~~/lib/word-cloud-layout";
 import {
   globalWordCloudPeriods,
+  wordCloudImageVersion,
   wordCloudPath,
   wordCloudPeriods,
   wordCloudRange,
@@ -154,7 +155,12 @@ export function WordCloudExplorer({
   }
 
   const params = data
-    ? new URLSearchParams({ ...(account ? { user: account.fid } : {}), period: data.period, at: data.at }).toString()
+    ? new URLSearchParams({
+        ...(account ? { user: account.fid } : {}),
+        period: data.period,
+        at: data.at,
+        v: wordCloudImageVersion,
+      }).toString()
     : "";
   const image = `/api/og/word-cloud/cloud.png?${params}`;
   return (

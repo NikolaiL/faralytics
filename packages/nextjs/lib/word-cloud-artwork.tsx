@@ -13,7 +13,14 @@ import {
   type WordCloudSelection,
 } from "~~/lib/word-cloud";
 
-const face = join(process.cwd(), "assets/fonts/FaralyticsOG-Bold.ttf");
+const fontsDirectory = join(process.cwd(), "assets/fonts");
+const latin = { family: "FaralyticsOG Bold", file: join(fontsDirectory, "FaralyticsOG-Bold.ttf") };
+const cyrillicAndGreek = { family: "FaralyticsSans Bold", file: join(fontsDirectory, "FaralyticsSans-Bold.ttf") };
+const eastAsian = {
+  family: "Noto Sans CJK SC",
+  file: join(fontsDirectory, "word-cloud/NotoSansCJKsc-Regular.otf"),
+};
+const japaneseKana = /[\p{Script_Extensions=Hiragana}\p{Script_Extensions=Katakana}]/u;
 
 export async function renderWordCloud(words: WordCloudData["words"], height: number) {
   const top = words[0]?.[1] || 1;
@@ -22,11 +29,18 @@ export async function renderWordCloud(words: WordCloudData["words"], height: num
       const size = cloudWordSize(word, count, top, height);
       const safeWord = word.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
       const color = cloudWordColor(index);
+      const isJapanese = japaneseKana.test(word);
+      const face =
+        isJapanese || /[\p{Script=Han}\p{Script=Hangul}\p{Script=Bopomofo}]/u.test(word)
+          ? eastAsian
+          : /[\p{Script=Cyrillic}\p{Script=Greek}]/u.test(word)
+            ? cyrillicAndGreek
+            : latin;
       const raster = await sharp({
         text: {
-          text: `<span foreground="${color}">${safeWord}</span>`,
-          font: `FaralyticsOG Bold ${size}`,
-          fontfile: face,
+          text: `<span foreground="${color}"${isJapanese ? ' lang="ja"' : ""}>${safeWord}</span>`,
+          font: `${face.family} ${size}`,
+          fontfile: face.file,
           dpi: 72,
           rgba: true,
         },
@@ -64,13 +78,13 @@ export const readWordCloudPng = unstable_cache(
     const { words } = await readWordCloud(fid, selection);
     return (await renderWordCloud(words, height)).toString("base64");
   },
-  ["word-cloud-png-v3"],
+  ["word-cloud-png-v4"],
   { revalidate: 300 },
 );
 
 const renderGlobalWordCloudPng = unstable_cache(
   async (words: WordCloudData["words"]) => (await renderWordCloud(words, cloudHeight)).toString("base64"),
-  ["global-word-cloud-png-v1"],
+  ["global-word-cloud-png-v2"],
   { revalidate: 3600 },
 );
 

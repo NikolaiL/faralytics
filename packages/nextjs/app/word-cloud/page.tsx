@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
 import { WordCloudExplorer } from "~~/components/WordCloudExplorer";
-import { globalWordCloudSelection, wordCloudPath, wordCloudPeriods, wordCloudSelection } from "~~/lib/word-cloud";
+import {
+  globalWordCloudSelection,
+  wordCloudImageVersion,
+  wordCloudPath,
+  wordCloudPeriods,
+  wordCloudSelection,
+} from "~~/lib/word-cloud";
 
 type PageProps = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 const title = "Word Cloud — Faralytics";
@@ -14,8 +20,9 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   const origin = process.env.NEXT_PUBLIC_URL || "http://localhost:3100";
   const path = wordCloudPath(user, selection, typeof ts === "string" ? ts : undefined);
   const url = new URL(path, origin).toString();
-  const params = new URL(url).search;
-  const image = new URL(`/api/og/word-cloud/farcaster.png${params}`, origin).toString();
+  const imageParams = new URL(url).searchParams;
+  imageParams.set("v", wordCloudImageVersion);
+  const image = new URL(`/api/og/word-cloud/farcaster.png?${imageParams}`, origin).toString();
   return {
     title,
     description,
@@ -25,7 +32,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
       card: "summary_large_image",
       title: shareTitle,
       description,
-      images: [new URL(`/api/og/word-cloud/x.png${params}`, origin).toString()],
+      images: [new URL(`/api/og/word-cloud/x.png?${imageParams}`, origin).toString()],
     },
     other: {
       "fc:miniapp": JSON.stringify({
